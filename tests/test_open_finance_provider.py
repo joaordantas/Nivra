@@ -91,6 +91,61 @@ class OpenFinanceApiTests(unittest.TestCase):
         self.assertEqual(unauthenticated.status_code, 401, unauthenticated.text)
         self.assertEqual(without_csrf.status_code, 403, without_csrf.text)
 
+    def test_missing_pluggy_credentials_do_not_block_application_or_auth(self) -> None:
+        with patch.dict(
+            os.environ,
+            {"PLUGGY_CLIENT_ID": "", "PLUGGY_CLIENT_SECRET": ""},
+        ):
+            reset_open_finance_provider()
+
+            self.assertEqual(self.client.get("/api/health").status_code, 200)
+            self.assertEqual(self.client.get("/openapi.json").status_code, 200)
+
+            csrf = self.client.get("/api/auth/csrf")
+            self.assertEqual(csrf.status_code, 200, csrf.text)
+
+            register_client(
+                self.client,
+                "Sem Pluggy",
+                "sem-pluggy@example.com",
+            )
+            logout = self.client.post(
+                "/api/auth/logout",
+                headers=csrf_headers(self.client),
+            )
+            self.assertEqual(logout.status_code, 204, logout.text)
+
+            login_csrf = self.client.get("/api/auth/csrf")
+            login = self.client.post(
+                "/api/auth/login",
+                headers={"X-CSRF-Token": login_csrf.json()["csrf_token"]},
+                json={
+                    "email": "sem-pluggy@example.com",
+                    "senha": "senha-segura-123",
+                },
+            )
+            self.assertEqual(login.status_code, 200, login.text)
+
+            restored_session = self.client.get("/api/auth/me")
+            self.assertEqual(restored_session.status_code, 200, restored_session.text)
+
+            connect_token = self.client.post(
+                "/api/open-finance/connect-token",
+                headers=csrf_headers(self.client),
+            )
+            self.assertEqual(connect_token.status_code, 503, connect_token.text)
+            self.assertEqual(
+                connect_token.json()["detail"],
+                "Open Finance ainda nao foi configurado neste ambiente.",
+            )
+
+            final_logout = self.client.post(
+                "/api/auth/logout",
+                headers=csrf_headers(self.client),
+            )
+            self.assertEqual(final_logout.status_code, 204, final_logout.text)
+            self.assertEqual(self.client.get("/api/auth/me").status_code, 401)
+
     def test_endpoint_returns_only_scoped_connect_token(self) -> None:
         register_client(self.client, "Sandbox", "sandbox@example.com")
         fake_response = {
