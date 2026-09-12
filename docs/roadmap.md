@@ -56,7 +56,7 @@ A Nivra busca reduzir ao máximo o tempo necessário para organizar, consultar e
 - [ ] Pagamentos parciais
 - [ ] Estornos e ajustes avançados
 
-## Autenticação segura
+## ✅ PRIORIDADE 1 — HARDENING DE CONTA
 
 - [x] Sessões server-side armazenadas no PostgreSQL
 - [x] Cookie HTTP-only
@@ -83,7 +83,85 @@ Melhorias futuras de conta e segurança:
 - [x] Verificação de e-mail
 - [x] Auditoria de IDOR/BOLA nas APIs privadas atuais
 
-## 1. Parcelamentos e recorrências
+Status: **CONCLUÍDA**
+
+## 🏦 PRIORIDADE 2 — OPEN FINANCE MVP
+
+> Objetivo: tornar a Nivra mais simples de testar e demonstrar com dados bancários fictícios, antes de qualquer conexão com bancos reais.
+
+### Etapa 2A — Provider e Sandbox
+
+- [x] Avaliar requisitos atuais da Pluggy
+- [ ] Criar ambiente Sandbox
+- [ ] Configurar credenciais somente no backend
+- [ ] Adicionar variáveis de ambiente
+- [ ] Criar abstração de provider
+- [ ] Criar endpoint para Connect Token
+- [ ] Integrar Pluggy Connect no frontend
+- [ ] Conectar instituição Sandbox
+- [ ] Testar fluxo completo
+
+Regra: nenhum secret da Pluggy pode chegar ao frontend.
+
+### Etapa 2B — Persistência
+
+- [ ] `conexoes_bancarias` com proprietário, provider, item externo, instituição, status e timestamps
+- [ ] `contas_bancarias_externas` com vínculo à conexão e à conta Nivra
+- [ ] `transacoes_bancarias` com identificador externo, valor, data, tipo e estado de conciliação
+- [ ] `eventos_sincronizacao` com início, término, status, erro e quantidade importada
+
+### Etapa 2C — Sincronização
+
+- [ ] Importar instituições, contas, saldos e transações
+- [ ] Atualizar dados existentes
+- [ ] Sincronização manual
+- [ ] Exibir última sincronização e erros de conexão
+
+### Etapa 2D — Idempotência
+
+- [ ] Unique constraints para IDs externos
+- [ ] Reprocessamento seguro sem duplicar dados
+- [ ] Atualizar registros externos existentes
+- [ ] Tratar exclusões externas
+- [ ] Testes de idempotência
+
+### Etapa 2E — Webhooks
+
+- [ ] Endpoint seguro e validação de autenticidade do provider
+- [ ] Eventos de atualização, erro, criação, atualização e exclusão de transações
+- [ ] Retry seguro, idempotência e logs estruturados
+
+### Etapa 2F — UX
+
+- [ ] Botão "Conectar banco"
+- [ ] Instituição, status e última sincronização
+- [ ] Reconectar, sincronizar agora e desconectar
+- [ ] Fluxo responsivo, loading, erro e safe area no mobile
+
+### Etapa 2G — Demo para testers
+
+- [ ] Modo Sandbox demonstrável
+- [ ] Banco, contas, saldo e histórico fictícios
+- [ ] Estado de erro demonstrável
+- [ ] Documentar como testar
+
+### Etapa 2H — Conciliação MVP
+
+- [ ] Identificar correspondência com lançamento manual
+- [ ] Evitar duplicação e marcar possível correspondência
+- [ ] Mesclar somente após confirmação
+- [ ] Manter histórico da decisão
+
+### Gate Open Finance Sandbox
+
+- [ ] Connect funciona
+- [ ] Conta, saldo e transações externas importados
+- [ ] Re-sync e webhook duplicados não criam dados extras
+- [ ] Isolamento entre usuários validado
+- [ ] Secrets ausentes do frontend
+- [ ] Build e testes passam
+
+## 💳 PRIORIDADE 3 — PARCELAMENTOS E RECORRÊNCIAS
 
 ### Parcelamentos
 
@@ -102,7 +180,7 @@ Melhorias futuras de conta e segurança:
 - [ ] Detecção de padrões recorrentes
 - [ ] Cancelamento de recorrência
 
-## 2. Orçamentos e metas
+## 🎯 PRIORIDADE 4 — ORÇAMENTOS E METAS
 
 ### Orçamentos
 
@@ -117,18 +195,7 @@ Melhorias futuras de conta e segurança:
 - [ ] Progresso e valor necessário por mês
 - [ ] Metas concluídas e histórico
 
-## 3. Sincronização bancária e Open Finance
-
-- [ ] Escolha e validação de provider
-- [ ] Consentimento e gerenciamento de conexões
-- [ ] Sincronização de contas, saldos e transações
-- [ ] Atualização periódica, manual e por webhooks
-- [ ] Conciliação com lançamentos manuais
-- [ ] Prevenção de duplicações e resolução de conflitos
-- [ ] Sugestão de categoria e aprendizado estabelecimento → categoria
-- [ ] Identificação de assinaturas, transferências internas e movimentações incomuns
-
-## 4. Motor de inteligência financeira
+## 📊 PRIORIDADE 5 — MOTOR DE INTELIGÊNCIA FINANCEIRA
 
 - [ ] Comparação entre períodos
 - [ ] Gastos e receitas por categoria
@@ -140,7 +207,7 @@ Melhorias futuras de conta e segurança:
 - [ ] Situação de orçamentos e metas
 - [ ] Área “Sua atenção” baseada em regras determinísticas
 
-## 5. ✦ Lumi
+## ✦ PRIORIDADE 6 — LUMI
 
 Lumi será a assistente financeira inteligente da Nivra. A identidade está definida, mas a IA ainda não foi implementada.
 
@@ -152,7 +219,7 @@ Lumi será a assistente financeira inteligente da Nivra. A identidade está defi
 - [ ] Contexto financeiro estruturado e memória de preferências
 - [ ] Garantia de que a IA nunca acessa SQL diretamente
 
-## 6. Notificações internas
+## 🔔 PRIORIDADE 7 — NOTIFICAÇÕES INTERNAS
 
 - [ ] `NotificationService` e eventos financeiros
 - [ ] Centro de notificações e sino no frontend
@@ -161,7 +228,7 @@ Lumi será a assistente financeira inteligente da Nivra. A identidade está defi
 - [ ] Gastos incomuns e progresso de metas
 - [ ] Resumos semanal e mensal
 
-## 7. WhatsApp
+## 💬 PRIORIDADE 8 — WHATSAPP
 
 - [ ] Integração oficial
 - [ ] Vinculação, consentimento e preferências
@@ -169,7 +236,7 @@ Lumi será a assistente financeira inteligente da Nivra. A identidade está defi
 - [ ] Alertas de fatura
 - [ ] Resumos semanal e mensal
 
-## 8. Polimento e produção
+## 🛡️ PRIORIDADE 9 — POLIMENTO E PRODUÇÃO
 
 - [ ] Paginação e filtros server-side
 - [ ] Cache quando necessário
@@ -182,7 +249,7 @@ Lumi será a assistente financeira inteligente da Nivra. A identidade está defi
 - [ ] Política de privacidade, termos de uso e LGPD
 - [ ] Screenshots oficiais, onboarding e testes públicos
 
-## 9. Nivra Pro — futuro
+## 🚀 PRIORIDADE 10 — NIVRA PRO
 
 - [ ] Perfil profissional
 - [ ] Clientes, vendas e serviços
@@ -197,12 +264,16 @@ Lumi será a assistente financeira inteligente da Nivra. A identidade está defi
 | --- | --- |
 | `v0.1.x-alpha` | Core financeiro, cartões, PostgreSQL e deploy |
 | `v0.2.x-alpha` | Autenticação segura, sessões e segurança multiusuário |
-| `v0.3.x-alpha` | Parcelamentos, recorrências, orçamentos e metas |
-| `v0.4.x-alpha/beta` | Open Finance, sincronização e conciliação |
+| `v0.3.x-alpha` | Open Finance Sandbox, sincronização e conciliação inicial |
+| `v0.4.x-alpha` | Parcelamentos, recorrências, orçamentos e metas |
 | `v0.5.x-beta` | Inteligência financeira e “Sua atenção” |
 | `v0.6.x-beta` | Lumi, consultas e ações |
 | `v0.7.x-beta` | Notificações e WhatsApp |
 | `v0.8.x` / `v0.9.x` | Preparação para produção |
 | `v1.0.0` | Primeira versão pública considerada estável |
 
-A próxima etapa funcional é **Parcelamentos e recorrências**. A Nivra não avança automaticamente para ela sem uma atualização separada e revisada.
+## Próxima tarefa recomendada
+
+**Criar ambiente Sandbox da Pluggy.**
+
+É o primeiro item pendente da prioridade atual. A Nivra não avança automaticamente para ele sem uma nova solicitação.
