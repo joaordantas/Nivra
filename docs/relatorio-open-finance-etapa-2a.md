@@ -2,7 +2,7 @@
 
 ## Resultado
 
-A Nivra agora possui a base técnica para abrir o Pluggy Connect em modo Sandbox. A ativação final depende somente da criação da aplicação Pluggy, configuração das credenciais privadas e execução do fluxo real no ambiente publicado.
+A Nivra agora possui a base técnica para abrir o Pluggy Connect em modo Sandbox. A aplicação Pluggy de desenvolvimento e as credenciais privadas na Vercel foram confirmadas. A validação final depende somente da conexão de uma instituição fictícia em uma sessão autenticada da Nivra.
 
 ## Backend
 
@@ -40,12 +40,18 @@ A Nivra agora possui a base técnica para abrir o Pluggy Connect em modo Sandbox
 
 ## Limitações desta etapa
 
-- a aplicação Sandbox precisa ser criada manualmente no painel da Pluggy;
-- as credenciais precisam ser cadastradas manualmente na Vercel;
-- o fluxo real não pode ser validado sem essas credenciais;
+- o fluxo real ainda precisa ser validado em uma sessão autenticada da Nivra;
 - o `itemId` ainda não é persistido;
 - contas, saldos e transações ainda não são importados;
 - webhooks e conciliação pertencem a etapas posteriores.
 
 Consulte [Ativação manual do Sandbox](open-finance-sandbox-setup.md) para concluir os passos externos.
 
+## Validação externa parcial
+
+- aplicação `Nivra Development` confirmada no ambiente de desenvolvimento da Pluggy;
+- `PLUGGY_CLIENT_ID` e `PLUGGY_CLIENT_SECRET` confirmadas como secrets de Produção na Vercel, sem leitura ou registro dos valores;
+- commit `f4a8de9` publicado no GitHub;
+- deployment de Produção confirmado como `Ready`;
+- `GET /api/health` respondeu HTTP 200 com banco online;
+- conexão do Pluggy Bank ainda pendente em uma sessão autenticada.

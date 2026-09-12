@@ -92,8 +92,8 @@ Status: **CONCLUÍDA**
 ### Etapa 2A — Provider e Sandbox
 
 - [x] Avaliar requisitos atuais da Pluggy
-- [ ] Criar ambiente Sandbox
-- [-] Configurar credenciais somente no backend — suporte pronto; valores externos pendentes
+- [x] Criar ambiente Sandbox
+- [x] Configurar credenciais somente no backend
 - [x] Adicionar variáveis de ambiente
 - [x] Criar abstração de provider
 - [x] Criar endpoint para Connect Token
@@ -274,6 +274,6 @@ Lumi será a assistente financeira inteligente da Nivra. A identidade está defi
 
 ## Próxima tarefa recomendada
 
-**Criar ambiente Sandbox da Pluggy e cadastrar as credenciais privadas na Vercel.**
+**Conectar uma instituição Sandbox e validar o fluxo completo publicado.**
 
 É o primeiro item pendente da prioridade atual. A Nivra não avança automaticamente para ele sem uma nova solicitação.
