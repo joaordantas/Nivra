@@ -124,6 +124,8 @@ export const api = {
   updateAccountStatus: (accountId: number, ativo: boolean) =>
     request<Account>(`/accounts/${accountId}/status`, { method: "PATCH", body: JSON.stringify({ ativo }) }),
   setPrimaryAccount: (accountId: number) => request<Account>(`/accounts/${accountId}/primary`, { method: "PATCH" }),
+  createOpenFinanceConnectToken: () =>
+    request<{ connect_token: string; provider: "pluggy"; environment: "sandbox" }>("/open-finance/connect-token", { method: "POST" }),
 
   getTransfers: () => request<Transfer[]>("/transfers"),
   createTransfer: (payload: { conta_origem_id: number; conta_destino_id: number; valor: number; descricao: string; data: string }) =>

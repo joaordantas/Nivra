@@ -151,7 +151,7 @@ Detalhes estão em [Arquitetura](docs/architecture.md).
 | Autenticação segura e hardening de conta | Concluído |
 | Parcelamentos e recorrências | Planejado |
 | Orçamentos e metas | Planejado |
-| Open Finance | Planejado |
+| Open Finance Sandbox | Integração técnica pronta; ativação manual pendente |
 | Insights financeiros | Planejado |
 | Lumi | Em desenvolvimento conceitual |
 | Notificações e WhatsApp | Planejado |
@@ -212,8 +212,12 @@ Use [`.env.example`](.env.example) apenas como referência. Credenciais reais de
 | `EMAIL_PROVIDER` | Provedor de entrega; atualmente `resend` em produção |
 | `RESEND_API_KEY` | Credencial do Resend, somente no backend |
 | `EMAIL_FROM` | Remetente pertencente a um domínio verificado |
+| `PLUGGY_CLIENT_ID` | Identificador privado da aplicação Pluggy Sandbox |
+| `PLUGGY_CLIENT_SECRET` | Credencial privada da aplicação Pluggy Sandbox |
 
-Variáveis que contêm credenciais de banco nunca devem usar o prefixo `VITE_`.
+Variáveis que contêm credenciais de banco ou da Pluggy nunca devem usar o prefixo `VITE_`.
+
+O procedimento de ativação está em [Open Finance Sandbox](docs/open-finance-sandbox-setup.md).
 
 ## Banco de dados
 

@@ -2,7 +2,7 @@
 
 **Decisão:** adotar a **Pluggy** para o MVP de Open Finance em ambiente Sandbox.
 
-Esta decisão cobre somente a etapa de avaliação técnica. A Nivra ainda não possui conta Pluggy, credenciais, integração de widget, conexão bancária, persistência ou sincronização implementadas.
+Depois da avaliação, a base técnica do provider, o endpoint de Connect Token e o widget React foram implementados. A Nivra ainda não possui credenciais Pluggy configuradas, conexão persistida ou sincronização de dados.
 
 ## Por que Pluggy
 
@@ -54,6 +54,6 @@ Ainda não é permitido conectar bancos reais. A liberação de produção conti
 - [Ambientes e Sandbox](https://docs.pluggy.ai/docs/environments-and-configurations)
 - [Sandbox](https://docs.pluggy.ai/docs/sandbox)
 
-## Próxima unidade planejada
+## Ativação pendente
 
-Criar o ambiente Sandbox da Pluggy. Essa ação exige que o responsável pelo projeto crie ou acesse a conta do provider; ela não foi executada nesta atualização.
+Criar o ambiente Sandbox da Pluggy e cadastrar as credenciais privadas na Vercel. Consulte o [guia de ativação manual](open-finance-sandbox-setup.md).

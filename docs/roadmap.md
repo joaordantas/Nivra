@@ -93,13 +93,13 @@ Status: **CONCLUÍDA**
 
 - [x] Avaliar requisitos atuais da Pluggy
 - [ ] Criar ambiente Sandbox
-- [ ] Configurar credenciais somente no backend
-- [ ] Adicionar variáveis de ambiente
-- [ ] Criar abstração de provider
-- [ ] Criar endpoint para Connect Token
-- [ ] Integrar Pluggy Connect no frontend
+- [-] Configurar credenciais somente no backend — suporte pronto; valores externos pendentes
+- [x] Adicionar variáveis de ambiente
+- [x] Criar abstração de provider
+- [x] Criar endpoint para Connect Token
+- [x] Integrar Pluggy Connect no frontend
 - [ ] Conectar instituição Sandbox
-- [ ] Testar fluxo completo
+- [-] Testar fluxo completo — testes automatizados aprovados; validação real pendente
 
 Regra: nenhum secret da Pluggy pode chegar ao frontend.
 
@@ -274,6 +274,6 @@ Lumi será a assistente financeira inteligente da Nivra. A identidade está defi
 
 ## Próxima tarefa recomendada
 
-**Criar ambiente Sandbox da Pluggy.**
+**Criar ambiente Sandbox da Pluggy e cadastrar as credenciais privadas na Vercel.**
 
 É o primeiro item pendente da prioridade atual. A Nivra não avança automaticamente para ele sem uma nova solicitação.

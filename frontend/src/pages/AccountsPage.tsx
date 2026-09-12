@@ -9,6 +9,7 @@ import { EmptyState } from "../components/ui/EmptyState";
 import { Feedback } from "../components/ui/Feedback";
 import { Modal } from "../components/ui/Modal";
 import { PageHeader } from "../components/ui/PageHeader";
+import { OpenFinanceConnectCard } from "../components/finance/OpenFinanceConnectCard";
 import { api } from "../services/api";
 import type { Account, AccountType, Transfer } from "../types";
 import { formatCurrency, formatDate } from "../utils/formatters";
@@ -172,6 +173,8 @@ export function AccountsPage() {
       {message ? <Feedback tone="success">{message}</Feedback> : null}
 
       <Card className="accounts-total-card"><span>Saldo total nas contas ativas</span><strong>{loading ? "—" : formatCurrency(totalBalance)}</strong><small>Soma do saldo inicial e das movimentações vinculadas</small></Card>
+
+      <OpenFinanceConnectCard />
 
       <section className="account-cards" aria-label="Contas financeiras">
         {loading ? [1, 2].map((item) => <span className="surface-card skeleton account-card-skeleton" key={item} />) : null}

@@ -26,6 +26,8 @@ SESSION_TTL_HOURS=168
 CORS_ORIGINS=
 APP_PUBLIC_URL=http://127.0.0.1:5173
 EMAIL_PROVIDER=memory
+PLUGGY_CLIENT_ID=<client id da aplicacao sandbox>
+PLUGGY_CLIENT_SECRET=<client secret da aplicacao sandbox>
 ```
 
 Aplique o schema e inicie a API:
@@ -107,6 +109,10 @@ Configure no ambiente desejado:
 - `EMAIL_PROVIDER=resend`;
 - `RESEND_API_KEY` com uma chave criada para o projeto;
 - `EMAIL_FROM` com um remetente de domínio verificado.
+- `PLUGGY_CLIENT_ID` da aplicação Sandbox;
+- `PLUGGY_CLIENT_SECRET` da aplicação Sandbox.
+
+As credenciais Pluggy ficam somente no backend e nunca usam o prefixo `VITE_`. Consulte o [guia de ativação do Sandbox](open-finance-sandbox-setup.md) antes do teste publicado.
 
 Em produção, configure `APP_ENV=production`. A Vercel também informa `VERCEL_ENV=production`, usado como proteção adicional para ativar o atributo `Secure` do cookie.
 
