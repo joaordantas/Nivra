@@ -3,6 +3,8 @@ export interface User {
   usuario: string;
   email: string;
   tipo_perfil: string;
+  email_verificado: boolean;
+  email_verificado_em: string | null;
 }
 
 export interface Category {

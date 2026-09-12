@@ -75,11 +75,13 @@ A Nivra busca reduzir ao máximo o tempo necessário para organizar, consultar e
 
 Melhorias futuras de conta e segurança:
 
-- [ ] Recuperação e alteração de senha
-- [ ] Encerrar todas as sessões
+- [x] Recuperação de senha
+- [x] Alteração de senha
+- [x] Encerrar as outras sessões ao alterar a senha
 - [ ] Histórico de sessões e dispositivos
-- [ ] Rate limiting de login
-- [ ] Verificação de e-mail, se necessária
+- [x] Rate limiting persistente de login, cadastro e recuperação
+- [x] Verificação de e-mail
+- [x] Auditoria de IDOR/BOLA nas APIs privadas atuais
 
 ## 1. Parcelamentos e recorrências
 
@@ -173,7 +175,8 @@ Lumi será a assistente financeira inteligente da Nivra. A identidade está defi
 - [ ] Cache quando necessário
 - [ ] Error boundaries
 - [ ] Monitoramento e logs estruturados
-- [ ] Rate limiting
+- [x] Rate limiting básico de autenticação
+- [ ] Rate limiting geral da API
 - [ ] Acessibilidade e performance mobile
 - [ ] Auditoria de segurança, backup e recuperação
 - [ ] Política de privacidade, termos de uso e LGPD

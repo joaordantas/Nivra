@@ -30,6 +30,8 @@ usuarios = Table(
     Column("email", String(320), nullable=False, unique=True),
     Column("senha", Text, nullable=False),
     Column("tipo_perfil", String(80), nullable=False, server_default="Apenas Financeiro"),
+    Column("email_verificado", Boolean, nullable=False, server_default=false()),
+    Column("email_verificado_em", DateTime(timezone=True)),
 )
 
 sessoes = Table(
@@ -44,6 +46,38 @@ sessoes = Table(
 )
 Index("ix_sessoes_usuario", sessoes.c.usuario_id)
 Index("ix_sessoes_expiracao", sessoes.c.expira_em)
+
+auth_tokens = Table(
+    "auth_tokens", metadata,
+    Column("id", Integer, primary_key=True),
+    Column("usuario_id", ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False),
+    Column("finalidade", String(32), nullable=False),
+    Column("token_hash", String(64), nullable=False, unique=True),
+    Column("criado_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    Column("expira_em", DateTime(timezone=True), nullable=False),
+    Column("usado_em", DateTime(timezone=True)),
+    Column("revogado_em", DateTime(timezone=True)),
+    CheckConstraint(
+        "finalidade IN ('email_verification', 'password_reset')",
+        name="ck_auth_tokens_finalidade",
+    ),
+)
+Index("ix_auth_tokens_usuario_finalidade", auth_tokens.c.usuario_id, auth_tokens.c.finalidade)
+Index("ix_auth_tokens_expiracao", auth_tokens.c.expira_em)
+
+auth_rate_events = Table(
+    "auth_rate_events", metadata,
+    Column("id", Integer, primary_key=True),
+    Column("escopo", String(40), nullable=False),
+    Column("sujeito_hash", String(64), nullable=False),
+    Column("criado_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
+)
+Index(
+    "ix_auth_rate_events_lookup",
+    auth_rate_events.c.escopo,
+    auth_rate_events.c.sujeito_hash,
+    auth_rate_events.c.criado_em,
+)
 
 categorias = Table(
     "categorias", metadata,
@@ -205,6 +239,6 @@ limites = Table(
 Index("ix_limites_usuario_mes", limites.c.usuario_id, limites.c.mes)
 
 TABLES_IN_DEPENDENCY_ORDER = [
-    usuarios, sessoes, categorias, contas, transacoes, transferencias, cartoes,
+    usuarios, sessoes, auth_tokens, auth_rate_events, categorias, contas, transacoes, transferencias, cartoes,
     faturas, compras_cartao, pagamentos_fatura, vendas, parcelas, limites,
 ]

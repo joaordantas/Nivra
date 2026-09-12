@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 import { api } from "../services/api";
@@ -14,6 +14,7 @@ interface AuthContextValue {
   isLoading: boolean;
   login: (user: User) => void;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -49,6 +50,7 @@ function ThemeProvider({ children }: { children: ReactNode }) {
 function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const refreshUser = useCallback(async () => setUser(await api.getCurrentUser()), []);
 
   useEffect(() => {
     let active = true;
@@ -82,6 +84,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: Boolean(user),
       isLoading,
       login: setUser,
+      refreshUser,
       logout: async () => {
         try {
           await api.logout();
@@ -90,7 +93,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
         }
       },
     }),
-    [isLoading, user],
+    [isLoading, refreshUser, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

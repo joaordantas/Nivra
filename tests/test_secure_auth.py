@@ -225,7 +225,7 @@ class SecureAuthenticationTests(unittest.TestCase):
         response = self.client.post(
             "/api/auth/register",
             headers={"X-CSRF-Token": csrf_token},
-            json={"usuario": name, "email": email, "senha": "senha123"},
+            json={"usuario": name, "email": email, "senha": "senha-segura-123"},
         )
         self.assertEqual(response.status_code, 201, response.text)
         return response

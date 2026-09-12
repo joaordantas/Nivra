@@ -78,6 +78,23 @@ export const api = {
   register: (payload: { usuario: string; email: string; senha: string; tipo_perfil: string }) =>
     request<User>("/auth/register", { method: "POST", body: JSON.stringify(payload) }),
 
+  verifyEmail: (token: string) =>
+    request<{ message: string }>("/auth/email/verify", { method: "POST", body: JSON.stringify({ token }) }),
+  resendVerification: () =>
+    request<{ message: string }>("/auth/email/resend", { method: "POST" }),
+  forgotPassword: (email: string) =>
+    request<{ message: string }>("/auth/password/forgot", { method: "POST", body: JSON.stringify({ email }) }),
+  resetPassword: (token: string, novaSenha: string, confirmarSenha: string) =>
+    request<{ message: string }>("/auth/password/reset", {
+      method: "POST",
+      body: JSON.stringify({ token, nova_senha: novaSenha, confirmar_senha: confirmarSenha }),
+    }),
+  changePassword: (senhaAtual: string, novaSenha: string, confirmarSenha: string) =>
+    request<{ message: string }>("/auth/password/change", {
+      method: "POST",
+      body: JSON.stringify({ senha_atual: senhaAtual, nova_senha: novaSenha, confirmar_senha: confirmarSenha }),
+    }),
+
   logout: async () => {
     try {
       await request<void>("/auth/logout", { method: "POST" });

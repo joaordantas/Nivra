@@ -24,6 +24,8 @@ DATABASE_URL=<conexao PostgreSQL da aplicacao>
 DATABASE_URL_UNPOOLED=<conexao direta para migrations>
 SESSION_TTL_HOURS=168
 CORS_ORIGINS=
+APP_PUBLIC_URL=http://127.0.0.1:5173
+EMAIL_PROVIDER=memory
 ```
 
 Aplique o schema e inicie a API:
@@ -50,6 +52,8 @@ npm run dev
 O Vite inicia normalmente em `http://127.0.0.1:5173`. Quando necessário, `VITE_API_URL` deve conter somente a origem pública da API. Use o mesmo nome de host no frontend e backend durante o desenvolvimento (`127.0.0.1` nos dois, por exemplo) para manter o comportamento de cookies consistente.
 
 O frontend usa `credentials: include`. A sessão fica em cookie HTTP-only, e operações de escrita obtêm automaticamente um token CSRF pelo endpoint `/api/auth/csrf`.
+
+Em desenvolvimento e testes, `EMAIL_PROVIDER=memory` evita entregas externas. Para validar links localmente, os testes usam uma caixa de saída em memória. Em produção, configure `EMAIL_PROVIDER=resend`, `RESEND_API_KEY`, `EMAIL_FROM` e `APP_PUBLIC_URL`. O remetente deve usar um domínio verificado no provedor.
 
 ## Testes
 
@@ -99,6 +103,10 @@ Configure no ambiente desejado:
 - `DATABASE_URL_UNPOOLED`;
 - `SESSION_TTL_HOURS` quando o prazo padrão de 7 dias não for adequado;
 - `CORS_ORIGINS` apenas quando existir um frontend confiável em outra origem.
+- `APP_PUBLIC_URL=https://nivra-finance.vercel.app`;
+- `EMAIL_PROVIDER=resend`;
+- `RESEND_API_KEY` com uma chave criada para o projeto;
+- `EMAIL_FROM` com um remetente de domínio verificado.
 
 Em produção, configure `APP_ENV=production`. A Vercel também informa `VERCEL_ENV=production`, usado como proteção adicional para ativar o atributo `Secure` do cookie.
 

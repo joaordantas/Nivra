@@ -17,7 +17,7 @@ def csrf_headers(client: TestClient) -> dict[str, str]:
     return {"X-CSRF-Token": str(token)}
 
 
-def register_client(client: TestClient, name: str, email: str, password: str = "senha123") -> dict:
+def register_client(client: TestClient, name: str, email: str, password: str = "senha-segura-123") -> dict:
     token = issue_csrf(client)
     response = client.post(
         "/api/auth/register",

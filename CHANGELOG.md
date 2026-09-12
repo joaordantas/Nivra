@@ -14,6 +14,12 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 - proteção CSRF em login, cadastro, logout e operações financeiras de escrita;
 - migration Alembic para a tabela `sessoes`;
 - testes de revogação, expiração, CORS, CSRF, falsificação de usuário e isolamento multiusuário.
+- verificação de e-mail e reenvio com tokens de uso único;
+- recuperação e alteração de senha;
+- telas de recuperação, redefinição e segurança da conta;
+- migration para tokens de conta, estado de verificação e eventos de limite;
+- rate limiting persistente nas operações sensíveis de autenticação;
+- testes de expiração, reutilização de token, enumeração de conta e IDOR/BOLA.
 
 ### Changed
 
@@ -26,6 +32,9 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 - o banco armazena somente hashes dos tokens de sessão;
 - logout revoga a sessão no servidor;
 - CORS aceita origens locais exatas e origens adicionais configuradas explicitamente.
+- troca e recuperação de senha revogam sessões anteriores;
+- tokens de conta são persistidos exclusivamente como hashes e não aparecem na URL HTTP;
+- respostas de recuperação não confirmam se um e-mail existe.
 
 ### Planned
 

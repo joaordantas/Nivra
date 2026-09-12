@@ -5,4 +5,7 @@ def hash_senha(senha: str) -> str:
 
 def verificar_senha(senha: str, hash_salvo: str | bytes) -> bool:
     hash_bytes = hash_salvo.encode("utf-8") if isinstance(hash_salvo, str) else hash_salvo
-    return bcrypt.checkpw(senha.encode("utf-8"), hash_bytes)
+    try:
+        return bcrypt.checkpw(senha.encode("utf-8"), hash_bytes)
+    except (ValueError, TypeError):
+        return False

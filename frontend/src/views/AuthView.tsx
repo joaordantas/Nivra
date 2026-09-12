@@ -1,6 +1,7 @@
 import { ArrowRight, CheckCircle2, Moon, PiggyBank, ShieldCheck, Sparkles, Sun } from "lucide-react";
 import { useState } from "react";
 import type { FormEvent } from "react";
+import { Link } from "react-router-dom";
 
 import { api } from "../services/api";
 import { Button } from "../components/ui/Button";
@@ -101,13 +102,14 @@ export function AuthView({ onLogin }: AuthViewProps) {
             <form className="form-grid auth-form" onSubmit={handleLogin}>
               <label>E-mail<input autoComplete="email" onChange={(event) => setLoginEmail(event.target.value)} placeholder="voce@exemplo.com" type="email" value={loginEmail} /></label>
               <label>Senha<input autoComplete="current-password" onChange={(event) => setLoginPassword(event.target.value)} placeholder="Sua senha" type="password" value={loginPassword} /></label>
+              <Link className="auth-text-link" to="/forgot-password">Esqueci minha senha</Link>
               <Button disabled={loading} type="submit">{loading ? "Entrando..." : <>Entrar <ArrowRight size={18} /></>}</Button>
             </form>
           ) : (
             <form className="form-grid auth-form" onSubmit={handleRegister}>
               <label>Seu nome<input autoComplete="name" onChange={(event) => setName(event.target.value)} placeholder="Como podemos chamar você?" value={name} /></label>
               <label>E-mail<input autoComplete="email" onChange={(event) => setRegisterEmail(event.target.value)} placeholder="voce@exemplo.com" type="email" value={registerEmail} /></label>
-              <label>Senha<input autoComplete="new-password" minLength={6} onChange={(event) => setRegisterPassword(event.target.value)} placeholder="No mínimo 6 caracteres" type="password" value={registerPassword} /></label>
+              <label>Senha<input autoComplete="new-password" minLength={12} onChange={(event) => setRegisterPassword(event.target.value)} placeholder="No mínimo 12 caracteres" type="password" value={registerPassword} /></label>
               <Button disabled={loading} type="submit">{loading ? "Criando..." : <>Criar minha conta <ArrowRight size={18} /></>}</Button>
             </form>
           )}

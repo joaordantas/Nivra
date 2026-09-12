@@ -29,7 +29,8 @@ def buscar_sessao(token_hash: str) -> tuple | None:
         return conn.execute(
             """
             SELECT u.id, u.usuario, u.email, u.tipo_perfil,
-                   s.token_hash, s.csrf_hash, s.expira_em
+                   s.token_hash, s.csrf_hash, s.expira_em,
+                   u.email_verificado, u.email_verificado_em
             FROM sessoes s
             JOIN usuarios u ON u.id = s.usuario_id
             WHERE s.token_hash = ? AND s.revogada_em IS NULL
@@ -79,6 +80,22 @@ def limpar_sessoes_expiradas() -> None:
     try:
         conn.execute(
             "DELETE FROM sessoes WHERE expira_em <= CURRENT_TIMESTAMP OR revogada_em IS NOT NULL"
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def revogar_todas_sessoes(usuario_id: int, agora: datetime) -> None:
+    conn = get_connection()
+    try:
+        conn.execute(
+            """
+            UPDATE sessoes
+            SET revogada_em = ?
+            WHERE usuario_id = ? AND revogada_em IS NULL
+            """,
+            (agora, usuario_id),
         )
         conn.commit()
     finally:

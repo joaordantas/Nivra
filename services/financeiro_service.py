@@ -25,26 +25,25 @@ def registrar_pagamento_parcela(parcela_id: int, usuario_id: int) -> bool:
 def registrar_pagamento_parcela_atomic(parcela_id: int, usuario_id: int) -> bool:
     conn = get_connection()
     try:
-        cursor = conn.cursor()
-        cursor.execute("""
+        update_result = conn.execute("""
             UPDATE parcelas
             SET status = 'pago'
             WHERE id = ? AND usuario_id = ? AND status = 'pendente'
         """, (parcela_id, usuario_id))
 
-        if cursor.rowcount == 0:
+        if update_result.rowcount == 0:
             conn.rollback()
             return False
 
-        cursor.execute("""
+        value_result = conn.execute("""
             SELECT valor
             FROM parcelas
             WHERE id = ? AND usuario_id = ?
         """, (parcela_id, usuario_id))
-        resultado = cursor.fetchone()
+        resultado = value_result.fetchone()
         valor = resultado[0] if resultado else 0.0
 
-        cursor.execute("""
+        conn.execute("""
             INSERT INTO transacoes (valor, tipo, categoria_id, comentario, data, usuario_id)
             VALUES (?, ?, ?, ?, ?, ?)
         """, (

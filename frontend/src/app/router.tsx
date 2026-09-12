@@ -11,6 +11,10 @@ import { SettingsPage } from "../pages/SettingsPage";
 import { CategoriesPage } from "../pages/settings/CategoriesPage";
 import { TransactionsPage } from "../pages/TransactionsPage";
 import { AccountsPage } from "../pages/AccountsPage";
+import { ForgotPasswordPage } from "../pages/ForgotPasswordPage";
+import { ResetPasswordPage } from "../pages/ResetPasswordPage";
+import { VerifyEmailPage } from "../pages/VerifyEmailPage";
+import { SecurityPage } from "../pages/settings/SecurityPage";
 import { useAuth } from "./providers";
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
@@ -34,6 +38,9 @@ const router = createBrowserRouter([
       </PublicRoute>
     ),
   },
+  { path: "/forgot-password", element: <PublicRoute><ForgotPasswordPage /></PublicRoute> },
+  { path: "/reset-password", element: <ResetPasswordPage /> },
+  { path: "/verify-email", element: <VerifyEmailPage /> },
   {
     path: "/",
     element: (
@@ -61,6 +68,7 @@ const router = createBrowserRouter([
       },
       { path: "settings", element: <SettingsPage /> },
       { path: "settings/categories", element: <CategoriesPage /> },
+      { path: "settings/security", element: <SecurityPage /> },
       { path: "*", element: <NotFoundPage /> },
     ],
   },

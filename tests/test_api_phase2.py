@@ -29,7 +29,7 @@ class Phase2ApiTests(unittest.TestCase):
         login = login_client.post(
             "/api/auth/login",
             headers={"X-CSRF-Token": login_csrf},
-            json={"email": "A@example.com", "senha": "senha123"},
+            json={"email": "A@example.com", "senha": "senha-segura-123"},
         )
         self.assertEqual(login.status_code, 200, login.text)
         self.assertEqual(login.json()["id"], user_a["id"])

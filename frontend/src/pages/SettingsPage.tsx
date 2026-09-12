@@ -1,4 +1,4 @@
-import { ArrowRight, FolderCog, UserRound } from "lucide-react";
+import { ArrowRight, FolderCog, KeyRound, UserRound } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { useAuth } from "../app/providers";
@@ -20,6 +20,11 @@ export function SettingsPage() {
         <Card className="settings-card settings-card-muted">
           <span className="settings-icon"><UserRound size={21} /></span>
           <div><h2>Perfil</h2><p>{user?.email}</p><small>Mais opções de perfil serão adicionadas posteriormente.</small></div>
+        </Card>
+        <Card className="settings-card">
+          <span className="settings-icon"><KeyRound size={21} /></span>
+          <div><h2>Segurança</h2><p>Altere sua senha e encerre as outras sessões abertas.</p></div>
+          <Link aria-label="Abrir segurança" className="icon-button" to="/settings/security"><ArrowRight size={19} /></Link>
         </Card>
       </div>
     </div>

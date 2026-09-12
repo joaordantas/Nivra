@@ -158,6 +158,6 @@ Arquivos principais alterados:
 
 ## Limitações conhecidas
 
-A autenticação ainda é a versão temporária das fases atuais: o frontend guarda o usuário no `localStorage` e envia `usuario_id`. A propriedade é validada nos services, mas ainda não existe uma sessão segura que impeça a falsificação desse identificador. O próximo trabalho de segurança deve introduzir autenticação no backend com token ou cookie HTTP-only antes de testes com dados financeiros reais.
+> Atualização posterior: esta limitação histórica foi resolvida pela autenticação server-side. O frontend não envia mais `usuario_id`; a identidade atual vem da sessão HTTP-only validada pelo backend. Consulte `docs/relatorio-autenticacao-segura.md` e `docs/relatorio-hardening-autenticacao.md`.
 
 Nenhuma alteração funcional da Fase 3A foi desenvolvida durante esta migração.

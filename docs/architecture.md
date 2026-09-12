@@ -62,9 +62,13 @@ Operações críticas utilizam transações. A troca de conta principal serializ
 
 O login cria uma sessão persistente no PostgreSQL. O navegador recebe um identificador aleatório em cookie HTTP-only; o banco guarda somente seu hash. Em produção, o cookie usa `Secure` e `SameSite=Lax`. A sessão possui prazo de expiração configurável e o logout a revoga no servidor.
 
+Verificação de e-mail e recuperação de senha usam tokens aleatórios de uso único. O link carrega o token no fragmento da URL, evitando que ele seja enviado no caminho HTTP, e o PostgreSQL recebe somente o SHA-256. A alteração ou recuperação de senha revoga sessões e tokens ainda ativos. Uma nova sessão é criada apenas para o dispositivo que alterou a senha autenticado.
+
+Limites de tentativa são compartilhados entre instâncias serverless por meio da tabela `auth_rate_events`. As chaves combinam contexto de rede e identidade normalizada e são persistidas somente como hash. Na Vercel, o backend usa o endereço de cliente informado pelos cabeçalhos controlados pela plataforma.
+
 O frontend não envia `usuario_id` nas APIs protegidas. O FastAPI resolve `current_user` a partir da sessão, as rotas repassam essa identidade e os services verificam a propriedade de contas, categorias, transações, transferências, cartões e demais entidades privadas. Requisições de alteração também exigem um token CSRF vinculado à sessão.
 
-Recuperação de senha, rate limiting e histórico de dispositivos permanecem no roadmap de segurança.
+O histórico e o gerenciamento individual de dispositivos permanecem no roadmap de segurança.
 
 ## Evolução planejada
 

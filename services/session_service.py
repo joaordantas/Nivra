@@ -28,6 +28,8 @@ class AuthenticatedUser:
     tipo_perfil: str
     token_hash: str
     csrf_hash: str
+    email_verificado: bool
+    email_verificado_em: str | None
 
 
 def gerar_token() -> str:
@@ -87,6 +89,8 @@ def autenticar_sessao(raw_token: str | None) -> AuthenticatedUser | None:
         tipo_perfil=str(row[3]),
         token_hash=str(row[4]),
         csrf_hash=str(row[5]),
+        email_verificado=bool(row[7]),
+        email_verificado_em=str(row[8]) if row[8] is not None else None,
     )
 
 

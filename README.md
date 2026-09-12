@@ -66,6 +66,9 @@ O produto parte de um núcleo financeiro funcional e avança gradualmente para a
 - proteção CSRF nas operações de escrita;
 - identidade do usuário determinada pelo backend;
 - testes de regras financeiras, API, falsificação de identidade e isolamento entre usuários.
+- verificação de e-mail com link de uso único;
+- alteração e recuperação de senha com revogação das sessões anteriores;
+- limites persistentes para tentativas de login, cadastro e recuperação.
 
 ## Demonstração e screenshots
 
@@ -145,7 +148,7 @@ Detalhes estão em [Arquitetura](docs/architecture.md).
 | Núcleo de contas e movimentações | Concluído |
 | PostgreSQL persistente e migrations | Concluído |
 | Conta principal, cartões e faturas | Disponível em Alpha |
-| Autenticação segura por sessão | Concluído |
+| Autenticação segura e hardening de conta | Concluído |
 | Parcelamentos e recorrências | Planejado |
 | Orçamentos e metas | Planejado |
 | Open Finance | Planejado |
@@ -205,6 +208,10 @@ Use [`.env.example`](.env.example) apenas como referência. Credenciais reais de
 | `SESSION_TTL_HOURS` | Prazo da sessão; o padrão é 168 horas |
 | `CORS_ORIGINS` | Origens adicionais confiáveis, separadas por vírgula |
 | `VITE_API_URL` | Origem pública da API, quando frontend e backend não compartilham domínio |
+| `APP_PUBLIC_URL` | URL pública usada nos links de verificação e recuperação |
+| `EMAIL_PROVIDER` | Provedor de entrega; atualmente `resend` em produção |
+| `RESEND_API_KEY` | Credencial do Resend, somente no backend |
+| `EMAIL_FROM` | Remetente pertencente a um domínio verificado |
 
 Variáveis que contêm credenciais de banco nunca devem usar o prefixo `VITE_`.
 
@@ -231,7 +238,10 @@ Antes do primeiro deploy de um ambiente novo:
 - o cookie da sessão é HTTP-only, SameSite Lax e Secure em produção;
 - operações de escrita exigem proteção CSRF vinculada à sessão;
 - a identidade vem do backend e a propriedade continua validada nos services;
-- recuperação e alteração de senha, histórico de sessões e rate limiting de login ainda estão planejados;
+- tokens de verificação e recuperação expiram, são de uso único e ficam armazenados somente como hash;
+- troca e recuperação de senha revogam as sessões anteriores;
+- tentativas sensíveis possuem limites persistentes no PostgreSQL;
+- histórico e gerenciamento individual de dispositivos ainda estão planejados;
 - filtros são processados no frontend e ainda não possuem paginação no backend;
 - Lumi, insights automáticos e notificações ainda não estão disponíveis;
 - a aplicação permanece em Alpha e não deve receber dados financeiros críticos.
