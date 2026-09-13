@@ -147,18 +147,18 @@ Status: **CONCLUÍDA E VALIDADA; RE-SYNC VALIDADO EM PRODUÇÃO NO SANDBOX**
 
 #### Vínculo de contas
 
-- [ ] Vincular conta externa a uma conta Nivra existente por `conta_nivra_id`
-- [ ] Criar uma conta Nivra a partir de uma conta externa
-- [ ] Exibir e alterar o vínculo com segurança
-- [ ] Impedir vínculos entre usuários diferentes
-- [ ] Identificar a origem bancária da conta sem duplicar a relação existente
+- [x] Vincular conta externa a uma conta Nivra existente por `conta_nivra_id`
+- [x] Criar uma conta Nivra a partir de uma conta externa
+- [x] Exibir e alterar o vínculo com segurança
+- [x] Impedir vínculos entre usuários diferentes
+- [x] Identificar a origem bancária da conta sem duplicar a relação existente
 
 #### Saldo bancário
 
-- [ ] Usar o saldo informado pelo provider como saldo atual da conta vinculada
-- [ ] Exibir origem e horário da última sincronização do saldo
-- [ ] Manter o cálculo manual para contas sem vínculo Open Finance
-- [ ] Incluir contas vinculadas no saldo consolidado sem dupla contagem
+- [x] Usar o saldo informado pelo provider como saldo atual da conta vinculada
+- [x] Exibir origem e horário da última sincronização do saldo
+- [x] Manter o cálculo manual para contas sem vínculo Open Finance
+- [x] Incluir contas vinculadas no saldo consolidado sem dupla contagem
 
 #### Histórico unificado
 
@@ -179,7 +179,7 @@ Status: **CONCLUÍDA E VALIDADA; RE-SYNC VALIDADO EM PRODUÇÃO NO SANDBOX**
 
 #### Dashboard
 
-- [ ] Considerar saldos bancários das contas vinculadas
+- [x] Considerar saldos bancários das contas vinculadas
 - [ ] Considerar receitas e despesas externas vinculadas
 - [ ] Aplicar a conciliação antes de calcular totais
 - [ ] Exibir atualização e origem dos dados bancários
@@ -187,16 +187,16 @@ Status: **CONCLUÍDA E VALIDADA; RE-SYNC VALIDADO EM PRODUÇÃO NO SANDBOX**
 
 #### Gate da Etapa 2D.5
 
-- [ ] Conta externa pode criar ou vincular uma conta Nivra
-- [ ] Saldo bancário aparece uma única vez no saldo consolidado
+- [x] Conta externa pode criar ou vincular uma conta Nivra
+- [x] Saldo bancário aparece uma única vez no saldo consolidado
 - [ ] Transações bancárias aparecem no histórico principal
 - [ ] Categorias padrão são resolvidas pela chave interna
 - [ ] Lançamentos conciliados não são contados duas vezes
 - [ ] Dashboard combina dados manuais e bancários corretamente
-- [ ] Usuário A não acessa vínculos ou dados do usuário B
-- [ ] Testes Python e build React/TypeScript passam
+- [x] Usuário A não acessa vínculos ou dados do usuário B
+- [x] Testes Python e build React/TypeScript passam
 
-Status: **PENDENTE — PRÓXIMA ETAPA RECOMENDADA**
+Status: **EM ANDAMENTO — VÍNCULO E SALDO CONCLUÍDOS**
 
 ### Etapa 2E — Webhooks
 
@@ -348,6 +348,6 @@ Lumi será a assistente financeira inteligente da Nivra. A identidade está defi
 
 ## Próxima tarefa recomendada
 
-**Etapa 2D.5 — vincular contas externas ao núcleo da Nivra e criar o histórico unificado.**
+**Etapa 2D.5 — criar o histórico unificado de transações manuais e bancárias.**
 
-É a próxima unidade lógica pendente da prioridade atual. Webhooks passam a vir depois dessa integração visível. A Nivra não avança automaticamente sem uma nova solicitação.
+O vínculo de contas e o uso do saldo bancário já estão implementados e validados localmente. A próxima unidade deve exibir as transações sincronizadas no histórico principal, preservar busca e filtros e preparar a conciliação básica antes dos totais. Webhooks continuam depois dessa integração visível. A Nivra não avança automaticamente sem uma nova solicitação.

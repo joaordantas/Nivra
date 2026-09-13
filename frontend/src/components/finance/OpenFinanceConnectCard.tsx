@@ -1,4 +1,4 @@
-import { CheckCircle2, Landmark, Link2, RefreshCw } from "lucide-react";
+import { CheckCircle2, CreditCard, Landmark, Link2, Plus, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { PluggyConnect } from "react-pluggy-connect";
 
@@ -7,7 +7,7 @@ import { api } from "../../services/api";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { Feedback } from "../ui/Feedback";
-import type { OpenFinanceConnection, OpenFinanceExternalAccount } from "../../types";
+import type { Account, OpenFinanceConnection, OpenFinanceExternalAccount } from "../../types";
 
 
 const currency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
@@ -21,7 +21,13 @@ function formatSyncDate(value: string | null) {
 }
 
 
-export function OpenFinanceConnectCard() {
+interface OpenFinanceConnectCardProps {
+  accounts: Account[];
+  onAccountsChanged: () => Promise<void>;
+}
+
+
+export function OpenFinanceConnectCard({ accounts, onAccountsChanged }: OpenFinanceConnectCardProps) {
   const { theme } = useTheme();
   const [connectToken, setConnectToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -31,6 +37,8 @@ export function OpenFinanceConnectCard() {
   const [loadingConnections, setLoadingConnections] = useState(true);
   const [syncingId, setSyncingId] = useState<number | null>(null);
   const [externalAccounts, setExternalAccounts] = useState<Record<number, OpenFinanceExternalAccount[]>>({});
+  const [selectedAccountIds, setSelectedAccountIds] = useState<Record<number, number>>({});
+  const [linkingExternalAccountId, setLinkingExternalAccountId] = useState<number | null>(null);
 
   const loadConnections = useCallback(async () => {
     try {
@@ -103,6 +111,48 @@ export function OpenFinanceConnectCard() {
     }
   }
 
+  function availableAccounts(externalAccount: OpenFinanceExternalAccount) {
+    return accounts.filter((account) => (
+      account.ativo
+      && (account.conta_externa_id === null || account.conta_externa_id === externalAccount.id)
+    ));
+  }
+
+  async function linkExternalAccount(externalAccount: OpenFinanceExternalAccount) {
+    const accountId = selectedAccountIds[externalAccount.id] ?? externalAccount.conta_nivra_id;
+    if (!accountId) {
+      setError("Selecione uma conta Nivra para criar o vínculo.");
+      return;
+    }
+    try {
+      setLinkingExternalAccountId(externalAccount.id);
+      setError("");
+      setMessage("");
+      const link = await api.linkOpenFinanceExternalAccount(externalAccount.id, accountId);
+      setMessage(`${externalAccount.nome} foi vinculada a ${link.conta_nivra_nome}.`);
+      await Promise.all([loadConnections(), onAccountsChanged()]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Não foi possível vincular esta conta.");
+    } finally {
+      setLinkingExternalAccountId(null);
+    }
+  }
+
+  async function createNivraAccount(externalAccount: OpenFinanceExternalAccount) {
+    try {
+      setLinkingExternalAccountId(externalAccount.id);
+      setError("");
+      setMessage("");
+      const link = await api.createAccountFromOpenFinance(externalAccount.id);
+      setMessage(`${link.conta_nivra_nome} foi criada com o saldo sincronizado pelo banco.`);
+      await Promise.all([loadConnections(), onAccountsChanged()]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Não foi possível criar a conta Nivra.");
+    } finally {
+      setLinkingExternalAccountId(null);
+    }
+  }
+
   return (
     <Card as="section" className="open-finance-connect-card">
       <span className="open-finance-icon"><Landmark aria-hidden="true" size={22} /></span>
@@ -146,9 +196,56 @@ export function OpenFinanceConnectCard() {
             {(externalAccounts[connection.id] ?? []).length > 0 ? (
               <div className="open-finance-external-accounts">
                 {(externalAccounts[connection.id] ?? []).map((account) => (
-                  <div key={account.id}>
-                    <span><strong>{account.nome}</strong><small>{account.quantidade_transacoes} transações</small></span>
-                    <strong>{account.saldo === null ? "Saldo indisponível" : currency.format(account.saldo)}</strong>
+                  <div className="open-finance-external-account" key={account.id}>
+                    <span className="open-finance-external-account-summary">
+                      <strong>{account.nome}</strong>
+                      <small>{account.quantidade_transacoes} transações</small>
+                    </span>
+                    <strong className="open-finance-external-balance">{account.saldo === null ? "Saldo indisponível" : currency.format(account.saldo)}</strong>
+                    {account.pode_vincular_conta_nivra ? (
+                      <div className="open-finance-link-controls">
+                        {account.conta_nivra_nome ? (
+                          <small className="open-finance-linked"><CheckCircle2 size={13} />Vinculada a {account.conta_nivra_nome}</small>
+                        ) : null}
+                        {availableAccounts(account).length > 0 ? (
+                          <select
+                            aria-label={`Conta Nivra para ${account.nome}`}
+                            onChange={(event) => setSelectedAccountIds((current) => ({
+                              ...current,
+                              [account.id]: Number(event.target.value),
+                            }))}
+                            value={selectedAccountIds[account.id] ?? account.conta_nivra_id ?? ""}
+                          >
+                            <option disabled value="">Vincular a uma conta existente</option>
+                            {availableAccounts(account).map((nivraAccount) => (
+                              <option key={nivraAccount.id} value={nivraAccount.id}>{nivraAccount.nome}</option>
+                            ))}
+                          </select>
+                        ) : null}
+                        {availableAccounts(account).length > 0 ? (
+                          <Button
+                            disabled={linkingExternalAccountId !== null}
+                            onClick={() => void linkExternalAccount(account)}
+                            type="button"
+                            variant="secondary"
+                          >
+                            <Link2 size={14} />{account.conta_nivra_id ? "Salvar vínculo" : "Vincular"}
+                          </Button>
+                        ) : null}
+                        {!account.conta_nivra_id ? (
+                          <Button
+                            disabled={linkingExternalAccountId !== null}
+                            onClick={() => void createNivraAccount(account)}
+                            type="button"
+                            variant="ghost"
+                          >
+                            <Plus size={14} />Criar conta Nivra
+                          </Button>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <small className="open-finance-link-note"><CreditCard size={13} />Cartão externo — integração com cartões será feita separadamente.</small>
+                    )}
                   </div>
                 ))}
               </div>

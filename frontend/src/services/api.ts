@@ -8,6 +8,7 @@ import type {
   Invoice,
   InvoiceDetail,
   OpenFinanceConnection,
+  OpenFinanceAccountLink,
   OpenFinanceExternalAccount,
   OpenFinanceSyncResult,
   ProfitSummary,
@@ -142,6 +143,15 @@ export const api = {
     }),
   getOpenFinanceExternalAccounts: (connectionId: number) =>
     request<OpenFinanceExternalAccount[]>(`/open-finance/connections/${connectionId}/accounts`),
+  linkOpenFinanceExternalAccount: (externalAccountId: number, accountId: number) =>
+    request<OpenFinanceAccountLink>(`/open-finance/external-accounts/${externalAccountId}/link`, {
+      method: "PATCH",
+      body: JSON.stringify({ conta_nivra_id: accountId }),
+    }),
+  createAccountFromOpenFinance: (externalAccountId: number) =>
+    request<OpenFinanceAccountLink>(`/open-finance/external-accounts/${externalAccountId}/nivra-account`, {
+      method: "POST",
+    }),
 
   getTransfers: () => request<Transfer[]>("/transfers"),
   createTransfer: (payload: { conta_origem_id: number; conta_destino_id: number; valor: number; descricao: string; data: string }) =>

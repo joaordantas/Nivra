@@ -463,9 +463,15 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
 .open-finance-connection small { margin-top: 2px; }
 .open-finance-sync-error { color: var(--danger); }
 .open-finance-external-accounts { display: grid; grid-column: 2 / -1; gap: 6px; }
-.open-finance-external-accounts > div { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 8px 10px; border-top: 1px solid var(--border); }
+.open-finance-external-accounts > div { padding: 10px; border-top: 1px solid var(--border); }
 .open-finance-external-accounts span small { display: block; }
-.open-finance-external-accounts > div > strong { color: var(--text-primary); font-size: 0.74rem; white-space: nowrap; }
+.open-finance-external-account { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px 16px; }
+.open-finance-external-balance { color: var(--text-primary); font-size: 0.74rem; white-space: nowrap; }
+.open-finance-link-controls { display: flex; grid-column: 1 / -1; flex-wrap: wrap; align-items: center; gap: 8px; }
+.open-finance-link-controls select { min-width: 190px; flex: 1 1 220px; padding: 8px 10px; font-size: 0.7rem; }
+.open-finance-link-controls .button { min-height: 34px; padding: 7px 10px; font-size: 0.68rem; }
+.open-finance-linked, .open-finance-link-note { display: inline-flex !important; grid-column: 1 / -1; align-items: center; gap: 5px; color: var(--positive) !important; }
+.open-finance-link-note { color: var(--text-secondary) !important; }
 .spin { animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .open-finance-connect-card > #PluggyConnect { width: 0; height: 0; overflow: hidden; }
@@ -481,9 +487,11 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
 .status-badge.active { background: var(--positive-soft); color: var(--positive); }
 .status-badge.inactive { background: var(--neutral-soft); color: var(--text-secondary); }
 .status-badge.primary { display: inline-flex; align-items: center; gap: 4px; background: var(--primary-soft); color: var(--primary); }
+.status-badge.bank { display: inline-flex; align-items: center; gap: 4px; background: var(--primary-soft); color: var(--primary); }
 .account-badges { display: flex; flex-wrap: wrap; align-self: center; justify-content: flex-end; gap: 5px; }
 .account-actions { display: flex; align-self: end; justify-self: end; gap: 4px; }
 .account-usage { grid-column: 1 / -1; margin-top: -8px; color: var(--text-soft) !important; line-height: 1.45; }
+.account-source { grid-column: 1 / -1; margin-top: -8px; color: var(--primary) !important; line-height: 1.45; }
 .account-card-skeleton { min-height: 155px; }
 .accounts-empty-card { grid-column: 1 / -1; }
 .accounts-layout { display: grid; grid-template-columns: minmax(280px, 0.75fr) minmax(420px, 1.25fr); gap: 16px; align-items: start; }

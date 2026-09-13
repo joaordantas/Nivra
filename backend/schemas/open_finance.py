@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ConnectTokenResponse(BaseModel):
@@ -49,3 +49,17 @@ class OpenFinanceExternalAccountResponse(BaseModel):
     moeda: str
     saldo: float | None = None
     quantidade_transacoes: int
+    conta_nivra_id: int | None = None
+    conta_nivra_nome: str | None = None
+    pode_vincular_conta_nivra: bool
+
+
+class OpenFinanceAccountLink(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    conta_nivra_id: int = Field(ge=1)
+
+
+class OpenFinanceAccountLinkResponse(BaseModel):
+    conta_externa_id: int
+    conta_nivra_id: int
+    conta_nivra_nome: str

@@ -19,6 +19,7 @@ _lockable_rows = {
     ("usuarios", "id"),
     ("faturas", "id"),
     ("conexoes_bancarias", "id"),
+    ("contas_bancarias_externas", "id"),
 }
 
 

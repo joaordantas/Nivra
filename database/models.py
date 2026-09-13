@@ -276,6 +276,7 @@ contas_bancarias_externas = Table(
     Column("criada_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
     Column("atualizada_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
     UniqueConstraint("conexao_id", "external_account_id", name="uq_contas_externas_conexao_conta"),
+    UniqueConstraint("conta_nivra_id", name="uq_contas_externas_conta_nivra"),
 )
 Index("ix_contas_externas_conexao", contas_bancarias_externas.c.conexao_id)
 Index("ix_contas_externas_conta_nivra", contas_bancarias_externas.c.conta_nivra_id)

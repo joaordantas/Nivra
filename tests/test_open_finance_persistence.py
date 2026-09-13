@@ -203,6 +203,11 @@ class OpenFinanceMigrationTests(unittest.TestCase):
             for constraint in inspector.get_unique_constraints("transacoes_bancarias")
         }
         self.assertIn("uq_transacoes_bancarias_conta_transacao", transaction_uniques)
+        external_account_uniques = {
+            constraint["name"]
+            for constraint in inspector.get_unique_constraints("contas_bancarias_externas")
+        }
+        self.assertIn("uq_contas_externas_conta_nivra", external_account_uniques)
 
         connection_fks = inspector.get_foreign_keys("conexoes_bancarias")
         self.assertTrue(any(fk["referred_table"] == "usuarios" for fk in connection_fks))

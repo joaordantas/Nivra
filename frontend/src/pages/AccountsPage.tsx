@@ -172,9 +172,9 @@ export function AccountsPage() {
       {error ? <Feedback>{error}</Feedback> : null}
       {message ? <Feedback tone="success">{message}</Feedback> : null}
 
-      <Card className="accounts-total-card"><span>Saldo total nas contas ativas</span><strong>{loading ? "—" : formatCurrency(totalBalance)}</strong><small>Soma do saldo inicial e das movimentações vinculadas</small></Card>
+      <Card className="accounts-total-card"><span>Saldo total nas contas ativas</span><strong>{loading ? "—" : formatCurrency(totalBalance)}</strong><small>Soma dos saldos atuais das suas contas</small></Card>
 
-      <OpenFinanceConnectCard />
+      <OpenFinanceConnectCard accounts={accounts} onAccountsChanged={() => load()} />
 
       <section className="account-cards" aria-label="Contas financeiras">
         {loading ? [1, 2].map((item) => <span className="surface-card skeleton account-card-skeleton" key={item} />) : null}
@@ -185,6 +185,7 @@ export function AccountsPage() {
             <div><small>{accountTypeLabels[account.tipo]}</small><h2>{account.nome}</h2></div>
             <span className="account-badges">
               {account.principal ? <span className="status-badge primary"><Star size={12} />Principal</span> : null}
+              {account.origem === "open_finance" ? <span className="status-badge bank"><Landmark size={12} />Banco</span> : null}
               <span className={`status-badge ${account.ativo ? "active" : "inactive"}`}>{account.ativo ? "Ativa" : "Inativa"}</span>
             </span>
             <strong>{formatCurrency(account.saldo_atual)}</strong>
@@ -194,6 +195,7 @@ export function AccountsPage() {
               <button aria-label={`${account.ativo ? "Desativar" : "Reativar"} ${account.nome}`} className="icon-button" onClick={() => void toggleAccount(account)} type="button"><Power size={15} /></button>
             </span>
             {account.percentual_uso > 0 ? <small className="account-usage">{account.percentual_uso.toLocaleString("pt-BR")}% das movimentações dos últimos 90 dias{account.mais_utilizada ? " · mais utilizada" : ""}</small> : null}
+            {account.origem === "open_finance" ? <small className="account-source">Saldo sincronizado por {account.instituicao_nome ?? "Open Finance"}{account.ultima_sincronizacao_em ? ` · ${new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(account.ultima_sincronizacao_em))}` : ""}</small> : null}
           </Card>
         ))}
       </section>
@@ -241,8 +243,8 @@ export function AccountsPage() {
           <form className="form-grid" onSubmit={handleEditAccount}>
             <label>Nome<input autoFocus maxLength={80} onChange={(event) => setEditName(event.target.value)} value={editName} /></label>
             <label>Tipo<select onChange={(event) => setEditType(event.target.value as AccountType)} value={editType}>{Object.entries(accountTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-            <label>Saldo inicial<input onChange={(event) => setEditInitialBalance(Number(event.target.value))} step="0.01" type="number" value={editInitialBalance} /></label>
-            <small className="field-hint">Alterar o saldo inicial recalcula o saldo atual mantendo as movimentações registradas.</small>
+            <label>Saldo inicial<input disabled={editingAccount.origem === "open_finance"} onChange={(event) => setEditInitialBalance(Number(event.target.value))} step="0.01" type="number" value={editInitialBalance} /></label>
+            <small className="field-hint">{editingAccount.origem === "open_finance" ? "O saldo atual é informado pelo banco e atualizado pela sincronização." : "Alterar o saldo inicial recalcula o saldo atual mantendo as movimentações registradas."}</small>
             <Button disabled={saving || !editName.trim()} type="submit">{saving ? "Salvando..." : "Salvar alterações"}</Button>
           </form>
         </Modal>

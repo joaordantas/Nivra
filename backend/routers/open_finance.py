@@ -5,6 +5,8 @@ from backend.schemas.open_finance import (
     ConnectTokenResponse,
     OpenFinanceConnectionComplete,
     OpenFinanceConnectionResponse,
+    OpenFinanceAccountLink,
+    OpenFinanceAccountLinkResponse,
     OpenFinanceExternalAccountResponse,
     OpenFinanceSyncResponse,
 )
@@ -14,14 +16,18 @@ from services.open_finance_provider import (
     OpenFinanceProviderError,
 )
 from services.open_finance_service import (
+    OpenFinanceAccountLinkConflictError,
+    OpenFinanceAccountLinkError,
     OpenFinanceItemStateError,
     OpenFinanceConnectionNotFoundError,
     OpenFinanceOwnershipError,
     concluir_conexao_service,
     criar_connect_token_service,
+    criar_conta_nivra_da_externa_service,
     listar_conexoes_service,
     listar_contas_externas_service,
     sincronizar_conexao_service,
+    vincular_conta_externa_service,
 )
 
 
@@ -135,3 +141,61 @@ def list_external_accounts(
         ]
     except OpenFinanceConnectionNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+def _raise_account_link_http_error(exc: Exception) -> None:
+    if isinstance(exc, OpenFinanceConnectionNotFoundError):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    if isinstance(exc, OpenFinanceAccountLinkConflictError):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    if isinstance(exc, OpenFinanceAccountLinkError):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)) from exc
+    raise exc
+
+
+@router.patch(
+    "/open-finance/external-accounts/{external_account_id}/link",
+    response_model=OpenFinanceAccountLinkResponse,
+)
+def link_external_account(
+    external_account_id: int,
+    payload: OpenFinanceAccountLink,
+    current_user: CurrentUserCsrf,
+) -> OpenFinanceAccountLinkResponse:
+    try:
+        return OpenFinanceAccountLinkResponse(
+            **vincular_conta_externa_service(
+                current_user.id,
+                external_account_id,
+                payload.conta_nivra_id,
+            )
+        )
+    except (
+        OpenFinanceConnectionNotFoundError,
+        OpenFinanceAccountLinkConflictError,
+        OpenFinanceAccountLinkError,
+    ) as exc:
+        _raise_account_link_http_error(exc)
+        raise AssertionError("unreachable")
+
+
+@router.post(
+    "/open-finance/external-accounts/{external_account_id}/nivra-account",
+    response_model=OpenFinanceAccountLinkResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_nivra_account_from_external(
+    external_account_id: int,
+    current_user: CurrentUserCsrf,
+) -> OpenFinanceAccountLinkResponse:
+    try:
+        return OpenFinanceAccountLinkResponse(
+            **criar_conta_nivra_da_externa_service(current_user.id, external_account_id)
+        )
+    except (
+        OpenFinanceConnectionNotFoundError,
+        OpenFinanceAccountLinkConflictError,
+        OpenFinanceAccountLinkError,
+    ) as exc:
+        _raise_account_link_http_error(exc)
+        raise AssertionError("unreachable")

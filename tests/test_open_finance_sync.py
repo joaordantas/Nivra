@@ -122,6 +122,13 @@ class OpenFinanceSyncApiTests(unittest.TestCase):
             headers=csrf_headers(self.a),
         )
 
+    def external_accounts(self) -> list[dict]:
+        response = self.a.get(
+            f"/api/open-finance/connections/{self.connection_id}/accounts"
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        return response.json()
+
     def test_sync_imports_snapshot_without_changing_manual_finances(self) -> None:
         conn = get_connection()
         try:
@@ -265,6 +272,151 @@ class OpenFinanceSyncApiTests(unittest.TestCase):
 
         self.assertEqual(sync.status_code, 404, sync.text)
         self.assertEqual(accounts.status_code, 404, accounts.text)
+
+    def test_existing_account_can_be_linked_and_uses_provider_balance(self) -> None:
+        account = self.a.post(
+            "/api/accounts",
+            headers=csrf_headers(self.a),
+            json={"nome": "Minha conta", "tipo": "digital", "saldo_inicial": 100},
+        )
+        self.assertEqual(account.status_code, 201, account.text)
+        self.assertEqual(self.sync().status_code, 200)
+        external = self.external_accounts()[0]
+
+        linked = self.a.patch(
+            f"/api/open-finance/external-accounts/{external['id']}/link",
+            headers=csrf_headers(self.a),
+            json={"conta_nivra_id": account.json()["id"]},
+        )
+
+        self.assertEqual(linked.status_code, 200, linked.text)
+        refreshed_external = self.external_accounts()[0]
+        self.assertEqual(refreshed_external["conta_nivra_id"], account.json()["id"])
+        self.assertEqual(refreshed_external["conta_nivra_nome"], "Minha conta")
+        listed = self.a.get("/api/accounts").json()[0]
+        self.assertEqual(listed["saldo_inicial"], 100)
+        self.assertEqual(listed["saldo_atual"], 1250.5)
+        self.assertEqual(listed["origem"], "open_finance")
+        self.assertEqual(listed["conta_externa_id"], external["id"])
+
+        self.provider.accounts[0] = replace(
+            self.provider.accounts[0], balance=Decimal("1300.75")
+        )
+        self.assertEqual(self.sync().status_code, 200)
+        updated = self.a.get("/api/accounts").json()[0]
+        self.assertEqual(updated["saldo_atual"], 1300.75)
+        self.assertEqual(updated["conta_externa_id"], external["id"])
+
+    def test_nivra_account_can_be_created_atomically_from_external_account(self) -> None:
+        self.assertEqual(self.sync().status_code, 200)
+        external = self.external_accounts()[0]
+
+        created = self.a.post(
+            f"/api/open-finance/external-accounts/{external['id']}/nivra-account",
+            headers=csrf_headers(self.a),
+        )
+
+        self.assertEqual(created.status_code, 201, created.text)
+        self.assertEqual(created.json()["conta_nivra_nome"], "Sandbox PF - Conta Sandbox")
+        listed = self.a.get("/api/accounts").json()
+        self.assertEqual(len(listed), 1)
+        self.assertEqual(listed[0]["tipo"], "corrente")
+        self.assertEqual(listed[0]["saldo_inicial"], 0)
+        self.assertEqual(listed[0]["saldo_atual"], 1250.5)
+        self.assertEqual(listed[0]["origem"], "open_finance")
+        self.assertEqual(self.external_accounts()[0]["conta_nivra_id"], listed[0]["id"])
+
+    def test_link_can_be_changed_without_leaving_two_accounts_linked(self) -> None:
+        first = self.a.post(
+            "/api/accounts",
+            headers=csrf_headers(self.a),
+            json={"nome": "Primeira", "tipo": "digital", "saldo_inicial": 10},
+        ).json()
+        second = self.a.post(
+            "/api/accounts",
+            headers=csrf_headers(self.a),
+            json={"nome": "Segunda", "tipo": "digital", "saldo_inicial": 20},
+        ).json()
+        self.assertEqual(self.sync().status_code, 200)
+        external_id = self.external_accounts()[0]["id"]
+        for account_id in (first["id"], second["id"]):
+            response = self.a.patch(
+                f"/api/open-finance/external-accounts/{external_id}/link",
+                headers=csrf_headers(self.a),
+                json={"conta_nivra_id": account_id},
+            )
+            self.assertEqual(response.status_code, 200, response.text)
+
+        accounts = {account["id"]: account for account in self.a.get("/api/accounts").json()}
+        self.assertEqual(accounts[first["id"]]["origem"], "manual")
+        self.assertEqual(accounts[first["id"]]["saldo_atual"], 10)
+        self.assertEqual(accounts[second["id"]]["origem"], "open_finance")
+        self.assertEqual(accounts[second["id"]]["saldo_atual"], 1250.5)
+
+    def test_link_rejects_other_user_account_duplicate_target_and_credit_card(self) -> None:
+        second_external = replace(
+            self.provider.accounts[0], id="external-account-2", name="Outra conta"
+        )
+        credit = replace(
+            self.provider.accounts[0],
+            id="external-credit-1",
+            name="Cartao Sandbox",
+            type="CREDIT",
+            subtype="CREDIT_CARD",
+            balance=Decimal("-500.00"),
+        )
+        self.provider.accounts.extend([second_external, credit])
+        self.provider.transactions[second_external.id] = []
+        self.provider.transactions[credit.id] = []
+        self.assertEqual(self.sync().status_code, 200)
+        external_by_name = {item["nome"]: item for item in self.external_accounts()}
+        target = self.a.post(
+            "/api/accounts",
+            headers=csrf_headers(self.a),
+            json={"nome": "Alvo", "tipo": "digital", "saldo_inicial": 0},
+        ).json()
+        other_user_account = self.b.post(
+            "/api/accounts",
+            headers=csrf_headers(self.b),
+            json={"nome": "Privada B", "tipo": "digital", "saldo_inicial": 0},
+        ).json()
+
+        first_link = self.a.patch(
+            f"/api/open-finance/external-accounts/{external_by_name['Conta Sandbox']['id']}/link",
+            headers=csrf_headers(self.a),
+            json={"conta_nivra_id": target["id"]},
+        )
+        duplicate = self.a.patch(
+            f"/api/open-finance/external-accounts/{external_by_name['Outra conta']['id']}/link",
+            headers=csrf_headers(self.a),
+            json={"conta_nivra_id": target["id"]},
+        )
+        foreign_target = self.a.patch(
+            f"/api/open-finance/external-accounts/{external_by_name['Outra conta']['id']}/link",
+            headers=csrf_headers(self.a),
+            json={"conta_nivra_id": other_user_account["id"]},
+        )
+        foreign_external = self.b.patch(
+            f"/api/open-finance/external-accounts/{external_by_name['Outra conta']['id']}/link",
+            headers=csrf_headers(self.b),
+            json={"conta_nivra_id": other_user_account["id"]},
+        )
+        credit_link = self.a.patch(
+            f"/api/open-finance/external-accounts/{external_by_name['Cartao Sandbox']['id']}/link",
+            headers=csrf_headers(self.a),
+            json={"conta_nivra_id": target["id"]},
+        )
+        missing_csrf = self.a.patch(
+            f"/api/open-finance/external-accounts/{external_by_name['Outra conta']['id']}/link",
+            json={"conta_nivra_id": target["id"]},
+        )
+
+        self.assertEqual(first_link.status_code, 200, first_link.text)
+        self.assertEqual(duplicate.status_code, 409, duplicate.text)
+        self.assertEqual(foreign_target.status_code, 404, foreign_target.text)
+        self.assertEqual(foreign_external.status_code, 404, foreign_external.text)
+        self.assertEqual(credit_link.status_code, 422, credit_link.text)
+        self.assertEqual(missing_csrf.status_code, 403, missing_csrf.text)
 
 
 if __name__ == "__main__":

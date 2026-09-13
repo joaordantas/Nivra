@@ -37,6 +37,10 @@ export interface Account {
   principal: boolean;
   percentual_uso: number;
   mais_utilizada: boolean;
+  origem: "manual" | "open_finance";
+  conta_externa_id: number | null;
+  instituicao_nome: string | null;
+  ultima_sincronizacao_em: string | null;
 }
 
 export interface OpenFinanceConnection {
@@ -61,6 +65,15 @@ export interface OpenFinanceExternalAccount {
   moeda: string;
   saldo: number | null;
   quantidade_transacoes: number;
+  conta_nivra_id: number | null;
+  conta_nivra_nome: string | null;
+  pode_vincular_conta_nivra: boolean;
+}
+
+export interface OpenFinanceAccountLink {
+  conta_externa_id: number;
+  conta_nivra_id: number;
+  conta_nivra_nome: string;
 }
 
 export interface OpenFinanceSyncResult {

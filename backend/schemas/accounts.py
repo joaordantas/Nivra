@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -32,6 +33,10 @@ class AccountResponse(BaseModel):
     principal: bool = False
     percentual_uso: float = 0
     mais_utilizada: bool = False
+    origem: Literal["manual", "open_finance"] = "manual"
+    conta_externa_id: int | None = None
+    instituicao_nome: str | None = None
+    ultima_sincronizacao_em: datetime | None = None
 
 
 class TransferCreate(BaseModel):

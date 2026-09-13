@@ -1,8 +1,16 @@
 import os
 
+from sqlalchemy.exc import IntegrityError
+
 from repositories.open_finance_connection_repo import (
     criar_ou_obter_conexao_bancaria,
     listar_conexoes_bancarias,
+)
+from repositories.open_finance_link_repo import (
+    buscar_conta_externa_para_vinculo,
+    buscar_conta_nivra_disponivel,
+    criar_conta_nivra_e_vincular,
+    vincular_conta_externa,
 )
 from repositories.open_finance_sync_repo import (
     buscar_conexao_para_sincronizacao,
@@ -33,6 +41,14 @@ class OpenFinanceItemStateError(RuntimeError):
 
 
 class OpenFinanceConnectionNotFoundError(RuntimeError):
+    pass
+
+
+class OpenFinanceAccountLinkError(RuntimeError):
+    pass
+
+
+class OpenFinanceAccountLinkConflictError(RuntimeError):
     pass
 
 
@@ -237,6 +253,95 @@ def listar_contas_externas_service(usuario_id: int, conexao_id: int) -> list[dic
             "moeda": str(row[4]),
             "saldo": float(row[5]) if row[5] is not None else None,
             "quantidade_transacoes": int(row[6]),
+            "conta_nivra_id": int(row[7]) if row[7] is not None else None,
+            "conta_nivra_nome": str(row[8]) if row[8] is not None else None,
+            "pode_vincular_conta_nivra": str(row[2]).upper() == "BANK" and str(row[4]).upper() == "BRL",
         }
         for row in listar_contas_externas(conexao_id, usuario_id)
     ]
+
+
+def _obter_conta_externa_vinculavel(usuario_id: int, conta_externa_id: int) -> tuple:
+    external_account = buscar_conta_externa_para_vinculo(conta_externa_id, usuario_id)
+    if external_account is None:
+        raise OpenFinanceConnectionNotFoundError("Conta externa nao encontrada.")
+    if str(external_account[2]).upper() != "BANK":
+        raise OpenFinanceAccountLinkError(
+            "Somente contas bancarias podem ser vinculadas ao nucleo financeiro nesta etapa."
+        )
+    if str(external_account[4]).upper() != "BRL":
+        raise OpenFinanceAccountLinkError(
+            "Somente contas em reais podem ser vinculadas nesta etapa."
+        )
+    return external_account
+
+
+def _tipo_conta_nivra(subtipo: str | None) -> str:
+    normalized = (subtipo or "").upper()
+    if normalized == "CHECKING_ACCOUNT":
+        return "corrente"
+    if normalized == "SAVINGS_ACCOUNT":
+        return "poupanca"
+    return "digital"
+
+
+def vincular_conta_externa_service(
+    usuario_id: int,
+    conta_externa_id: int,
+    conta_nivra_id: int,
+) -> dict:
+    external_account = _obter_conta_externa_vinculavel(usuario_id, conta_externa_id)
+    nivra_account = buscar_conta_nivra_disponivel(conta_nivra_id, usuario_id)
+    if nivra_account is None or not bool(nivra_account[2]):
+        raise OpenFinanceConnectionNotFoundError("Conta Nivra ativa nao encontrada.")
+    linked_external_id = nivra_account[3]
+    if linked_external_id is not None and int(linked_external_id) != conta_externa_id:
+        raise OpenFinanceAccountLinkConflictError(
+            "Esta conta Nivra ja esta vinculada a outra conta bancaria."
+        )
+    try:
+        if not vincular_conta_externa(conta_externa_id, conta_nivra_id, usuario_id):
+            raise OpenFinanceConnectionNotFoundError(
+                "Conta externa ou conta Nivra nao encontrada."
+            )
+    except IntegrityError as exc:
+        raise OpenFinanceAccountLinkConflictError(
+            "Esta conta Nivra ja esta vinculada a outra conta bancaria."
+        ) from exc
+    return {
+        "conta_externa_id": int(external_account[0]),
+        "conta_nivra_id": conta_nivra_id,
+        "conta_nivra_nome": str(nivra_account[1]),
+    }
+
+
+def criar_conta_nivra_da_externa_service(
+    usuario_id: int,
+    conta_externa_id: int,
+) -> dict:
+    external_account = _obter_conta_externa_vinculavel(usuario_id, conta_externa_id)
+    if external_account[6] is not None:
+        raise OpenFinanceAccountLinkConflictError(
+            "Esta conta bancaria ja esta vinculada a Nivra."
+        )
+    account_name = f"{external_account[7]} - {external_account[1]}"[:80].strip()
+    try:
+        conta_nivra_id = criar_conta_nivra_e_vincular(
+            conta_externa_id=conta_externa_id,
+            usuario_id=usuario_id,
+            nome=account_name,
+            tipo=_tipo_conta_nivra(
+                str(external_account[3]) if external_account[3] is not None else None
+            ),
+        )
+    except IntegrityError as exc:
+        raise OpenFinanceAccountLinkConflictError(
+            "Ja existe uma conta Nivra com esse nome ou vinculo bancario."
+        ) from exc
+    except ValueError as exc:
+        raise OpenFinanceAccountLinkConflictError(str(exc)) from exc
+    return {
+        "conta_externa_id": conta_externa_id,
+        "conta_nivra_id": conta_nivra_id,
+        "conta_nivra_nome": account_name,
+    }

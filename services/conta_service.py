@@ -22,7 +22,18 @@ def _validar_dados_conta(nome: str, tipo: str) -> str:
 
 
 def _formatar_conta(conta: tuple) -> dict:
-    conta_id, nome, tipo, saldo_inicial, ativo, principal, saldo_atual = conta
+    (
+        conta_id,
+        nome,
+        tipo,
+        saldo_inicial,
+        ativo,
+        principal,
+        saldo_atual,
+        conta_externa_id,
+        instituicao_nome,
+        ultima_sincronizacao_em,
+    ) = conta
     return {
         "id": conta_id,
         "nome": nome,
@@ -33,6 +44,12 @@ def _formatar_conta(conta: tuple) -> dict:
         "principal": bool(principal),
         "percentual_uso": 0.0,
         "mais_utilizada": False,
+        "origem": "open_finance" if conta_externa_id is not None else "manual",
+        "conta_externa_id": int(conta_externa_id) if conta_externa_id is not None else None,
+        "instituicao_nome": str(instituicao_nome) if instituicao_nome is not None else None,
+        "ultima_sincronizacao_em": (
+            str(ultima_sincronizacao_em) if ultima_sincronizacao_em is not None else None
+        ),
     }
 
 
@@ -49,6 +66,10 @@ def criar_conta_service(nome: str, tipo: str, saldo_inicial: float, usuario_id: 
         "principal": False,
         "percentual_uso": 0.0,
         "mais_utilizada": False,
+        "origem": "manual",
+        "conta_externa_id": None,
+        "instituicao_nome": None,
+        "ultima_sincronizacao_em": None,
     }
 
 

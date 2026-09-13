@@ -28,6 +28,14 @@ SALDO_ATUAL_SQL = """
 """
 
 
+SALDO_EXIBIDO_SQL = f"""
+    CASE
+        WHEN ce.id IS NOT NULL AND ce.saldo IS NOT NULL THEN ce.saldo
+        ELSE {SALDO_ATUAL_SQL}
+    END
+"""
+
+
 def criar_conta(nome: str, tipo: str, saldo_inicial: float, usuario_id: int) -> int:
     conn = get_connection()
     try:
@@ -52,8 +60,12 @@ def listar_contas_com_saldo(usuario_id: int, incluir_inativas: bool = False) -> 
         return conn.execute(
             f"""
             SELECT c.id, c.nome, c.tipo, c.saldo_inicial, c.ativo, c.principal,
-                   {SALDO_ATUAL_SQL} AS saldo_atual
+                   {SALDO_EXIBIDO_SQL} AS saldo_atual,
+                   ce.id AS conta_externa_id, cb.instituicao_nome,
+                   cb.ultima_sincronizacao_em
             FROM contas c
+            LEFT JOIN contas_bancarias_externas ce ON ce.conta_nivra_id = c.id
+            LEFT JOIN conexoes_bancarias cb ON cb.id = ce.conexao_id
             WHERE c.usuario_id = ? {filtro_ativo}
             ORDER BY c.ativo DESC, c.principal DESC, LOWER(c.nome)
             """,
@@ -72,8 +84,12 @@ def buscar_conta_por_id(
         return conn.execute(
             f"""
             SELECT c.id, c.nome, c.tipo, c.saldo_inicial, c.ativo, c.principal,
-                   {SALDO_ATUAL_SQL} AS saldo_atual
+                   {SALDO_EXIBIDO_SQL} AS saldo_atual,
+                   ce.id AS conta_externa_id, cb.instituicao_nome,
+                   cb.ultima_sincronizacao_em
             FROM contas c
+            LEFT JOIN contas_bancarias_externas ce ON ce.conta_nivra_id = c.id
+            LEFT JOIN conexoes_bancarias cb ON cb.id = ce.conexao_id
             WHERE c.id = ? AND c.usuario_id = ? {filtro_ativo}
             """,
             (conta_id, usuario_id),

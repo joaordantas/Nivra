@@ -30,6 +30,10 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 - atualização idempotente de registros externos e remoção de dados que deixaram de existir no snapshot completo;
 - histórico de sucesso e falha das sincronizações, com última execução exibida na página de Contas.
 - ativação das Etapas 2C/2D em produção, com 2 contas e 41 transações Sandbox importadas e re-sync validado sem duplicação.
+- vínculo de contas bancárias externas com contas Nivra existentes;
+- criação atômica de uma conta Nivra a partir de uma conta bancária sincronizada;
+- saldo bancário como fonte do saldo atual para contas vinculadas, com origem e horário da sincronização;
+- proteção de unicidade para impedir que duas contas externas usem a mesma conta Nivra.
 
 ### Changed
 
@@ -39,6 +43,7 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 - o frontend deixou de armazenar a identidade autenticada no `localStorage` e de enviar `usuario_id`.
 - a confirmação visual do Pluggy Connect agora ocorre somente depois que o backend valida e persiste a conexão.
 - dados bancários sincronizados permanecem separados dos lançamentos financeiros manuais até a futura etapa de conciliação.
+- contas manuais preservam seu cálculo de saldo; contas bancárias vinculadas passam a exibir o saldo informado pelo provider.
 
 ### Security
 

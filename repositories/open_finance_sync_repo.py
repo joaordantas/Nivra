@@ -305,13 +305,16 @@ def listar_contas_externas(conexao_id: int, usuario_id: int) -> list[tuple]:
         return conn.execute(
             """
             SELECT ce.id, ce.nome, ce.tipo, ce.subtipo, ce.moeda, ce.saldo,
-                   COUNT(tb.id) AS quantidade_transacoes
+                   COUNT(tb.id) AS quantidade_transacoes,
+                   ce.conta_nivra_id, c.nome AS conta_nivra_nome
             FROM contas_bancarias_externas ce
             JOIN conexoes_bancarias cb ON cb.id = ce.conexao_id
+            LEFT JOIN contas c ON c.id = ce.conta_nivra_id
             LEFT JOIN transacoes_bancarias tb
                    ON tb.conta_bancaria_externa_id = ce.id
             WHERE ce.conexao_id = ? AND cb.usuario_id = ?
-            GROUP BY ce.id, ce.nome, ce.tipo, ce.subtipo, ce.moeda, ce.saldo
+            GROUP BY ce.id, ce.nome, ce.tipo, ce.subtipo, ce.moeda, ce.saldo,
+                     ce.conta_nivra_id, c.nome
             ORDER BY LOWER(ce.nome), ce.id
             """,
             (conexao_id, usuario_id),
