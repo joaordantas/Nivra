@@ -92,9 +92,9 @@ Resultados em 13 de setembro de 2026:
 - `git diff --check`: aprovado;
 - Alembic: a Etapa 2C/2D reutiliza o schema da Etapa 2B e não exige nova migration.
 
-## Ativação manual no Neon e na Vercel
+## Ativação no Neon e na Vercel
 
-Antes do deploy, aplicar a migration pendente das categorias padrão:
+A migration das categorias padrão foi aplicada no Neon principal em 13 de setembro de 2026:
 
 ```powershell
 $env:APP_ENV = "production"
@@ -102,17 +102,20 @@ $env:DATABASE_URL_UNPOOLED = "<URL direta do Neon>"
 .venv\Scripts\python.exe -m alembic upgrade head
 ```
 
-O `head` esperado é `c64e8a1f9b2d`. Não é necessário criar tabelas ou variáveis adicionais para as Etapas 2C/2D.
+O Neon foi confirmado no `head` `c64e8a1f9b2d`. As Etapas 2C/2D não exigiram outra migration nem novas variáveis de ambiente.
 
-Depois, publicar o código na Vercel e validar com uma conta de teste:
+O commit `405e7cd` foi publicado na branch `main` e implantado pela Vercel. Em produção foram confirmados:
 
-1. entrar na Nivra;
-2. abrir Contas;
-3. manter ou criar uma conexão Sandbox PF;
-4. clicar em **Sincronizar**;
-5. confirmar contas, saldos e quantidades de transações;
-6. clicar novamente e confirmar que não aparecem registros duplicados;
-7. atualizar a página e confirmar que os dados continuam disponíveis.
+- `/api/health` com resposta HTTP 200;
+- `/openapi.json` com resposta HTTP 200 e as rotas novas de sincronização;
+- login da conta de teste e restauração da sessão após atualizar a página;
+- criação e persistência de uma conexão Pluggy Bank pelo Connect Sandbox PF;
+- importação de 2 contas externas: Conta Corrente e Mastercard Black;
+- importação de 41 transações, sendo 25 da Conta Corrente e 16 do Mastercard Black;
+- saldos externos de R$ 36.180,75 e -R$ 961,95 exibidos pelo frontend;
+- segunda sincronização mantendo 41 transações, sem duplicação;
+- atualização da página restaurando conexão, saldos e as mesmas contagens pelo backend;
+- transações manuais da Nivra preservadas e visíveis no dashboard antes e depois da ativação.
 
 As credenciais `PLUGGY_CLIENT_ID`, `PLUGGY_CLIENT_SECRET`, `DATABASE_URL` e `DATABASE_URL_UNPOOLED` continuam exclusivamente no backend/Vercel. Nenhum valor real deve ser colocado no repositório.
 

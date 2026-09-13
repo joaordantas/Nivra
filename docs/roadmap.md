@@ -129,7 +129,7 @@ Status: **CONCLUÍDA**
 - [x] Sincronização manual
 - [x] Exibir última sincronização e erros de conexão
 
-Status: **CONCLUÍDA E VALIDADA LOCALMENTE; ativação no Sandbox de produção pendente**
+Status: **CONCLUÍDA E VALIDADA EM PRODUÇÃO NO SANDBOX**
 
 ### Etapa 2D — Idempotência
 
@@ -139,7 +139,7 @@ Status: **CONCLUÍDA E VALIDADA LOCALMENTE; ativação no Sandbox de produção 
 - [x] Tratar exclusões externas
 - [x] Testes de idempotência
 
-Status: **CONCLUÍDA E VALIDADA LOCALMENTE**
+Status: **CONCLUÍDA E VALIDADA EM PRODUÇÃO NO SANDBOX**
 
 ### Etapa 2E — Webhooks
 
@@ -171,8 +171,9 @@ Status: **CONCLUÍDA E VALIDADA LOCALMENTE**
 ### Gate Open Finance Sandbox
 
 - [x] Connect funciona
-- [ ] Conta, saldo e transações externas importados
-- [ ] Re-sync e webhook duplicados não criam dados extras
+- [x] Conta, saldo e transações externas importados
+- [x] Re-sync não cria dados extras
+- [ ] Webhook duplicado não cria dados extras
 - [x] Isolamento entre usuários validado
 - [x] Secrets ausentes do frontend
 - [x] Build e testes passam

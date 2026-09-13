@@ -29,6 +29,7 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 - sincronização manual de contas, saldos e transações da Pluggy com paginação por cursor;
 - atualização idempotente de registros externos e remoção de dados que deixaram de existir no snapshot completo;
 - histórico de sucesso e falha das sincronizações, com última execução exibida na página de Contas.
+- ativação das Etapas 2C/2D em produção, com 2 contas e 41 transações Sandbox importadas e re-sync validado sem duplicação.
 
 ### Changed
 
