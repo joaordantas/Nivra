@@ -78,6 +78,9 @@ class OpenFinanceProvider(Protocol):
         self,
         account_id: str,
         account_type: str,
+        *,
+        transaction_ids: list[str] | None = None,
+        created_at_from: str | None = None,
     ) -> list[OpenFinanceTransaction]:
         ...
 
@@ -301,13 +304,25 @@ class PluggyOpenFinanceProvider:
         self,
         account_id: str,
         account_type: str,
+        *,
+        transaction_ids: list[str] | None = None,
+        created_at_from: str | None = None,
     ) -> list[OpenFinanceTransaction]:
+        if transaction_ids and created_at_from:
+            raise ValueError("Use IDs ou data de criacao, nunca os dois filtros.")
+        if transaction_ids and len(transaction_ids) > 500:
+            raise ValueError("A Pluggy aceita no maximo 500 IDs por consulta.")
         transactions: list[OpenFinanceTransaction] = []
         next_cursor: str | None = None
         seen_cursors: set[str] = set()
 
         for _ in range(MAX_TRANSACTION_PAGES):
             url = f"{PLUGGY_API_URL}/v2/transactions?accountId={quote(account_id, safe='')}"
+            if transaction_ids:
+                joined_ids = ",".join(transaction_ids)
+                url += f"&ids={quote(joined_ids, safe=',')}"
+            if created_at_from:
+                url += f"&createdAtFrom={quote(created_at_from, safe='')}"
             if next_cursor is not None:
                 url += f"&after={quote(next_cursor, safe='')}"
             response = self._requester(

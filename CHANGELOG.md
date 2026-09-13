@@ -38,6 +38,10 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 - categorização bancária por chave interna estável, com fallback seguro para `Outros`;
 - conciliação básica de possíveis duplicações, com confirmação, rejeição e preservação dos registros de origem;
 - proteção de unicidade para impedir que um lançamento manual seja conciliado com mais de uma transação bancária.
+- endpoint autenticado para webhooks Pluggy e caixa de entrada persistente por `eventId`;
+- processamento de `item/updated`, `item/error`, `item/deleted` e eventos de criação, atualização e exclusão de transações;
+- retentativa segura de eventos com falha, reivindicação atômica contra concorrência, deduplicação e logs estruturados sem payload financeiro;
+- utilitário para cadastrar ou atualizar o webhook com header secreto na API da Pluggy.
 
 ### Changed
 
@@ -49,6 +53,7 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 - dados bancários sincronizados permanecem em tabelas próprias e são combinados com lançamentos manuais na camada de consulta;
 - contas manuais preservam seu cálculo de saldo; contas bancárias vinculadas passam a exibir o saldo informado pelo provider.
 - o dashboard considera receitas e despesas das contas bancárias vinculadas, ignora duplicações confirmadas e mantém transferências internas neutras.
+- alterações bancárias recebidas por webhook atualizam somente os registros indicados; mudanças financeiras relevantes desfazem conciliações antigas para nova revisão.
 
 ### Security
 
@@ -59,6 +64,7 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 - tokens de conta são persistidos exclusivamente como hashes e não aparecem na URL HTTP;
 - respostas de recuperação não confirmam se um e-mail existe.
 - `itemId` recebido do frontend é validado diretamente na Pluggy e vinculado ao usuário da sessão por `clientUserId`.
+- webhooks usam segredo de no mínimo 32 caracteres comparado em tempo constante, sem sessão, CSRF ou exposição ao frontend.
 
 ### Planned
 

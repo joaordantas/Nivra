@@ -330,8 +330,43 @@ eventos_sincronizacao = Table(
 )
 Index("ix_eventos_sync_conexao_inicio", eventos_sincronizacao.c.conexao_id, eventos_sincronizacao.c.iniciada_em)
 
+eventos_webhook_open_finance = Table(
+    "eventos_webhook_open_finance", metadata,
+    Column("id", Integer, primary_key=True),
+    Column("provider", String(30), nullable=False, server_default="pluggy"),
+    Column("provider_event_id", String(100), nullable=False),
+    Column("tipo", String(60), nullable=False),
+    Column("external_item_id", String(120)),
+    Column("conexao_id", ForeignKey("conexoes_bancarias.id", ondelete="SET NULL")),
+    Column("status", String(30), nullable=False, server_default="recebido"),
+    Column("tentativas", Integer, nullable=False, server_default="1"),
+    Column("payload_hash", String(64), nullable=False),
+    Column("quantidade_processada", Integer, nullable=False, server_default="0"),
+    Column("codigo_erro", String(80)),
+    Column("mensagem_erro", Text),
+    Column("recebido_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    Column("ultima_tentativa_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    Column("processado_em", DateTime(timezone=True)),
+    UniqueConstraint("provider", "provider_event_id", name="uq_eventos_webhook_provider_evento"),
+    CheckConstraint(
+        "status IN ('recebido', 'processando', 'sucesso', 'ignorado', 'erro')",
+        name="ck_eventos_webhook_status",
+    ),
+    CheckConstraint("tentativas >= 1", name="ck_eventos_webhook_tentativas"),
+    CheckConstraint(
+        "quantidade_processada >= 0",
+        name="ck_eventos_webhook_quantidade",
+    ),
+)
+Index(
+    "ix_eventos_webhook_item_recebido",
+    eventos_webhook_open_finance.c.external_item_id,
+    eventos_webhook_open_finance.c.recebido_em,
+)
+
 TABLES_IN_DEPENDENCY_ORDER = [
     usuarios, sessoes, auth_tokens, auth_rate_events, categorias, contas, transacoes, transferencias, cartoes,
     faturas, compras_cartao, pagamentos_fatura, vendas, parcelas, limites, conexoes_bancarias,
     contas_bancarias_externas, transacoes_bancarias, eventos_sincronizacao,
+    eventos_webhook_open_finance,
 ]

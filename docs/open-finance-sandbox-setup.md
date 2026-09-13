@@ -1,6 +1,6 @@
-# Ativação manual do Open Finance Sandbox
+# Ativação do Open Finance Sandbox e webhooks
 
-A base técnica da Etapa 2A está pronta. Para ativar o widget no ambiente publicado, o responsável pelo projeto precisa criar a aplicação Sandbox da Pluggy e cadastrar duas variáveis privadas na Vercel.
+A integração Sandbox inclui conexão, persistência, sincronização, vínculo com o núcleo e recebimento idempotente de webhooks. As credenciais e o segredo do webhook pertencem exclusivamente ao backend.
 
 ## 1. Criar a aplicação Pluggy
 
@@ -18,13 +18,43 @@ No projeto da Nivra na Vercel, abra **Settings → Environment Variables** e adi
 ```text
 PLUGGY_CLIENT_ID=<Client ID da aplicação Sandbox>
 PLUGGY_CLIENT_SECRET=<Client Secret da aplicação Sandbox>
+PLUGGY_WEBHOOK_SECRET=<segredo aleatório com pelo menos 32 caracteres>
+PLUGGY_WEBHOOK_URL=https://nivra-finance.vercel.app/api/open-finance/webhooks/pluggy
 ```
 
-Marque os ambientes em que o Sandbox será testado. Depois, faça um novo deploy para que a função FastAPI receba as variáveis.
+Use o mesmo `PLUGGY_WEBHOOK_SECRET` ao registrar o webhook na Pluggy. Marque os ambientes em que o Sandbox será testado e faça um novo deploy para que a função FastAPI receba as variáveis.
 
 Não crie variáveis com prefixo `VITE_`: esse prefixo enviaria o valor ao bundle do navegador.
 
-## 3. Validar o fluxo publicado
+## 3. Aplicar as migrations
+
+Antes do deploy que contém os webhooks, aplique as migrations com a conexão direta do Neon:
+
+```powershell
+alembic upgrade head
+alembic current
+```
+
+O head esperado para a Etapa 2E é `a93c7e4d5f21`.
+
+## 4. Registrar o webhook na Pluggy
+
+O header secreto só pode ser configurado pela API da Pluggy. Com as quatro variáveis abaixo disponíveis apenas no terminal local, execute o utilitário do projeto:
+
+```text
+PLUGGY_CLIENT_ID=<Client ID Sandbox>
+PLUGGY_CLIENT_SECRET=<Client Secret Sandbox>
+PLUGGY_WEBHOOK_SECRET=<o mesmo segredo cadastrado na Vercel>
+PLUGGY_WEBHOOK_URL=https://nivra-finance.vercel.app/api/open-finance/webhooks/pluggy
+```
+
+```powershell
+python scripts/register_pluggy_webhook.py
+```
+
+O utilitário cria o webhook `all` ou atualiza o cadastro existente para a URL informada, reativa o registro e envia o segredo em `X-Nivra-Webhook-Secret`. Ele não imprime credenciais.
+
+## 5. Validar o fluxo publicado
 
 1. Entre em `https://nivra-finance.vercel.app`.
 2. Abra **Contas**.
@@ -38,9 +68,13 @@ Senha: password-ok
 MFA, quando solicitado: 123456
 ```
 
-6. Confirme que o widget mostra sucesso e que a Nivra informa o identificador da conexão Sandbox.
+6. Confirme que o widget mostra sucesso e que a Nivra restaura a conexão.
+7. Vincule a conta externa a uma conta Nivra.
+8. Sincronize e confirme saldo e transações.
+9. No painel da Pluggy, confirme entrega HTTP 200 para os eventos.
+10. Reenvie um evento já entregue e confirme que ele aparece como duplicado sem criar outra transação.
 
-Nesta etapa, a conexão ainda não é persistida no PostgreSQL e contas ou transações ainda não são importadas. Essas entregas pertencem às Etapas 2B e 2C.
+O endpoint aceita apenas notificações com o segredo configurado. Falhas temporárias retornam HTTP 503 para permitir as retentativas da Pluggy; requisições sem autenticação são recusadas com HTTP 401.
 
 ## Diagnóstico rápido
 
@@ -48,4 +82,6 @@ Nesta etapa, a conexão ainda não é persistida no PostgreSQL e contas ou trans
 - Mensagem de credenciais recusadas: gere ou copie novamente as credenciais da aplicação Sandbox.
 - Widget não carrega: confirme acesso a `connect.pluggy.ai` no navegador e tente novamente.
 - Banco Sandbox não aparece: confirme que o fluxo está com `includeSandbox` habilitado; a Nivra já o habilita nesta versão.
-
+- Webhook retorna 503 de configuração: confirme `PLUGGY_WEBHOOK_SECRET` na Vercel e faça redeploy.
+- Webhook retorna 401: atualize o cadastro usando exatamente o mesmo segredo da Vercel.
+- Evento não atualiza a Nivra: consulte `eventos_webhook_open_finance` e a página Events da Pluggy pelo `eventId`.

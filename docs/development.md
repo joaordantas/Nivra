@@ -28,6 +28,8 @@ APP_PUBLIC_URL=http://127.0.0.1:5173
 EMAIL_PROVIDER=memory
 PLUGGY_CLIENT_ID=<client id da aplicacao sandbox>
 PLUGGY_CLIENT_SECRET=<client secret da aplicacao sandbox>
+PLUGGY_WEBHOOK_SECRET=<segredo aleatorio com pelo menos 32 caracteres>
+PLUGGY_WEBHOOK_URL=https://seu-dominio/api/open-finance/webhooks/pluggy
 OPEN_FINANCE_ENVIRONMENT=sandbox
 ```
 
@@ -112,16 +114,18 @@ Configure no ambiente desejado:
 - `EMAIL_FROM` com um remetente de domínio verificado.
 - `PLUGGY_CLIENT_ID` da aplicação Sandbox;
 - `PLUGGY_CLIENT_SECRET` da aplicação Sandbox.
+- `PLUGGY_WEBHOOK_SECRET` com pelo menos 32 caracteres;
+- `PLUGGY_WEBHOOK_URL=https://nivra-finance.vercel.app/api/open-finance/webhooks/pluggy`.
 
-As credenciais Pluggy ficam somente no backend e nunca usam o prefixo `VITE_`. Consulte o [guia de ativação do Sandbox](open-finance-sandbox-setup.md) antes do teste publicado.
+As credenciais Pluggy ficam somente no backend e nunca usam o prefixo `VITE_`. O segredo do webhook deve ser igual na Vercel e no header privado cadastrado na Pluggy. Consulte o [guia de ativação do Sandbox](open-finance-sandbox-setup.md) antes do teste publicado.
 
-Após publicar as Etapas 2B e 2B.5, aplique a migration `c64e8a1f9b2d` de forma controlada antes de acessar os novos endpoints e categorias padrão:
+Antes de publicar código que depende de uma nova estrutura, aplique todas as migrations pendentes de forma controlada:
 
 ```bash
 alembic upgrade head
 ```
 
-O fluxo de finalização consulta o Item diretamente na Pluggy e persiste apenas sua referência, instituição, status e identificador de conector. Conexão persistida não significa dados sincronizados; a importação de contas, saldos e transações pertence à Etapa 2C.
+O endpoint público do webhook é autenticado por `X-Nivra-Webhook-Secret`, registra cada `eventId` no PostgreSQL e nunca exige sessão ou CSRF. Ele deve ser chamado somente pela Pluggy. O cadastro ou atualização segura do webhook pode ser feito com `python scripts/register_pluggy_webhook.py`.
 
 Em produção, configure `APP_ENV=production`. A Vercel também informa `VERCEL_ENV=production`, usado como proteção adicional para ativar o atributo `Secure` do cookie.
 

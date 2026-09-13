@@ -200,9 +200,11 @@ Status: **CONCLUÍDA E VALIDADA LOCALMENTE; ATIVAÇÃO DA MIGRATION/DEPLOY PENDE
 
 ### Etapa 2E — Webhooks
 
-- [ ] Endpoint seguro e validação de autenticidade do provider
-- [ ] Eventos de atualização, erro, criação, atualização e exclusão de transações
-- [ ] Retry seguro, idempotência e logs estruturados
+- [x] Endpoint seguro e validação de autenticidade do provider
+- [x] Eventos de atualização, erro, criação, atualização e exclusão de transações
+- [x] Retry seguro, idempotência e logs estruturados
+
+Status: **IMPLEMENTAÇÃO E TESTES LOCAIS CONCLUÍDOS; MIGRATION, DEPLOY E VALIDAÇÃO SANDBOX PENDENTES**
 
 ### Etapa 2F — UX
 
@@ -230,7 +232,7 @@ Status: **CONCLUÍDA E VALIDADA LOCALMENTE; ATIVAÇÃO DA MIGRATION/DEPLOY PENDE
 - [x] Connect funciona
 - [x] Conta, saldo e transações externas importados
 - [x] Re-sync não cria dados extras
-- [ ] Webhook duplicado não cria dados extras
+- [-] Webhook duplicado não cria dados extras — validado localmente; confirmação Sandbox pendente
 - [x] Isolamento entre usuários validado
 - [x] Secrets ausentes do frontend
 - [x] Build e testes passam
@@ -348,6 +350,6 @@ Lumi será a assistente financeira inteligente da Nivra. A identidade está defi
 
 ## Próxima tarefa recomendada
 
-**Etapa 2E — Webhooks.**
+**Ativar e validar a Etapa 2E em produção.**
 
-A integração visível com o núcleo está concluída localmente: vínculo, saldo bancário, histórico unificado, categorias estáveis, conciliação básica e totais do dashboard. A próxima unidade lógica é receber eventos autenticados do provider, com retry e idempotência. A Nivra não inicia essa etapa sem uma nova solicitação.
+O código, a migration e os testes dos webhooks estão concluídos localmente. A próxima unidade é aplicar a migration `a93c7e4d5f21`, configurar o segredo no backend, publicar e validar uma entrega real e sua repetição no Sandbox da Pluggy. Depois dessa confirmação, a próxima etapa de desenvolvimento será a **Etapa 2F — UX Open Finance**. A Nivra não inicia a 2F sem uma nova solicitação.

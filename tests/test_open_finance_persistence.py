@@ -190,6 +190,7 @@ class OpenFinanceMigrationTests(unittest.TestCase):
             "contas_bancarias_externas",
             "transacoes_bancarias",
             "eventos_sincronizacao",
+            "eventos_webhook_open_finance",
         }
         self.assertTrue(expected_tables.issubset(set(inspector.get_table_names())))
 
@@ -217,6 +218,13 @@ class OpenFinanceMigrationTests(unittest.TestCase):
 
         indexes = {index["name"] for index in inspector.get_indexes("conexoes_bancarias")}
         self.assertIn("ix_conexoes_usuario_status", indexes)
+        webhook_uniques = {
+            constraint["name"]
+            for constraint in inspector.get_unique_constraints(
+                "eventos_webhook_open_finance"
+            )
+        }
+        self.assertIn("uq_eventos_webhook_provider_evento", webhook_uniques)
 
         dispose_engine()
         command.downgrade(get_alembic_config(), "b92d8f3a6c10")

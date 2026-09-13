@@ -201,6 +201,20 @@ def persistir_snapshot_sincronizacao(
                         data = excluded.data,
                         direcao = excluded.direcao,
                         metadata_provider = excluded.metadata_provider,
+                        status_conciliacao = CASE
+                            WHEN transacoes_bancarias.valor <> excluded.valor
+                              OR transacoes_bancarias.data <> excluded.data
+                              OR transacoes_bancarias.direcao <> excluded.direcao
+                            THEN 'pendente'
+                            ELSE transacoes_bancarias.status_conciliacao
+                        END,
+                        transacao_nivra_id = CASE
+                            WHEN transacoes_bancarias.valor <> excluded.valor
+                              OR transacoes_bancarias.data <> excluded.data
+                              OR transacoes_bancarias.direcao <> excluded.direcao
+                            THEN NULL
+                            ELSE transacoes_bancarias.transacao_nivra_id
+                        END,
                         atualizada_em = CURRENT_TIMESTAMP
                     """,
                     (

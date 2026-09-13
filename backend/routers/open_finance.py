@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Header, HTTPException, status
 
 from backend.dependencies.auth import CurrentUser, CurrentUserCsrf
 from backend.schemas.open_finance import (
@@ -9,6 +9,8 @@ from backend.schemas.open_finance import (
     OpenFinanceAccountLinkResponse,
     OpenFinanceExternalAccountResponse,
     OpenFinanceSyncResponse,
+    PluggyWebhookPayload,
+    PluggyWebhookResponse,
 )
 from services.open_finance_provider import (
     OpenFinanceConfigurationError,
@@ -29,9 +31,51 @@ from services.open_finance_service import (
     sincronizar_conexao_service,
     vincular_conta_externa_service,
 )
+from services.open_finance_webhook_service import (
+    WEBHOOK_HEADER_NAME,
+    WebhookAuthenticationError,
+    WebhookConfigurationError,
+    WebhookPayloadConflictError,
+    WebhookPermanentError,
+    WebhookTemporaryError,
+    processar_webhook_pluggy_service,
+)
 
 
 router = APIRouter(tags=["open-finance"])
+
+
+@router.post(
+    "/open-finance/webhooks/pluggy",
+    response_model=PluggyWebhookResponse,
+)
+def receive_pluggy_webhook(
+    payload: PluggyWebhookPayload,
+    webhook_secret: str | None = Header(default=None, alias=WEBHOOK_HEADER_NAME),
+) -> PluggyWebhookResponse:
+    try:
+        return PluggyWebhookResponse(
+            **processar_webhook_pluggy_service(payload, webhook_secret)
+        )
+    except WebhookAuthenticationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Webhook nao autenticado.",
+        ) from exc
+    except WebhookConfigurationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Webhook Open Finance ainda nao configurado.",
+        ) from exc
+    except WebhookPayloadConflictError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    except WebhookPermanentError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except WebhookTemporaryError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
 
 
 @router.post("/open-finance/connect-token", response_model=ConnectTokenResponse)

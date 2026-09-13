@@ -150,6 +150,32 @@ class PluggyProviderTests(unittest.TestCase):
             with self.assertRaises(OpenFinanceConfigurationError):
                 get_open_finance_provider()
 
+    def test_provider_filters_webhook_transactions_without_exposing_credentials(self) -> None:
+        calls: list[tuple[str, str, dict[str, str], dict | None]] = []
+
+        def requester(method: str, url: str, headers: dict[str, str], payload: dict | None) -> dict:
+            calls.append((method, url, headers, payload))
+            if url.endswith("/auth"):
+                return {"apiKey": "server-api-key"}
+            return {"results": []}
+
+        provider = PluggyOpenFinanceProvider("client-id", "client-secret", requester=requester)
+        provider.list_transactions(
+            "account-id",
+            "BANK",
+            transaction_ids=["transaction-a", "transaction-b"],
+        )
+        provider.list_transactions(
+            "account-id",
+            "BANK",
+            created_at_from="2026-09-13T12:00:00.000Z",
+        )
+
+        self.assertIn("ids=transaction-a,transaction-b", calls[1][1])
+        self.assertIn("createdAtFrom=2026-09-13T12%3A00%3A00.000Z", calls[2][1])
+        self.assertEqual(calls[1][2], {"X-API-KEY": "server-api-key"})
+        self.assertNotIn("client-secret", calls[1][1])
+
     def test_service_uses_internal_user_reference(self) -> None:
         provider = FakeProvider()
 
