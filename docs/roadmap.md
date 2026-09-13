@@ -139,7 +139,7 @@ Status: **CONCLUÍDA E VALIDADA EM PRODUÇÃO NO SANDBOX**
 - [x] Tratar exclusões externas
 - [x] Testes de idempotência
 
-Status: **CONCLUÍDA E VALIDADA EM PRODUÇÃO NO SANDBOX**
+Status: **CONCLUÍDA E VALIDADA; RE-SYNC VALIDADO EM PRODUÇÃO NO SANDBOX**
 
 ### Etapa 2E — Webhooks
 
