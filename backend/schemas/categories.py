@@ -14,3 +14,4 @@ class CategoryUpdate(BaseModel):
 class CategoryResponse(BaseModel):
     id: int
     nome: str
+    padrao: bool = False

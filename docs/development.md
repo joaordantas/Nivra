@@ -115,7 +115,7 @@ Configure no ambiente desejado:
 
 As credenciais Pluggy ficam somente no backend e nunca usam o prefixo `VITE_`. Consulte o [guia de ativação do Sandbox](open-finance-sandbox-setup.md) antes do teste publicado.
 
-Após publicar a Etapa 2B, aplique a migration `e81f72c4a93b` de forma controlada antes de acessar os novos endpoints:
+Após publicar as Etapas 2B e 2B.5, aplique a migration `c64e8a1f9b2d` de forma controlada antes de acessar os novos endpoints e categorias padrão:
 
 ```bash
 alembic upgrade head

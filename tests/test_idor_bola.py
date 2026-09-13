@@ -62,7 +62,8 @@ class CrossAccountAuthorizationTests(unittest.TestCase):
         ]
 
         self.assertTrue(all(response.status_code in {400, 404, 409} for response in attempts), [(r.status_code, r.text) for r in attempts])
-        self.assertEqual(self.a.get("/api/categories").json()[0]["nome"], "Privada")
+        categorias_a = self.a.get("/api/categories").json()
+        self.assertTrue(any(categoria["nome"] == "Privada" for categoria in categorias_a))
         self.assertEqual(self.a.get("/api/transactions").json()[0]["valor"], 50)
         self.assertEqual(self.a.get(f"/api/invoices/{purchase['fatura_id']}").json()["valor_total"], 100)
         self.assertEqual(self.b.get("/api/accounts").json(), [])

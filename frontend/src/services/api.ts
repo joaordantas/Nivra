@@ -8,6 +8,8 @@ import type {
   Invoice,
   InvoiceDetail,
   OpenFinanceConnection,
+  OpenFinanceExternalAccount,
+  OpenFinanceSyncResult,
   ProfitSummary,
   ReceivableByClient,
   Sale,
@@ -134,6 +136,12 @@ export const api = {
     }),
   getOpenFinanceConnections: () =>
     request<OpenFinanceConnection[]>("/open-finance/connections"),
+  syncOpenFinanceConnection: (connectionId: number) =>
+    request<OpenFinanceSyncResult>(`/open-finance/connections/${connectionId}/sync`, {
+      method: "POST",
+    }),
+  getOpenFinanceExternalAccounts: (connectionId: number) =>
+    request<OpenFinanceExternalAccount[]>(`/open-finance/connections/${connectionId}/accounts`),
 
   getTransfers: () => request<Transfer[]>("/transfers"),
   createTransfer: (payload: { conta_origem_id: number; conta_destino_id: number; valor: number; descricao: string; data: string }) =>

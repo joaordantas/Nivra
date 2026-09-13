@@ -1,4 +1,5 @@
 from database.connection import get_connection
+from repositories.categoria_repo import criar_categorias_padrao
 from utils.security import hash_senha
 
 def cadastrar_usuario(usuario: str, email: str, senha: str, tipo_perfil: str):
@@ -9,8 +10,13 @@ def cadastrar_usuario(usuario: str, email: str, senha: str, tipo_perfil: str):
             VALUES (?, ?, ?, ?)
             RETURNING id
         """, (usuario, email, hash_senha(senha), tipo_perfil)).fetchone()
+        usuario_id = int(resultado[0])
+        criar_categorias_padrao(conn, usuario_id)
         conn.commit()
-        return int(resultado[0])
+        return usuario_id
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         conn.close()
 

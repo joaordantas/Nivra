@@ -110,7 +110,9 @@ class Phase2ApiTests(unittest.TestCase):
         transactions_b = self.client_b.get("/api/transactions").json()
         self.assertEqual([item["id"] for item in transactions_a], [expense_id])
         self.assertEqual(len(transactions_b), 1)
-        self.assertEqual(self.client_a.get("/api/categories").json(), [category_a])
+        categories_a = self.client_a.get("/api/categories").json()
+        self.assertIn(category_a, categories_a)
+        self.assertTrue(any(category["padrao"] for category in categories_a))
 
         updated = self.client_a.put(
             f"/api/transactions/{expense_id}",

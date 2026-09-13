@@ -4,7 +4,17 @@ from database.connection import get_connection
 CONNECTION_SELECT = """
     SELECT id, usuario_id, provider, external_item_id, client_user_ref,
            external_connector_id, instituicao_nome, status, ambiente,
-           criada_em, atualizada_em, ultima_sincronizacao_em, desconectada_em
+           criada_em, atualizada_em, ultima_sincronizacao_em, desconectada_em,
+           (
+               SELECT es.status FROM eventos_sincronizacao es
+               WHERE es.conexao_id = conexoes_bancarias.id
+               ORDER BY es.iniciada_em DESC, es.id DESC LIMIT 1
+           ) AS ultimo_evento_status,
+           (
+               SELECT es.mensagem_erro FROM eventos_sincronizacao es
+               WHERE es.conexao_id = conexoes_bancarias.id
+               ORDER BY es.iniciada_em DESC, es.id DESC LIMIT 1
+           ) AS ultimo_erro
     FROM conexoes_bancarias
 """
 

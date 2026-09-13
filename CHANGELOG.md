@@ -25,6 +25,10 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 - listagem isolada das conexões bancárias e restauração do estado após novo login;
 - proteção idempotente contra callbacks repetidos e reivindicação de Item por outro usuário.
 - ativação da persistência Open Finance Sandbox no Neon e publicação do fluxo na Vercel.
+- categorias padrão por usuário com chaves internas estáveis e proteção contra exclusão;
+- sincronização manual de contas, saldos e transações da Pluggy com paginação por cursor;
+- atualização idempotente de registros externos e remoção de dados que deixaram de existir no snapshot completo;
+- histórico de sucesso e falha das sincronizações, com última execução exibida na página de Contas.
 
 ### Changed
 
@@ -32,6 +36,7 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 - todas as APIs protegidas passam a obter o usuário da sessão no backend;
 - o frontend deixou de armazenar a identidade autenticada no `localStorage` e de enviar `usuario_id`.
 - a confirmação visual do Pluggy Connect agora ocorre somente depois que o backend valida e persiste a conexão.
+- dados bancários sincronizados permanecem separados dos lançamentos financeiros manuais até a futura etapa de conciliação.
 
 ### Security
 

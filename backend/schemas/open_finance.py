@@ -26,3 +26,26 @@ class OpenFinanceConnectionResponse(BaseModel):
     atualizada_em: datetime
     ultima_sincronizacao_em: datetime | None = None
     desconectada_em: datetime | None = None
+    ultimo_evento_status: str | None = None
+    ultimo_erro: str | None = None
+
+
+class OpenFinanceSyncResponse(BaseModel):
+    conexao_id: int
+    contas_criadas: int
+    contas_atualizadas: int
+    contas_removidas: int
+    transacoes_criadas: int
+    transacoes_atualizadas: int
+    transacoes_removidas: int
+    transacoes_processadas: int
+
+
+class OpenFinanceExternalAccountResponse(BaseModel):
+    id: int
+    nome: str
+    tipo: str
+    subtipo: str | None = None
+    moeda: str
+    saldo: float | None = None
+    quantidade_transacoes: int

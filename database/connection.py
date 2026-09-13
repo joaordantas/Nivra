@@ -15,7 +15,11 @@ _engine: Engine | None = None
 _engine_url: str | None = None
 _engine_lock = threading.Lock()
 _iso_date = re.compile(r"^\d{4}-\d{2}-\d{2}$")
-_lockable_rows = {("usuarios", "id"), ("faturas", "id")}
+_lockable_rows = {
+    ("usuarios", "id"),
+    ("faturas", "id"),
+    ("conexoes_bancarias", "id"),
+}
 
 
 def _normalizar_url(url: str) -> str:

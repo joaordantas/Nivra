@@ -1,4 +1,4 @@
-import { CheckCircle2, Landmark, Link2 } from "lucide-react";
+import { CheckCircle2, Landmark, Link2, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { PluggyConnect } from "react-pluggy-connect";
 
@@ -7,7 +7,18 @@ import { api } from "../../services/api";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { Feedback } from "../ui/Feedback";
-import type { OpenFinanceConnection } from "../../types";
+import type { OpenFinanceConnection, OpenFinanceExternalAccount } from "../../types";
+
+
+const currency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+
+function formatSyncDate(value: string | null) {
+  if (!value) return "Ainda não realizada";
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
 
 
 export function OpenFinanceConnectCard() {
@@ -18,11 +29,21 @@ export function OpenFinanceConnectCard() {
   const [message, setMessage] = useState("");
   const [connections, setConnections] = useState<OpenFinanceConnection[]>([]);
   const [loadingConnections, setLoadingConnections] = useState(true);
+  const [syncingId, setSyncingId] = useState<number | null>(null);
+  const [externalAccounts, setExternalAccounts] = useState<Record<number, OpenFinanceExternalAccount[]>>({});
 
   const loadConnections = useCallback(async () => {
     try {
       setLoadingConnections(true);
-      setConnections(await api.getOpenFinanceConnections());
+      const loadedConnections = await api.getOpenFinanceConnections();
+      setConnections(loadedConnections);
+      const accountEntries = await Promise.all(
+        loadedConnections.map(async (connection) => [
+          connection.id,
+          await api.getOpenFinanceExternalAccounts(connection.id),
+        ] as const),
+      );
+      setExternalAccounts(Object.fromEntries(accountEntries));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível carregar as conexões bancárias.");
     } finally {
@@ -64,6 +85,24 @@ export function OpenFinanceConnectCard() {
     }
   }
 
+  async function syncConnection(connection: OpenFinanceConnection) {
+    try {
+      setSyncingId(connection.id);
+      setError("");
+      setMessage("");
+      const result = await api.syncOpenFinanceConnection(connection.id);
+      setMessage(
+        `${connection.instituicao_nome}: ${result.transacoes_processadas} transações sincronizadas.`,
+      );
+      await loadConnections();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Não foi possível sincronizar esta conexão.");
+      await loadConnections();
+    } finally {
+      setSyncingId(null);
+    }
+  }
+
   return (
     <Card as="section" className="open-finance-connect-card">
       <span className="open-finance-icon"><Landmark aria-hidden="true" size={22} /></span>
@@ -90,9 +129,30 @@ export function OpenFinanceConnectCard() {
             <span className="open-finance-connection-icon"><CheckCircle2 aria-hidden="true" size={18} /></span>
             <span>
               <strong>{connection.instituicao_nome}</strong>
-              <small>Sincronização: {connection.ultima_sincronizacao_em ? "Realizada" : "Ainda não realizada"}</small>
+              <small>Sincronização: {formatSyncDate(connection.ultima_sincronizacao_em)}</small>
+              {connection.ultimo_evento_status === "erro" && connection.ultimo_erro ? (
+                <small className="open-finance-sync-error">{connection.ultimo_erro}</small>
+              ) : null}
             </span>
-            <span className="status-badge active">Conectado</span>
+            <Button
+              disabled={syncingId !== null}
+              onClick={() => void syncConnection(connection)}
+              type="button"
+              variant="secondary"
+            >
+              <RefreshCw aria-hidden="true" className={syncingId === connection.id ? "spin" : ""} size={15} />
+              {syncingId === connection.id ? "Sincronizando..." : "Sincronizar"}
+            </Button>
+            {(externalAccounts[connection.id] ?? []).length > 0 ? (
+              <div className="open-finance-external-accounts">
+                {(externalAccounts[connection.id] ?? []).map((account) => (
+                  <div key={account.id}>
+                    <span><strong>{account.nome}</strong><small>{account.quantidade_transacoes} transações</small></span>
+                    <strong>{account.saldo === null ? "Saldo indisponível" : currency.format(account.saldo)}</strong>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </div>
         ))}
       </div>

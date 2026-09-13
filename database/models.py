@@ -86,6 +86,8 @@ categorias = Table(
     Column("id", Integer, primary_key=True),
     Column("nome", String(120), nullable=False),
     Column("usuario_id", ForeignKey("usuarios.id"), nullable=False),
+    Column("chave_sistema", String(50)),
+    UniqueConstraint("usuario_id", "chave_sistema", name="uq_categorias_usuario_chave_sistema"),
 )
 
 contas = Table(

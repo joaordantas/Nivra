@@ -461,6 +461,13 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
 .open-finance-connection strong { font-size: 0.78rem; }
 .open-finance-connection small, .open-finance-loading, .open-finance-empty { color: var(--text-secondary); font-size: 0.68rem; }
 .open-finance-connection small { margin-top: 2px; }
+.open-finance-sync-error { color: var(--danger); }
+.open-finance-external-accounts { display: grid; grid-column: 2 / -1; gap: 6px; }
+.open-finance-external-accounts > div { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 8px 10px; border-top: 1px solid var(--border); }
+.open-finance-external-accounts span small { display: block; }
+.open-finance-external-accounts > div > strong { color: var(--text-primary); font-size: 0.74rem; white-space: nowrap; }
+.spin { animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 .open-finance-connect-card > #PluggyConnect { width: 0; height: 0; overflow: hidden; }
 .account-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
 .account-card { display: grid; min-height: 175px; grid-template-columns: auto 1fr auto; gap: 16px; padding: 20px; }
@@ -554,6 +561,7 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
 .category-symbol { display: grid; width: 34px; height: 34px; flex: 0 0 34px; place-items: center; border-radius: 9px; background: var(--neutral-soft); color: var(--text-secondary); }
 .row-actions { display: flex; align-items: center; gap: 4px; }
 .row-actions .button { min-height: 34px; padding: 0 11px; font-size: 0.74rem; }
+.category-system-lock { display: grid; width: 34px; height: 34px; place-items: center; color: var(--text-soft); }
 
 .coming-soon-card { display: grid; min-height: 360px; place-items: center; align-content: center; padding: 40px; text-align: center; }
 .coming-soon-card h1, .coming-soon-card h2 { margin: 14px 0 6px; font-size: 1.25rem; }

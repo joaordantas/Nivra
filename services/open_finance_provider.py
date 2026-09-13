@@ -4,14 +4,20 @@ import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import date, datetime
+from decimal import Decimal, InvalidOperation
 from typing import Protocol
 from urllib.error import HTTPError, URLError
+from urllib.parse import parse_qs, quote, urlparse
 from urllib.request import Request, urlopen
+from zoneinfo import ZoneInfo
 
 
 PLUGGY_API_URL = "https://api.pluggy.ai"
 HTTP_TIMEOUT_SECONDS = 15
 API_KEY_CACHE_SECONDS = 110 * 60
+MAX_TRANSACTION_PAGES = 1000
+BRAZIL_TIMEZONE = ZoneInfo("America/Sao_Paulo")
 
 
 class OpenFinanceConfigurationError(RuntimeError):
@@ -36,11 +42,43 @@ class OpenFinanceItem:
     execution_status: str
 
 
+@dataclass(frozen=True)
+class OpenFinanceAccount:
+    id: str
+    name: str
+    type: str
+    subtype: str | None
+    currency_code: str
+    balance: Decimal | None
+
+
+@dataclass(frozen=True)
+class OpenFinanceTransaction:
+    id: str
+    description: str
+    amount: Decimal
+    date: date
+    direction: str
+    status: str
+    category_id: str | None
+    category_name: str | None
+
+
 class OpenFinanceProvider(Protocol):
     def create_connect_token(self, client_user_id: str) -> str:
         ...
 
     def get_item(self, item_id: str) -> OpenFinanceItem:
+        ...
+
+    def list_accounts(self, item_id: str) -> list[OpenFinanceAccount]:
+        ...
+
+    def list_transactions(
+        self,
+        account_id: str,
+        account_type: str,
+    ) -> list[OpenFinanceTransaction]:
         ...
 
 
@@ -86,6 +124,48 @@ def _request_json(
     if not isinstance(body, dict):
         raise OpenFinanceProviderError("A Pluggy retornou uma resposta inesperada.")
     return body
+
+
+def _required_text(value: object, message: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise OpenFinanceProviderError(message)
+    return value.strip()
+
+
+def _optional_text(value: object) -> str | None:
+    return value.strip() if isinstance(value, str) and value.strip() else None
+
+
+def _decimal(value: object, *, required: bool) -> Decimal | None:
+    if value is None and not required:
+        return None
+    try:
+        parsed = Decimal(str(value))
+    except (InvalidOperation, ValueError) as exc:
+        raise OpenFinanceProviderError("A Pluggy retornou um valor financeiro invalido.") from exc
+    if not parsed.is_finite():
+        raise OpenFinanceProviderError("A Pluggy retornou um valor financeiro invalido.")
+    return parsed
+
+
+def _financial_date(value: object) -> date:
+    text_value = _required_text(value, "A Pluggy retornou uma data de transacao invalida.")
+    try:
+        if len(text_value) == 10:
+            return date.fromisoformat(text_value)
+        parsed = datetime.fromisoformat(text_value.replace("Z", "+00:00"))
+        if parsed.tzinfo is not None:
+            parsed = parsed.astimezone(BRAZIL_TIMEZONE)
+        return parsed.date()
+    except ValueError as exc:
+        raise OpenFinanceProviderError("A Pluggy retornou uma data de transacao invalida.") from exc
+
+
+def _results(response: dict, resource: str) -> list[dict]:
+    results = response.get("results")
+    if not isinstance(results, list) or any(not isinstance(item, dict) for item in results):
+        raise OpenFinanceProviderError(f"A Pluggy retornou uma lista de {resource} invalida.")
+    return results
 
 
 class PluggyOpenFinanceProvider:
@@ -185,6 +265,107 @@ class PluggyOpenFinanceProvider:
             institution_name=institution_name.strip(),
             status=status,
             execution_status=execution_status,
+        )
+
+    def list_accounts(self, item_id: str) -> list[OpenFinanceAccount]:
+        response = self._requester(
+            "GET",
+            f"{PLUGGY_API_URL}/accounts?itemId={quote(item_id, safe='')}",
+            {"X-API-KEY": self._get_api_key()},
+            None,
+        )
+        accounts: list[OpenFinanceAccount] = []
+        for raw in _results(response, "contas"):
+            account_id = _required_text(
+                raw.get("id"), "A Pluggy retornou uma conta sem identificador."
+            )
+            account_type = _required_text(
+                raw.get("type"), "A Pluggy retornou uma conta sem tipo."
+            ).upper()
+            accounts.append(
+                OpenFinanceAccount(
+                    id=account_id,
+                    name=_required_text(
+                        raw.get("name") or raw.get("marketingName"),
+                        "A Pluggy retornou uma conta sem nome.",
+                    ),
+                    type=account_type,
+                    subtype=_optional_text(raw.get("subtype")),
+                    currency_code=(_optional_text(raw.get("currencyCode")) or "BRL").upper(),
+                    balance=_decimal(raw.get("balance"), required=False),
+                )
+            )
+        return accounts
+
+    def list_transactions(
+        self,
+        account_id: str,
+        account_type: str,
+    ) -> list[OpenFinanceTransaction]:
+        transactions: list[OpenFinanceTransaction] = []
+        next_cursor: str | None = None
+        seen_cursors: set[str] = set()
+
+        for _ in range(MAX_TRANSACTION_PAGES):
+            url = f"{PLUGGY_API_URL}/v2/transactions?accountId={quote(account_id, safe='')}"
+            if next_cursor is not None:
+                url += f"&after={quote(next_cursor, safe='')}"
+            response = self._requester(
+                "GET",
+                url,
+                {"X-API-KEY": self._get_api_key()},
+                None,
+            )
+            for raw in _results(response, "transacoes"):
+                amount = _decimal(raw.get("amount"), required=True)
+                assert amount is not None
+                raw_type = (_optional_text(raw.get("type")) or "").upper()
+                if raw_type in {"DEBIT", "CREDIT"}:
+                    direction = "saida" if raw_type == "DEBIT" else "entrada"
+                elif account_type.upper() == "CREDIT":
+                    direction = "saida" if amount >= 0 else "entrada"
+                else:
+                    direction = "entrada" if amount >= 0 else "saida"
+                transactions.append(
+                    OpenFinanceTransaction(
+                        id=_required_text(
+                            raw.get("id"),
+                            "A Pluggy retornou uma transacao sem identificador.",
+                        ),
+                        description=_required_text(
+                            raw.get("description"),
+                            "A Pluggy retornou uma transacao sem descricao.",
+                        ),
+                        amount=abs(amount),
+                        date=_financial_date(raw.get("date")),
+                        direction=direction,
+                        status=(_optional_text(raw.get("status")) or "POSTED").upper(),
+                        category_id=_optional_text(raw.get("categoryId")),
+                        category_name=_optional_text(raw.get("category")),
+                    )
+                )
+
+            next_value = response.get("next")
+            if not next_value:
+                return transactions
+            next_text = _required_text(
+                next_value, "A Pluggy retornou um cursor de transacoes invalido."
+            )
+            query = parse_qs(urlparse(next_text).query)
+            cursor_values = query.get("after")
+            if not cursor_values or not cursor_values[0]:
+                raise OpenFinanceProviderError(
+                    "A Pluggy retornou um cursor de transacoes invalido."
+                )
+            next_cursor = cursor_values[0]
+            if next_cursor in seen_cursors:
+                raise OpenFinanceProviderError(
+                    "A Pluggy repetiu um cursor durante a sincronizacao."
+                )
+            seen_cursors.add(next_cursor)
+
+        raise OpenFinanceProviderError(
+            "A sincronizacao excedeu o limite seguro de paginas da Pluggy."
         )
 
 

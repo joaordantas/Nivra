@@ -1,4 +1,4 @@
-import { ArrowLeft, FolderPlus, Pencil, Tags, Trash2, X } from "lucide-react";
+import { ArrowLeft, FolderPlus, LockKeyhole, Pencil, Tags, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { Link } from "react-router-dom";
@@ -107,7 +107,9 @@ export function CategoriesPage() {
                     ) : (
                       <button aria-label={`Editar ${category.nome}`} className="icon-button" onClick={() => { setEditingId(category.id); setEditingName(category.nome); }} type="button"><Pencil size={17} /></button>
                     )}
-                    <button aria-label={`Excluir ${category.nome}`} className="icon-button icon-button-danger" onClick={() => void handleDelete(category.id)} type="button"><Trash2 size={17} /></button>
+                    {category.padrao ? (
+                      <span aria-label={`${category.nome} é uma categoria padrão`} className="category-system-lock" title="Categoria padrão"><LockKeyhole size={16} /></span>
+                    ) : <button aria-label={`Excluir ${category.nome}`} className="icon-button icon-button-danger" onClick={() => void handleDelete(category.id)} type="button"><Trash2 size={17} /></button>}
                   </div>
                 </div>
               ))}

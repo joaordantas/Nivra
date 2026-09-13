@@ -112,20 +112,34 @@ Regra: nenhum secret da Pluggy pode chegar ao frontend.
 
 Status: **CONCLUÍDA E VALIDADA EM PRODUÇÃO NO SANDBOX**
 
+### Etapa 2B.5 — Categorias padrão
+
+- [x] Chaves internas estáveis por categoria padrão
+- [x] Categorias iniciais para usuários existentes e novos usuários
+- [x] Categorias personalizadas preservadas
+- [x] Proteção contra exclusão de categorias padrão
+- [x] Mapper central com fallback `other` para providers futuros
+
+Status: **CONCLUÍDA**
+
 ### Etapa 2C — Sincronização
 
-- [ ] Importar instituições, contas, saldos e transações
-- [ ] Atualizar dados existentes
-- [ ] Sincronização manual
-- [ ] Exibir última sincronização e erros de conexão
+- [x] Importar instituições, contas, saldos e transações
+- [x] Atualizar dados existentes
+- [x] Sincronização manual
+- [x] Exibir última sincronização e erros de conexão
+
+Status: **CONCLUÍDA E VALIDADA LOCALMENTE; ativação no Sandbox de produção pendente**
 
 ### Etapa 2D — Idempotência
 
-- [ ] Unique constraints para IDs externos
-- [ ] Reprocessamento seguro sem duplicar dados
-- [ ] Atualizar registros externos existentes
-- [ ] Tratar exclusões externas
-- [ ] Testes de idempotência
+- [x] Unique constraints para IDs externos
+- [x] Reprocessamento seguro sem duplicar dados
+- [x] Atualizar registros externos existentes
+- [x] Tratar exclusões externas
+- [x] Testes de idempotência
+
+Status: **CONCLUÍDA E VALIDADA LOCALMENTE**
 
 ### Etapa 2E — Webhooks
 
@@ -156,12 +170,12 @@ Status: **CONCLUÍDA E VALIDADA EM PRODUÇÃO NO SANDBOX**
 
 ### Gate Open Finance Sandbox
 
-- [ ] Connect funciona
+- [x] Connect funciona
 - [ ] Conta, saldo e transações externas importados
 - [ ] Re-sync e webhook duplicados não criam dados extras
-- [ ] Isolamento entre usuários validado
-- [ ] Secrets ausentes do frontend
-- [ ] Build e testes passam
+- [x] Isolamento entre usuários validado
+- [x] Secrets ausentes do frontend
+- [x] Build e testes passam
 
 ## 💳 PRIORIDADE 3 — PARCELAMENTOS E RECORRÊNCIAS
 
@@ -276,6 +290,6 @@ Lumi será a assistente financeira inteligente da Nivra. A identidade está defi
 
 ## Próxima tarefa recomendada
 
-**Etapa 2C — importar instituições, contas, saldos e transações do Sandbox.**
+**Etapa 2E — implementar webhooks seguros e idempotentes da Pluggy.**
 
 É a próxima unidade lógica pendente da prioridade atual. A Nivra não avança automaticamente para ela sem uma nova solicitação.

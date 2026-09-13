@@ -10,6 +10,7 @@ export interface User {
 export interface Category {
   id: number;
   nome: string;
+  padrao: boolean;
 }
 
 export interface Transaction {
@@ -48,6 +49,29 @@ export interface OpenFinanceConnection {
   atualizada_em: string;
   ultima_sincronizacao_em: string | null;
   desconectada_em: string | null;
+  ultimo_evento_status: string | null;
+  ultimo_erro: string | null;
+}
+
+export interface OpenFinanceExternalAccount {
+  id: number;
+  nome: string;
+  tipo: string;
+  subtipo: string | null;
+  moeda: string;
+  saldo: number | null;
+  quantidade_transacoes: number;
+}
+
+export interface OpenFinanceSyncResult {
+  conexao_id: number;
+  contas_criadas: number;
+  contas_atualizadas: number;
+  contas_removidas: number;
+  transacoes_criadas: number;
+  transacoes_atualizadas: number;
+  transacoes_removidas: number;
+  transacoes_processadas: number;
 }
 
 export type InvoiceStatus = "aberta" | "fechada" | "paga" | "vencida";

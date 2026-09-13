@@ -1,5 +1,6 @@
 import os
 import unittest
+from decimal import Decimal
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
@@ -87,6 +88,61 @@ class PluggyProviderTests(unittest.TestCase):
         self.assertEqual(calls[1][0], "GET")
         self.assertEqual(calls[1][2], {"X-API-KEY": "server-api-key"})
         self.assertIsNone(calls[1][3])
+
+    def test_provider_lists_accounts_and_cursor_paginated_transactions(self) -> None:
+        calls: list[tuple[str, str, dict[str, str], dict | None]] = []
+
+        def requester(method: str, url: str, headers: dict[str, str], payload: dict | None) -> dict:
+            calls.append((method, url, headers, payload))
+            if url.endswith("/auth"):
+                return {"apiKey": "server-api-key"}
+            if "/accounts?" in url:
+                return {
+                    "results": [{
+                        "id": "account-1",
+                        "name": "Conta Sandbox",
+                        "type": "BANK",
+                        "subtype": "CHECKING_ACCOUNT",
+                        "currencyCode": "BRL",
+                        "balance": 900.45,
+                    }]
+                }
+            if "after=" not in url:
+                return {
+                    "results": [{
+                        "id": "transaction-1",
+                        "description": "Mercado",
+                        "amount": -42.9,
+                        "date": "2026-09-12T02:00:00.000Z",
+                        "type": "DEBIT",
+                        "status": "POSTED",
+                        "category": "Groceries",
+                        "categoryId": "08000000",
+                    }],
+                    "next": "?accountId=account-1&after=next-cursor",
+                }
+            return {
+                "results": [{
+                    "id": "transaction-2",
+                    "description": "Salario",
+                    "amount": 2500,
+                    "date": "2026-09-12T12:00:00.000Z",
+                    "type": "CREDIT",
+                    "status": "POSTED",
+                }]
+            }
+
+        provider = PluggyOpenFinanceProvider("client-id", "client-secret", requester=requester)
+        accounts = provider.list_accounts("item-1")
+        transactions = provider.list_transactions(accounts[0].id, accounts[0].type)
+
+        self.assertEqual(accounts[0].balance, Decimal("900.45"))
+        self.assertEqual(len(transactions), 2)
+        self.assertEqual(transactions[0].amount, Decimal("42.9"))
+        self.assertEqual(transactions[0].direction, "saida")
+        self.assertEqual(transactions[0].date.isoformat(), "2026-09-11")
+        self.assertEqual(transactions[1].direction, "entrada")
+        self.assertTrue(any("after=next-cursor" in call[1] for call in calls))
 
     def test_missing_backend_credentials_fails_clearly(self) -> None:
         with patch.dict(os.environ, {"PLUGGY_CLIENT_ID": "", "PLUGGY_CLIENT_SECRET": ""}):

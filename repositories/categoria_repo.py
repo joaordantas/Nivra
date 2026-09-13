@@ -1,4 +1,5 @@
 from database.connection import get_connection
+from utils.categorias_padrao import DEFAULT_CATEGORIES
 
 
 def criar_categoria(nome: str, usuario_id: int) -> int:
@@ -15,12 +16,24 @@ def criar_categoria(nome: str, usuario_id: int) -> int:
         conn.close()
 
 
+def criar_categorias_padrao(conn, usuario_id: int) -> None:
+    for chave_sistema, nome in DEFAULT_CATEGORIES:
+        conn.execute(
+            """
+            INSERT INTO categorias (nome, usuario_id, chave_sistema)
+            VALUES (?, ?, ?)
+            ON CONFLICT (usuario_id, chave_sistema) DO NOTHING
+            """,
+            (nome, usuario_id, chave_sistema),
+        )
+
+
 def listar_categorias(usuario_id: int) -> list[tuple]:
     conn = get_connection()
     try:
         return conn.execute(
             """
-            SELECT id, nome FROM categorias
+            SELECT id, nome, chave_sistema FROM categorias
             WHERE usuario_id = ?
             ORDER BY LOWER(nome)
             """,
@@ -34,7 +47,7 @@ def buscar_categoria_por_id(categoria_id: int, usuario_id: int) -> tuple | None:
     conn = get_connection()
     try:
         return conn.execute(
-            "SELECT id, nome FROM categorias WHERE id = ? AND usuario_id = ?",
+            "SELECT id, nome, chave_sistema FROM categorias WHERE id = ? AND usuario_id = ?",
             (categoria_id, usuario_id),
         ).fetchone()
     finally:
