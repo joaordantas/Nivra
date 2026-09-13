@@ -7,6 +7,7 @@ import type {
   ClientInstallmentsResponse,
   Invoice,
   InvoiceDetail,
+  OpenFinanceConnection,
   ProfitSummary,
   ReceivableByClient,
   Sale,
@@ -126,6 +127,13 @@ export const api = {
   setPrimaryAccount: (accountId: number) => request<Account>(`/accounts/${accountId}/primary`, { method: "PATCH" }),
   createOpenFinanceConnectToken: () =>
     request<{ connect_token: string; provider: "pluggy"; environment: "sandbox" }>("/open-finance/connect-token", { method: "POST" }),
+  completeOpenFinanceConnection: (itemId: string) =>
+    request<OpenFinanceConnection>("/open-finance/connections/complete", {
+      method: "POST",
+      body: JSON.stringify({ item_id: itemId }),
+    }),
+  getOpenFinanceConnections: () =>
+    request<OpenFinanceConnection[]>("/open-finance/connections"),
 
   getTransfers: () => request<Transfer[]>("/transfers"),
   createTransfer: (payload: { conta_origem_id: number; conta_destino_id: number; valor: number; descricao: string; data: string }) =>

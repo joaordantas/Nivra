@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from backend.main import app
 from services.open_finance_provider import (
     OpenFinanceConfigurationError,
+    OpenFinanceItem,
     PluggyOpenFinanceProvider,
     get_open_finance_provider,
     reset_open_finance_provider,
@@ -25,6 +26,9 @@ class FakeProvider:
         self.client_user_ids.append(client_user_id)
         return self.token
 
+    def get_item(self, item_id: str) -> OpenFinanceItem:
+        raise AssertionError("get_item nao deveria ser chamado neste teste")
+
 
 class PluggyProviderTests(unittest.TestCase):
     def tearDown(self) -> None:
@@ -33,7 +37,7 @@ class PluggyProviderTests(unittest.TestCase):
     def test_provider_authenticates_on_backend_and_reuses_api_key(self) -> None:
         calls: list[tuple[str, str, dict[str, str], dict]] = []
 
-        def requester(method: str, url: str, headers: dict[str, str], payload: dict) -> dict:
+        def requester(method: str, url: str, headers: dict[str, str], payload: dict | None) -> dict:
             calls.append((method, url, headers, payload))
             if url.endswith("/auth"):
                 return {"apiKey": "server-api-key"}
@@ -57,6 +61,32 @@ class PluggyProviderTests(unittest.TestCase):
             calls[1][3],
             {"options": {"clientUserId": "nivra-user-7", "avoidDuplicates": True}},
         )
+
+    def test_provider_retrieves_and_normalizes_item_server_side(self) -> None:
+        item_id = "e2b360bd-0df4-4f73-ae93-66de4d689b86"
+        calls: list[tuple[str, str, dict[str, str], dict | None]] = []
+
+        def requester(method: str, url: str, headers: dict[str, str], payload: dict | None) -> dict:
+            calls.append((method, url, headers, payload))
+            if url.endswith("/auth"):
+                return {"apiKey": "server-api-key"}
+            return {
+                "id": item_id,
+                "clientUserId": "nivra-user-9",
+                "status": "UPDATED",
+                "executionStatus": "SUCCESS",
+                "connector": {"id": 2, "name": "Sandbox PF"},
+            }
+
+        provider = PluggyOpenFinanceProvider("client-id", "client-secret", requester=requester)
+        item = provider.get_item(item_id)
+
+        self.assertEqual(item.client_user_id, "nivra-user-9")
+        self.assertEqual(item.institution_name, "Sandbox PF")
+        self.assertEqual(item.connector_id, 2)
+        self.assertEqual(calls[1][0], "GET")
+        self.assertEqual(calls[1][2], {"X-API-KEY": "server-api-key"})
+        self.assertIsNone(calls[1][3])
 
     def test_missing_backend_credentials_fails_clearly(self) -> None:
         with patch.dict(os.environ, {"PLUGGY_CLIENT_ID": "", "PLUGGY_CLIENT_SECRET": ""}):

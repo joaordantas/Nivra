@@ -7,6 +7,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    JSON,
     MetaData,
     Numeric,
     String,
@@ -18,6 +19,7 @@ from sqlalchemy import (
     false,
     true,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 
 
 metadata = MetaData()
@@ -238,7 +240,91 @@ limites = Table(
 )
 Index("ix_limites_usuario_mes", limites.c.usuario_id, limites.c.mes)
 
+conexoes_bancarias = Table(
+    "conexoes_bancarias", metadata,
+    Column("id", Integer, primary_key=True),
+    Column("usuario_id", ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False),
+    Column("provider", String(30), nullable=False),
+    Column("external_item_id", String(80), nullable=False),
+    Column("client_user_ref", String(120), nullable=False),
+    Column("external_connector_id", Integer),
+    Column("instituicao_nome", String(160), nullable=False),
+    Column("status", String(30), nullable=False),
+    Column("ambiente", String(20), nullable=False, server_default="sandbox"),
+    Column("criada_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    Column("atualizada_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    Column("ultima_sincronizacao_em", DateTime(timezone=True)),
+    Column("desconectada_em", DateTime(timezone=True)),
+    UniqueConstraint("provider", "external_item_id", name="uq_conexoes_provider_item"),
+    CheckConstraint("ambiente IN ('sandbox', 'production')", name="ck_conexoes_ambiente"),
+)
+Index("ix_conexoes_usuario_status", conexoes_bancarias.c.usuario_id, conexoes_bancarias.c.status)
+
+contas_bancarias_externas = Table(
+    "contas_bancarias_externas", metadata,
+    Column("id", Integer, primary_key=True),
+    Column("conexao_id", ForeignKey("conexoes_bancarias.id", ondelete="CASCADE"), nullable=False),
+    Column("external_account_id", String(80), nullable=False),
+    Column("conta_nivra_id", ForeignKey("contas.id", ondelete="SET NULL")),
+    Column("nome", String(160), nullable=False),
+    Column("tipo", String(40), nullable=False),
+    Column("subtipo", String(60)),
+    Column("moeda", String(3), nullable=False, server_default="BRL"),
+    Column("saldo", money),
+    Column("criada_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    Column("atualizada_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    UniqueConstraint("conexao_id", "external_account_id", name="uq_contas_externas_conexao_conta"),
+)
+Index("ix_contas_externas_conexao", contas_bancarias_externas.c.conexao_id)
+Index("ix_contas_externas_conta_nivra", contas_bancarias_externas.c.conta_nivra_id)
+
+transacoes_bancarias = Table(
+    "transacoes_bancarias", metadata,
+    Column("id", Integer, primary_key=True),
+    Column("conta_bancaria_externa_id", ForeignKey("contas_bancarias_externas.id", ondelete="CASCADE"), nullable=False),
+    Column("external_transaction_id", String(80), nullable=False),
+    Column("descricao", Text, nullable=False),
+    Column("valor", money, nullable=False),
+    Column("data", Date, nullable=False),
+    Column("direcao", String(20), nullable=False),
+    Column("status_conciliacao", String(30), nullable=False, server_default="pendente"),
+    Column("transacao_nivra_id", ForeignKey("transacoes.id", ondelete="SET NULL")),
+    Column("metadata_provider", JSON().with_variant(JSONB, "postgresql")),
+    Column("criada_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    Column("atualizada_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    UniqueConstraint(
+        "conta_bancaria_externa_id",
+        "external_transaction_id",
+        name="uq_transacoes_bancarias_conta_transacao",
+    ),
+    CheckConstraint("direcao IN ('entrada', 'saida')", name="ck_transacoes_bancarias_direcao"),
+    CheckConstraint(
+        "status_conciliacao IN ('pendente', 'possivel_correspondencia', 'conciliada', 'ignorada')",
+        name="ck_transacoes_bancarias_conciliacao",
+    ),
+)
+Index("ix_transacoes_bancarias_conta_data", transacoes_bancarias.c.conta_bancaria_externa_id, transacoes_bancarias.c.data)
+Index("ix_transacoes_bancarias_transacao_nivra", transacoes_bancarias.c.transacao_nivra_id)
+
+eventos_sincronizacao = Table(
+    "eventos_sincronizacao", metadata,
+    Column("id", Integer, primary_key=True),
+    Column("conexao_id", ForeignKey("conexoes_bancarias.id", ondelete="CASCADE"), nullable=False),
+    Column("provider_event_id", String(100)),
+    Column("tipo", String(60), nullable=False),
+    Column("origem", String(30), nullable=False),
+    Column("status", String(30), nullable=False),
+    Column("iniciada_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    Column("finalizada_em", DateTime(timezone=True)),
+    Column("quantidade_processada", Integer, nullable=False, server_default="0"),
+    Column("codigo_erro", String(80)),
+    Column("mensagem_erro", Text),
+    CheckConstraint("quantidade_processada >= 0", name="ck_eventos_sync_quantidade"),
+)
+Index("ix_eventos_sync_conexao_inicio", eventos_sincronizacao.c.conexao_id, eventos_sincronizacao.c.iniciada_em)
+
 TABLES_IN_DEPENDENCY_ORDER = [
     usuarios, sessoes, auth_tokens, auth_rate_events, categorias, contas, transacoes, transferencias, cartoes,
-    faturas, compras_cartao, pagamentos_fatura, vendas, parcelas, limites,
+    faturas, compras_cartao, pagamentos_fatura, vendas, parcelas, limites, conexoes_bancarias,
+    contas_bancarias_externas, transacoes_bancarias, eventos_sincronizacao,
 ]

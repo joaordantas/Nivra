@@ -70,6 +70,16 @@ O frontend não envia `usuario_id` nas APIs protegidas. O FastAPI resolve `curre
 
 O histórico e o gerenciamento individual de dispositivos permanecem no roadmap de segurança.
 
+## Open Finance Sandbox
+
+O frontend solicita um Connect Token temporário ao backend e abre o Pluggy Connect. O token é criado com uma referência interna estável no formato `nivra-user-<usuario_id>` e com prevenção de duplicidade habilitada. Credenciais permanentes, API Key e segredos da Pluggy permanecem no backend.
+
+Quando o widget conclui uma conexão, o frontend envia somente o `itemId` para `POST /api/open-finance/connections/complete`. O backend consulta o Item diretamente na Pluggy com a API Key da aplicação, compara o `clientUserId` com o usuário da sessão e somente então grava a referência em `conexoes_bancarias`. A consulta server-side também comprova que o Item está acessível à Application da Nivra.
+
+O PostgreSQL aplica unicidade por provider e Item, e o service rejeita tentativas de reivindicar uma conexão de outro usuário. `GET /api/open-finance/connections` sempre filtra pelo usuário autenticado e restaura o estado após refresh ou novo login.
+
+As tabelas `contas_bancarias_externas`, `transacoes_bancarias` e `eventos_sincronizacao` estão preparadas para a sincronização posterior. Nenhuma conta, saldo ou transação é importada nesta etapa. `metadata_provider` permanece nulo; quando for usado, receberá somente campos explicitamente necessários, nunca credenciais, documentos ou payloads completos.
+
 ## Evolução planejada
 
 As próximas capacidades devem reutilizar services e repositories existentes. Lumi consumirá funções financeiras bem definidas; não terá acesso SQL direto. Notificações serão baseadas em eventos financeiros e canais desacoplados.

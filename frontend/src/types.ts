@@ -38,6 +38,18 @@ export interface Account {
   mais_utilizada: boolean;
 }
 
+export interface OpenFinanceConnection {
+  id: number;
+  provider: "pluggy";
+  instituicao_nome: string;
+  status: string;
+  ambiente: "sandbox" | "production";
+  criada_em: string;
+  atualizada_em: string;
+  ultima_sincronizacao_em: string | null;
+  desconectada_em: string | null;
+}
+
 export type InvoiceStatus = "aberta" | "fechada" | "paga" | "vencida";
 
 export interface Invoice {

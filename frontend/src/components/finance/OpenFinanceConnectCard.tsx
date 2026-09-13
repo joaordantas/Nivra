@@ -1,5 +1,5 @@
-import { Landmark, Link2 } from "lucide-react";
-import { useState } from "react";
+import { CheckCircle2, Landmark, Link2 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { PluggyConnect } from "react-pluggy-connect";
 
 import { useTheme } from "../../app/providers";
@@ -7,6 +7,7 @@ import { api } from "../../services/api";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { Feedback } from "../ui/Feedback";
+import type { OpenFinanceConnection } from "../../types";
 
 
 export function OpenFinanceConnectCard() {
@@ -15,6 +16,23 @@ export function OpenFinanceConnectCard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [connections, setConnections] = useState<OpenFinanceConnection[]>([]);
+  const [loadingConnections, setLoadingConnections] = useState(true);
+
+  const loadConnections = useCallback(async () => {
+    try {
+      setLoadingConnections(true);
+      setConnections(await api.getOpenFinanceConnections());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Não foi possível carregar as conexões bancárias.");
+    } finally {
+      setLoadingConnections(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadConnections();
+  }, [loadConnections]);
 
   async function openConnect() {
     try {
@@ -25,6 +43,22 @@ export function OpenFinanceConnectCard() {
       setConnectToken(response.connect_token);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível iniciar a conexão bancária.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function completeConnection(itemId: string) {
+    setConnectToken(null);
+    setLoading(true);
+    setError("");
+    setMessage("");
+    try {
+      const connection = await api.completeOpenFinanceConnection(itemId);
+      setMessage(`${connection.instituicao_nome} foi vinculada à Nivra. A sincronização ainda não foi realizada.`);
+      await loadConnections();
+    } catch {
+      setError("Banco conectado, mas não foi possível concluir o vínculo com a Nivra.");
     } finally {
       setLoading(false);
     }
@@ -46,6 +80,23 @@ export function OpenFinanceConnectCard() {
       {error ? <div className="open-finance-feedback"><Feedback>{error}</Feedback></div> : null}
       {message ? <div className="open-finance-feedback"><Feedback tone="success">{message}</Feedback></div> : null}
 
+      <div className="open-finance-connections" aria-live="polite">
+        {loadingConnections ? <span className="open-finance-loading">Carregando conexões...</span> : null}
+        {!loadingConnections && connections.length === 0 ? (
+          <span className="open-finance-empty">Nenhum banco Sandbox vinculado à Nivra.</span>
+        ) : null}
+        {connections.map((connection) => (
+          <div className="open-finance-connection" key={connection.id}>
+            <span className="open-finance-connection-icon"><CheckCircle2 aria-hidden="true" size={18} /></span>
+            <span>
+              <strong>{connection.instituicao_nome}</strong>
+              <small>Sincronização: {connection.ultima_sincronizacao_em ? "Realizada" : "Ainda não realizada"}</small>
+            </span>
+            <span className="status-badge active">Conectado</span>
+          </div>
+        ))}
+      </div>
+
       {connectToken ? (
         <PluggyConnect
           allowFullscreen
@@ -62,14 +113,10 @@ export function OpenFinanceConnectCard() {
             setError("Não foi possível carregar o ambiente seguro da Pluggy.");
             setConnectToken(null);
           }}
-          onSuccess={({ item }) => {
-            setMessage(`Conexão Sandbox criada (${item.id}). A sincronização dos dados será implementada na próxima etapa.`);
-            setConnectToken(null);
-          }}
+          onSuccess={({ item }) => completeConnection(item.id)}
           theme={theme}
         />
       ) : null}
     </Card>
   );
 }
-

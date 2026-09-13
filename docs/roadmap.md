@@ -98,17 +98,19 @@ Status: **CONCLUÍDA**
 - [x] Criar abstração de provider
 - [x] Criar endpoint para Connect Token
 - [x] Integrar Pluggy Connect no frontend
-- [ ] Conectar instituição Sandbox
-- [-] Testar fluxo completo — testes automatizados aprovados; validação real pendente
+- [x] Conectar instituição Sandbox
+- [x] Testar fluxo completo em produção com o Sandbox PF
 
 Regra: nenhum secret da Pluggy pode chegar ao frontend.
 
 ### Etapa 2B — Persistência
 
-- [ ] `conexoes_bancarias` com proprietário, provider, item externo, instituição, status e timestamps
-- [ ] `contas_bancarias_externas` com vínculo à conexão e à conta Nivra
-- [ ] `transacoes_bancarias` com identificador externo, valor, data, tipo e estado de conciliação
-- [ ] `eventos_sincronizacao` com início, término, status, erro e quantidade importada
+- [x] `conexoes_bancarias` com proprietário, provider, item externo, instituição, status e timestamps
+- [x] `contas_bancarias_externas` com vínculo à conexão e à conta Nivra
+- [x] `transacoes_bancarias` com identificador externo, valor, data, tipo e estado de conciliação
+- [x] `eventos_sincronizacao` com início, término, status, erro e quantidade importada
+
+Status: **CONCLUÍDA E VALIDADA EM PRODUÇÃO NO SANDBOX**
 
 ### Etapa 2C — Sincronização
 
@@ -274,6 +276,6 @@ Lumi será a assistente financeira inteligente da Nivra. A identidade está defi
 
 ## Próxima tarefa recomendada
 
-**Conectar uma instituição Sandbox e validar o fluxo completo publicado.**
+**Etapa 2C — importar instituições, contas, saldos e transações do Sandbox.**
 
-É o primeiro item pendente da prioridade atual. A Nivra não avança automaticamente para ele sem uma nova solicitação.
+É a próxima unidade lógica pendente da prioridade atual. A Nivra não avança automaticamente para ela sem uma nova solicitação.

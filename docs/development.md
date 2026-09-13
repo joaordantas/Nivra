@@ -28,6 +28,7 @@ APP_PUBLIC_URL=http://127.0.0.1:5173
 EMAIL_PROVIDER=memory
 PLUGGY_CLIENT_ID=<client id da aplicacao sandbox>
 PLUGGY_CLIENT_SECRET=<client secret da aplicacao sandbox>
+OPEN_FINANCE_ENVIRONMENT=sandbox
 ```
 
 Aplique o schema e inicie a API:
@@ -113,6 +114,14 @@ Configure no ambiente desejado:
 - `PLUGGY_CLIENT_SECRET` da aplicação Sandbox.
 
 As credenciais Pluggy ficam somente no backend e nunca usam o prefixo `VITE_`. Consulte o [guia de ativação do Sandbox](open-finance-sandbox-setup.md) antes do teste publicado.
+
+Após publicar a Etapa 2B, aplique a migration `e81f72c4a93b` de forma controlada antes de acessar os novos endpoints:
+
+```bash
+alembic upgrade head
+```
+
+O fluxo de finalização consulta o Item diretamente na Pluggy e persiste apenas sua referência, instituição, status e identificador de conector. Conexão persistida não significa dados sincronizados; a importação de contas, saldos e transações pertence à Etapa 2C.
 
 Em produção, configure `APP_ENV=production`. A Vercel também informa `VERCEL_ENV=production`, usado como proteção adicional para ativar o atributo `Secure` do cookie.
 

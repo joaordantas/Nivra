@@ -3,6 +3,7 @@ import os
 import threading
 import time
 from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Protocol
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -21,18 +22,40 @@ class OpenFinanceProviderError(RuntimeError):
     pass
 
 
+class OpenFinanceItemNotFoundError(OpenFinanceProviderError):
+    pass
+
+
+@dataclass(frozen=True)
+class OpenFinanceItem:
+    id: str
+    client_user_id: str
+    connector_id: int | None
+    institution_name: str
+    status: str
+    execution_status: str
+
+
 class OpenFinanceProvider(Protocol):
     def create_connect_token(self, client_user_id: str) -> str:
         ...
 
+    def get_item(self, item_id: str) -> OpenFinanceItem:
+        ...
 
-JsonRequester = Callable[[str, str, dict[str, str], dict], dict]
+
+JsonRequester = Callable[[str, str, dict[str, str], dict | None], dict]
 
 
-def _request_json(method: str, url: str, headers: dict[str, str], payload: dict) -> dict:
+def _request_json(
+    method: str,
+    url: str,
+    headers: dict[str, str],
+    payload: dict | None,
+) -> dict:
     request = Request(
         url,
-        data=json.dumps(payload).encode("utf-8"),
+        data=json.dumps(payload).encode("utf-8") if payload is not None else None,
         headers={"Content-Type": "application/json", **headers},
         method=method,
     )
@@ -40,6 +63,10 @@ def _request_json(method: str, url: str, headers: dict[str, str], payload: dict)
         with urlopen(request, timeout=HTTP_TIMEOUT_SECONDS) as response:
             body = json.loads(response.read().decode("utf-8"))
     except HTTPError as exc:
+        if exc.code == 404:
+            raise OpenFinanceItemNotFoundError(
+                "A conexao informada nao foi encontrada na Pluggy."
+            ) from exc
         if exc.code in {401, 403}:
             raise OpenFinanceProviderError(
                 "A Pluggy recusou as credenciais configuradas no backend."
@@ -119,6 +146,47 @@ class PluggyOpenFinanceProvider:
             )
         return connect_token
 
+    def get_item(self, item_id: str) -> OpenFinanceItem:
+        response = self._requester(
+            "GET",
+            f"{PLUGGY_API_URL}/items/{item_id}",
+            {"X-API-KEY": self._get_api_key()},
+            None,
+        )
+        connector = response.get("connector")
+        connector_id = connector.get("id") if isinstance(connector, dict) else None
+        institution_name = connector.get("name") if isinstance(connector, dict) else None
+        client_user_id = response.get("clientUserId")
+        status = response.get("status")
+        execution_status = response.get("executionStatus")
+        returned_id = response.get("id")
+
+        if (
+            not isinstance(returned_id, str)
+            or returned_id != item_id
+            or not isinstance(client_user_id, str)
+            or not isinstance(institution_name, str)
+            or not institution_name.strip()
+            or not isinstance(status, str)
+            or not isinstance(execution_status, str)
+        ):
+            raise OpenFinanceProviderError(
+                "A Pluggy retornou dados incompletos para a conexao."
+            )
+        if connector_id is not None and not isinstance(connector_id, int):
+            raise OpenFinanceProviderError(
+                "A Pluggy retornou um identificador de instituicao invalido."
+            )
+
+        return OpenFinanceItem(
+            id=returned_id,
+            client_user_id=client_user_id,
+            connector_id=connector_id,
+            institution_name=institution_name.strip(),
+            status=status,
+            execution_status=execution_status,
+        )
+
 
 _provider: PluggyOpenFinanceProvider | None = None
 _provider_credentials: tuple[str, str] | None = None
@@ -142,4 +210,3 @@ def reset_open_finance_provider() -> None:
     with _provider_lock:
         _provider = None
         _provider_credentials = None
-

@@ -20,12 +20,18 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 - migration para tokens de conta, estado de verificação e eventos de limite;
 - rate limiting persistente nas operações sensíveis de autenticação;
 - testes de expiração, reutilização de token, enumeração de conta e IDOR/BOLA.
+- persistência das conexões Pluggy Sandbox com validação server-side do Item;
+- tabelas preparatórias para contas externas, transações bancárias e eventos de sincronização;
+- listagem isolada das conexões bancárias e restauração do estado após novo login;
+- proteção idempotente contra callbacks repetidos e reivindicação de Item por outro usuário.
+- ativação da persistência Open Finance Sandbox no Neon e publicação do fluxo na Vercel.
 
 ### Changed
 
 - metadados públicos da API padronizados com a identidade Nivra;
 - todas as APIs protegidas passam a obter o usuário da sessão no backend;
 - o frontend deixou de armazenar a identidade autenticada no `localStorage` e de enviar `usuario_id`.
+- a confirmação visual do Pluggy Connect agora ocorre somente depois que o backend valida e persiste a conexão.
 
 ### Security
 
@@ -35,6 +41,7 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 - troca e recuperação de senha revogam sessões anteriores;
 - tokens de conta são persistidos exclusivamente como hashes e não aparecem na URL HTTP;
 - respostas de recuperação não confirmam se um e-mail existe.
+- `itemId` recebido do frontend é validado diretamente na Pluggy e vinculado ao usuário da sessão por `clientUserId`.
 
 ### Planned
 

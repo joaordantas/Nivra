@@ -1,12 +1,23 @@
 from fastapi import APIRouter, HTTPException, status
 
-from backend.dependencies.auth import CurrentUserCsrf
-from backend.schemas.open_finance import ConnectTokenResponse
+from backend.dependencies.auth import CurrentUser, CurrentUserCsrf
+from backend.schemas.open_finance import (
+    ConnectTokenResponse,
+    OpenFinanceConnectionComplete,
+    OpenFinanceConnectionResponse,
+)
 from services.open_finance_provider import (
     OpenFinanceConfigurationError,
+    OpenFinanceItemNotFoundError,
     OpenFinanceProviderError,
 )
-from services.open_finance_service import criar_connect_token_service
+from services.open_finance_service import (
+    OpenFinanceItemStateError,
+    OpenFinanceOwnershipError,
+    concluir_conexao_service,
+    criar_connect_token_service,
+    listar_conexoes_service,
+)
 
 
 router = APIRouter(tags=["open-finance"])
@@ -27,3 +38,48 @@ def create_connect_token(current_user: CurrentUserCsrf) -> ConnectTokenResponse:
             detail=str(exc),
         ) from exc
 
+
+@router.post(
+    "/open-finance/connections/complete",
+    response_model=OpenFinanceConnectionResponse,
+)
+def complete_connection(
+    payload: OpenFinanceConnectionComplete,
+    current_user: CurrentUserCsrf,
+) -> OpenFinanceConnectionResponse:
+    try:
+        connection = concluir_conexao_service(current_user.id, str(payload.item_id))
+        return OpenFinanceConnectionResponse(**connection)
+    except OpenFinanceConfigurationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Open Finance ainda nao foi configurado neste ambiente.",
+        ) from exc
+    except OpenFinanceItemNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Conexao bancaria nao encontrada.",
+        ) from exc
+    except OpenFinanceOwnershipError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Esta conexao bancaria nao pode ser vinculada a esta conta.",
+        ) from exc
+    except OpenFinanceItemStateError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    except OpenFinanceProviderError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=str(exc),
+        ) from exc
+
+
+@router.get(
+    "/open-finance/connections",
+    response_model=list[OpenFinanceConnectionResponse],
+)
+def list_connections(current_user: CurrentUser) -> list[OpenFinanceConnectionResponse]:
+    return [
+        OpenFinanceConnectionResponse(**connection)
+        for connection in listar_conexoes_service(current_user.id)
+    ]

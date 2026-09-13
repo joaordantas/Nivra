@@ -454,6 +454,13 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
 .open-finance-copy h2 { margin: 3px 0 4px; font-size: 0.95rem; }
 .open-finance-copy p { margin: 0; color: var(--text-secondary); font-size: 0.74rem; line-height: 1.55; }
 .open-finance-feedback { grid-column: 2 / -1; }
+.open-finance-connections { display: grid; grid-column: 2 / -1; gap: 8px; }
+.open-finance-connection { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 11px 12px; border: 1px solid var(--border); border-radius: 11px; background: var(--surface-subtle); }
+.open-finance-connection-icon { display: grid; place-items: center; color: var(--positive); }
+.open-finance-connection strong, .open-finance-connection small { display: block; }
+.open-finance-connection strong { font-size: 0.78rem; }
+.open-finance-connection small, .open-finance-loading, .open-finance-empty { color: var(--text-secondary); font-size: 0.68rem; }
+.open-finance-connection small { margin-top: 2px; }
 .open-finance-connect-card > #PluggyConnect { width: 0; height: 0; overflow: hidden; }
 .account-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
 .account-card { display: grid; min-height: 175px; grid-template-columns: auto 1fr auto; gap: 16px; padding: 20px; }
@@ -700,6 +707,7 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
   .open-finance-connect-card { grid-template-columns: auto 1fr; padding: 18px; }
   .open-finance-connect-card > .button { grid-column: 1 / -1; width: 100%; }
   .open-finance-feedback { grid-column: 1 / -1; }
+  .open-finance-connections { grid-column: 1 / -1; }
   .credit-card-panel, .card-form-panel, .invoice-history-panel { padding: 18px; }
   .credit-card-grid { grid-template-columns: 1fr; }
   .invoice-history-panel .card-heading { align-items: stretch; flex-direction: column; }
