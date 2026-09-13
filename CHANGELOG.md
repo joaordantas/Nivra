@@ -34,6 +34,7 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 ### Changed
 
 - metadados públicos da API padronizados com a identidade Nivra;
+- roadmap do Open Finance reorganizado para integrar contas, saldos e histórico ao núcleo antes dos webhooks;
 - todas as APIs protegidas passam a obter o usuário da sessão no backend;
 - o frontend deixou de armazenar a identidade autenticada no `localStorage` e de enviar `usuario_id`.
 - a confirmação visual do Pluggy Connect agora ocorre somente depois que o backend valida e persiste a conexão.

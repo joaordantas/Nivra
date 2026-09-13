@@ -141,6 +141,63 @@ Status: **CONCLUÍDA E VALIDADA EM PRODUÇÃO NO SANDBOX**
 
 Status: **CONCLUÍDA E VALIDADA; RE-SYNC VALIDADO EM PRODUÇÃO NO SANDBOX**
 
+### Etapa 2D.5 — Integração Open Finance com o núcleo
+
+> Tornar os dados sincronizados visíveis e úteis no núcleo financeiro antes de automatizar sua atualização por webhooks.
+
+#### Vínculo de contas
+
+- [ ] Vincular conta externa a uma conta Nivra existente por `conta_nivra_id`
+- [ ] Criar uma conta Nivra a partir de uma conta externa
+- [ ] Exibir e alterar o vínculo com segurança
+- [ ] Impedir vínculos entre usuários diferentes
+- [ ] Identificar a origem bancária da conta sem duplicar a relação existente
+
+#### Saldo bancário
+
+- [ ] Usar o saldo informado pelo provider como saldo atual da conta vinculada
+- [ ] Exibir origem e horário da última sincronização do saldo
+- [ ] Manter o cálculo manual para contas sem vínculo Open Finance
+- [ ] Incluir contas vinculadas no saldo consolidado sem dupla contagem
+
+#### Histórico unificado
+
+- [ ] Unir `transacoes` e `transacoes_bancarias` na camada de consulta
+- [ ] Não copiar cegamente transações externas para `transacoes`
+- [ ] Exibir origem `Manual` ou `Banco`
+- [ ] Preservar busca, filtros, ordenação e isolamento por usuário
+- [ ] Resolver a categoria externa pela chave estável da categoria padrão do usuário
+- [ ] Usar fallback `other` para categorias externas desconhecidas
+
+#### Conciliação básica
+
+- [ ] Detectar candidatos simples por conta, direção, valor e proximidade de data
+- [ ] Marcar possível correspondência entre lançamento manual e bancário
+- [ ] Evitar dupla contagem no histórico e no resumo financeiro
+- [ ] Permitir confirmar ou rejeitar a correspondência
+- [ ] Preservar os dois registros de origem para auditoria
+
+#### Dashboard
+
+- [ ] Considerar saldos bancários das contas vinculadas
+- [ ] Considerar receitas e despesas externas vinculadas
+- [ ] Aplicar a conciliação antes de calcular totais
+- [ ] Exibir atualização e origem dos dados bancários
+- [ ] Validar que transferências internas não alteram receitas ou despesas
+
+#### Gate da Etapa 2D.5
+
+- [ ] Conta externa pode criar ou vincular uma conta Nivra
+- [ ] Saldo bancário aparece uma única vez no saldo consolidado
+- [ ] Transações bancárias aparecem no histórico principal
+- [ ] Categorias padrão são resolvidas pela chave interna
+- [ ] Lançamentos conciliados não são contados duas vezes
+- [ ] Dashboard combina dados manuais e bancários corretamente
+- [ ] Usuário A não acessa vínculos ou dados do usuário B
+- [ ] Testes Python e build React/TypeScript passam
+
+Status: **PENDENTE — PRÓXIMA ETAPA RECOMENDADA**
+
 ### Etapa 2E — Webhooks
 
 - [ ] Endpoint seguro e validação de autenticidade do provider
@@ -161,12 +218,12 @@ Status: **CONCLUÍDA E VALIDADA; RE-SYNC VALIDADO EM PRODUÇÃO NO SANDBOX**
 - [ ] Estado de erro demonstrável
 - [ ] Documentar como testar
 
-### Etapa 2H — Conciliação MVP
+### Etapa 2H — Conciliação avançada
 
-- [ ] Identificar correspondência com lançamento manual
-- [ ] Evitar duplicação e marcar possível correspondência
-- [ ] Mesclar somente após confirmação
-- [ ] Manter histórico da decisão
+- [ ] Melhorar correspondências com descrições normalizadas e regras configuráveis
+- [ ] Tratar correspondências de múltiplos lançamentos e casos ambíguos
+- [ ] Oferecer revisão em lote
+- [ ] Manter histórico completo das decisões
 
 ### Gate Open Finance Sandbox
 
@@ -291,6 +348,6 @@ Lumi será a assistente financeira inteligente da Nivra. A identidade está defi
 
 ## Próxima tarefa recomendada
 
-**Etapa 2E — implementar webhooks seguros e idempotentes da Pluggy.**
+**Etapa 2D.5 — vincular contas externas ao núcleo da Nivra e criar o histórico unificado.**
 
-É a próxima unidade lógica pendente da prioridade atual. A Nivra não avança automaticamente para ela sem uma nova solicitação.
+É a próxima unidade lógica pendente da prioridade atual. Webhooks passam a vir depois dessa integração visível. A Nivra não avança automaticamente sem uma nova solicitação.

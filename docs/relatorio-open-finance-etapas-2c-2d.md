@@ -131,4 +131,18 @@ As credenciais `PLUGGY_CLIENT_ID`, `PLUGGY_CLIENT_SECRET`, `DATABASE_URL` e `DAT
 
 ## Próxima unidade lógica
 
-Etapa 2E — webhooks seguros e idempotentes da Pluggy.
+Etapa 2D.5 — integração Open Finance com o núcleo da Nivra.
+
+A ordem foi revista depois da validação em produção. A sincronização já mantém contas, saldos e transações externas com segurança, mas esses dados ainda ficam separados de `contas`, `transacoes` e do dashboard. Automatizar novas sincronizações por webhook antes de tornar os dados úteis no núcleo teria pouco valor perceptível para testers.
+
+A Etapa 2D.5 deverá:
+
+- usar `contas_bancarias_externas.conta_nivra_id` para criar ou vincular contas;
+- tratar o saldo do provider como fonte atual das contas vinculadas;
+- construir um histórico unificado por consulta, sem copiar cegamente registros externos;
+- resolver categorias pela chave interna criada na Etapa 2B.5;
+- identificar a origem `Manual` ou `Banco`;
+- aplicar uma conciliação básica antes de incluir os dados no dashboard;
+- impedir dupla contagem de saldos e movimentações.
+
+Webhooks passam a ser a Etapa 2E seguinte. A conciliação mais sofisticada permanece na Etapa 2H.
