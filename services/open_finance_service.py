@@ -26,6 +26,9 @@ from services.open_finance_provider import (
     get_open_finance_provider,
 )
 from utils.categorias_padrao import map_provider_category
+from services.open_finance_reconciliation_service import (
+    detectar_candidatos_conciliacao_service,
+)
 
 
 PROVIDER_NAME = "pluggy"
@@ -215,6 +218,7 @@ def sincronizar_conexao_service(
             status_conexao="active",
             contas=snapshot,
         )
+        detectar_candidatos_conciliacao_service(usuario_id, conexao_id)
         return {"conexao_id": conexao_id, **result}
     except OpenFinanceProviderError as exc:
         _registrar_falha_segura(evento_id, usuario_id, "provider_error", str(exc))
@@ -304,6 +308,7 @@ def vincular_conta_externa_service(
             raise OpenFinanceConnectionNotFoundError(
                 "Conta externa ou conta Nivra nao encontrada."
             )
+        detectar_candidatos_conciliacao_service(usuario_id)
     except IntegrityError as exc:
         raise OpenFinanceAccountLinkConflictError(
             "Esta conta Nivra ja esta vinculada a outra conta bancaria."
@@ -334,6 +339,7 @@ def criar_conta_nivra_da_externa_service(
                 str(external_account[3]) if external_account[3] is not None else None
             ),
         )
+        detectar_candidatos_conciliacao_service(usuario_id)
     except IntegrityError as exc:
         raise OpenFinanceAccountLinkConflictError(
             "Ja existe uma conta Nivra com esse nome ou vinculo bancario."

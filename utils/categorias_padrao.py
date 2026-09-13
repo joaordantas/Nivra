@@ -66,6 +66,28 @@ _PLUGGY_EXTERNAL_CATEGORY_NAMES = {
     "donations": "donations",
 }
 
+_PLUGGY_EXTERNAL_CATEGORY_PREFIXES = (
+    (("salary", "retirement", "entrepreneurial_activities", "government_aid", "non_recurring_income"), "income"),
+    (("same_person_transfer", "transfer", "credit_card_payment"), "transfers"),
+    (("automatic_investment", "fixed_income", "mutual_funds", "variable_income", "margin", "proceeds_interests", "pension"), "investments"),
+    (("late_payment", "overdraft", "interests_charged", "loan", "financing"), "loans_financing"),
+    (("rent", "houseware", "urban_land", "utilities", "water", "electricity", "gas"), "housing"),
+    (("groceries", "supermarket"), "groceries"),
+    (("food_and_drinks", "eating_out", "food_delivery", "restaurant"), "food"),
+    (("taxi", "ride_hailing", "public_transportation", "car_rental", "bicycle", "transportation"), "transport"),
+    (("automotive", "gas_stations", "parking", "tolls", "vehicle_"), "vehicle"),
+    (("healthcare", "dentist", "pharmacy", "optometry", "hospital", "clinics", "labs"), "health"),
+    (("education", "online_courses", "university", "school", "kindergarten"), "education"),
+    (("shopping", "online_shopping", "electronics", "clothing", "kids_and_toys", "bookstore", "sports_goods", "office_supplies"), "shopping"),
+    (("services", "telecommunications", "internet", "mobile", "tv", "wellness", "gyms", "digital_services", "gaming", "video_streaming", "music_streaming"), "subscriptions"),
+    (("leisure", "tickets", "stadiums", "landmarks", "cinema", "theater", "concerts", "gambling", "lottery", "online_bet"), "leisure"),
+    (("travel", "airport", "airlines", "accommodation", "mileage_programs", "bus_tickets"), "travel"),
+    (("taxes", "income_taxes", "tax_on_", "bank_fees", "account_fees", "wire_transfer_fees", "atm_fees", "legal_obligations"), "taxes"),
+    (("insurance",), "insurance"),
+    (("pet_supplies", "vet", "pets"), "pets"),
+    (("donations", "alimony"), "donations"),
+)
+
 
 def map_provider_category(
     provider: str,
@@ -81,7 +103,24 @@ def map_provider_category(
     del category_id  # Reservado para mapeamentos de IDs estáveis do provider.
     if provider.strip().lower() != "pluggy" or not category_name:
         return "other"
-    return _PLUGGY_EXTERNAL_CATEGORY_NAMES.get(
-        _normalizar_categoria_externa(category_name),
-        "other",
-    )
+    normalized = _normalizar_categoria_externa(category_name)
+    direct = _PLUGGY_EXTERNAL_CATEGORY_NAMES.get(normalized)
+    if direct is not None:
+        return direct
+    for prefixes, nivra_key in _PLUGGY_EXTERNAL_CATEGORY_PREFIXES:
+        if normalized.startswith(prefixes):
+            return nivra_key
+    return "other"
+
+
+def is_provider_neutral_movement(
+    provider: str,
+    category_id: str | int | None,
+    category_name: str | None,
+) -> bool:
+    """Reconhece movimentos que não representam receita ou despesa nova."""
+    del category_id
+    if provider.strip().lower() != "pluggy" or not category_name:
+        return False
+    normalized = _normalizar_categoria_externa(category_name)
+    return normalized.startswith(("same_person_transfer", "credit_card_payment"))

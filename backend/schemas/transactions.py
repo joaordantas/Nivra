@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -27,9 +28,25 @@ class TransactionListItem(BaseModel):
     data: str
     conta_id: int | None = None
     conta: str = "Sem conta"
+    origem: Literal["manual", "open_finance"] = "manual"
+    editavel: bool = True
+    status_conciliacao: Literal[
+        "pendente", "possivel_correspondencia", "conciliada", "ignorada"
+    ] | None = None
+    transacao_nivra_id: int | None = None
+    conciliada_com_banco: bool = False
+    neutra: bool = False
+    instituicao_nome: str | None = None
+    ultima_sincronizacao_em: datetime | None = None
 
 
 class TransactionSummary(BaseModel):
     entradas: float
     saidas: float
     saldo: float
+
+
+class ReconciliationResponse(BaseModel):
+    transacao_bancaria_id: int
+    transacao_nivra_id: int | None = None
+    status: Literal["conciliada", "rejeitada"]

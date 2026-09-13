@@ -347,6 +347,13 @@ select:focus-visible {
 .transaction-info strong { font-size: 0.84rem; }
 .transaction-info small { color: var(--text-secondary); font-size: 0.72rem; }
 .transaction-row > strong { flex: 0 0 auto; font-size: 0.81rem; }
+.transaction-origin-line { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+.transaction-origin { display: inline-flex; align-items: center; gap: 3px; width: fit-content; padding: 3px 6px; border-radius: 99px; background: var(--neutral-soft); color: var(--text-secondary); font-size: 0.62rem; font-weight: 750; line-height: 1; }
+.transaction-origin.bank, .transaction-origin.reconciled { background: var(--primary-soft); color: var(--primary); }
+.transaction-origin.possible { background: var(--warning-soft); color: var(--warning); }
+.transaction-origin.neutral { background: var(--warning-soft); color: var(--warning); }
+.reconciliation-actions { padding-left: 0; }
+.reconciliation-confirm { color: var(--positive); }
 .amount-income { color: var(--positive); }
 .amount-expense { color: var(--text); }
 

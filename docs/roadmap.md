@@ -162,41 +162,41 @@ Status: **CONCLUÍDA E VALIDADA; RE-SYNC VALIDADO EM PRODUÇÃO NO SANDBOX**
 
 #### Histórico unificado
 
-- [ ] Unir `transacoes` e `transacoes_bancarias` na camada de consulta
-- [ ] Não copiar cegamente transações externas para `transacoes`
-- [ ] Exibir origem `Manual` ou `Banco`
-- [ ] Preservar busca, filtros, ordenação e isolamento por usuário
-- [ ] Resolver a categoria externa pela chave estável da categoria padrão do usuário
-- [ ] Usar fallback `other` para categorias externas desconhecidas
+- [x] Unir `transacoes` e `transacoes_bancarias` na camada de consulta
+- [x] Não copiar cegamente transações externas para `transacoes`
+- [x] Exibir origem `Manual` ou `Banco`
+- [x] Preservar busca, filtros, ordenação e isolamento por usuário
+- [x] Resolver a categoria externa pela chave estável da categoria padrão do usuário
+- [x] Usar fallback `other` para categorias externas desconhecidas
 
 #### Conciliação básica
 
-- [ ] Detectar candidatos simples por conta, direção, valor e proximidade de data
-- [ ] Marcar possível correspondência entre lançamento manual e bancário
-- [ ] Evitar dupla contagem no histórico e no resumo financeiro
-- [ ] Permitir confirmar ou rejeitar a correspondência
-- [ ] Preservar os dois registros de origem para auditoria
+- [x] Detectar candidatos simples por conta, direção, valor e proximidade de data
+- [x] Marcar possível correspondência entre lançamento manual e bancário
+- [x] Evitar dupla contagem no histórico e no resumo financeiro
+- [x] Permitir confirmar ou rejeitar a correspondência
+- [x] Preservar os dois registros de origem para auditoria
 
 #### Dashboard
 
 - [x] Considerar saldos bancários das contas vinculadas
-- [ ] Considerar receitas e despesas externas vinculadas
-- [ ] Aplicar a conciliação antes de calcular totais
-- [ ] Exibir atualização e origem dos dados bancários
-- [ ] Validar que transferências internas não alteram receitas ou despesas
+- [x] Considerar receitas e despesas externas vinculadas
+- [x] Aplicar a conciliação antes de calcular totais
+- [x] Exibir atualização e origem dos dados bancários
+- [x] Validar que transferências internas não alteram receitas ou despesas
 
 #### Gate da Etapa 2D.5
 
 - [x] Conta externa pode criar ou vincular uma conta Nivra
 - [x] Saldo bancário aparece uma única vez no saldo consolidado
-- [ ] Transações bancárias aparecem no histórico principal
-- [ ] Categorias padrão são resolvidas pela chave interna
-- [ ] Lançamentos conciliados não são contados duas vezes
-- [ ] Dashboard combina dados manuais e bancários corretamente
+- [x] Transações bancárias aparecem no histórico principal
+- [x] Categorias padrão são resolvidas pela chave interna
+- [x] Lançamentos conciliados não são contados duas vezes
+- [x] Dashboard combina dados manuais e bancários corretamente
 - [x] Usuário A não acessa vínculos ou dados do usuário B
 - [x] Testes Python e build React/TypeScript passam
 
-Status: **EM ANDAMENTO — VÍNCULO E SALDO CONCLUÍDOS**
+Status: **CONCLUÍDA E VALIDADA LOCALMENTE; ATIVAÇÃO DA MIGRATION/DEPLOY PENDENTE**
 
 ### Etapa 2E — Webhooks
 
@@ -348,6 +348,6 @@ Lumi será a assistente financeira inteligente da Nivra. A identidade está defi
 
 ## Próxima tarefa recomendada
 
-**Etapa 2D.5 — criar o histórico unificado de transações manuais e bancárias.**
+**Etapa 2E — Webhooks.**
 
-O vínculo de contas e o uso do saldo bancário já estão implementados e validados localmente. A próxima unidade deve exibir as transações sincronizadas no histórico principal, preservar busca e filtros e preparar a conciliação básica antes dos totais. Webhooks continuam depois dessa integração visível. A Nivra não avança automaticamente sem uma nova solicitação.
+A integração visível com o núcleo está concluída localmente: vínculo, saldo bancário, histórico unificado, categorias estáveis, conciliação básica e totais do dashboard. A próxima unidade lógica é receber eventos autenticados do provider, com retry e idempotência. A Nivra não inicia essa etapa sem uma nova solicitação.

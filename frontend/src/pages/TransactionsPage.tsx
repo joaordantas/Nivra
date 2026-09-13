@@ -1,4 +1,4 @@
-import { ArrowDownLeft, ArrowRightLeft, ArrowUpRight, FilterX, Pencil, ReceiptText, Search, Trash2 } from "lucide-react";
+import { ArrowDownLeft, ArrowRightLeft, ArrowUpRight, Check, FilterX, Landmark, Pencil, ReceiptText, Search, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
@@ -14,7 +14,7 @@ import type { Account, Category, MovementFormValues, MovementType, Transaction, 
 import { formatCurrency, formatDate } from "../utils/formatters";
 
 type Movement =
-  | { kind: "transaction"; id: number; tipo: "entrada" | "saida"; valor: number; descricao: string; data: string; categoriaId: number | null; categoria: string; contaId: number | null; conta: string }
+  | { kind: "transaction"; id: number; tipo: "entrada" | "saida"; valor: number; descricao: string; data: string; categoriaId: number | null; categoria: string; contaId: number | null; conta: string; origem: "manual" | "open_finance"; editavel: boolean; statusConciliacao: Transaction["status_conciliacao"]; conciliadaComBanco: boolean; neutra: boolean; instituicaoNome: string | null }
   | { kind: "transfer"; id: number; tipo: "transferencia"; valor: number; descricao: string; data: string; contaOrigemId: number; contaOrigem: string; contaDestinoId: number; contaDestino: string };
 
 type TypeFilter = "todos" | MovementType;
@@ -92,6 +92,12 @@ export function TransactionsPage() {
       categoria: transaction.categoria,
       contaId: transaction.conta_id,
       conta: transaction.conta,
+      origem: transaction.origem,
+      editavel: transaction.editavel,
+      statusConciliacao: transaction.status_conciliacao,
+      conciliadaComBanco: transaction.conciliada_com_banco,
+      neutra: transaction.neutra,
+      instituicaoNome: transaction.instituicao_nome,
     })),
     ...transfers.map((transfer): Movement => ({
       kind: "transfer",
@@ -126,6 +132,7 @@ export function TransactionsPage() {
   }, [accountFilter, categoryFilter, endDate, movements, search, startDate, typeFilter]);
 
   const summary = useMemo(() => filteredMovements.reduce((result, movement) => {
+    if (movement.kind === "transaction" && movement.neutra) return result;
     if (movement.tipo === "entrada") result.entradas += movement.valor;
     if (movement.tipo === "saida") result.saidas += movement.valor;
     result.saldo = result.entradas - result.saidas;
@@ -227,6 +234,22 @@ export function TransactionsPage() {
     }
   }
 
+  async function reconcileBankTransaction(movement: Extract<Movement, { kind: "transaction" }>, confirm: boolean) {
+    try {
+      setSaving(true);
+      setError("");
+      if (confirm) await api.confirmBankReconciliation(movement.id);
+      else await api.rejectBankReconciliation(movement.id);
+      setMessage(confirm ? "Correspondência confirmada. O lançamento será contado uma única vez." : "Correspondência rejeitada. Os dois lançamentos foram mantidos.");
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Não foi possível atualizar a conciliação.");
+      setMessage("");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   function clearFilters() {
     setSearch("");
     setTypeFilter("todos");
@@ -278,11 +301,11 @@ export function TransactionsPage() {
                 const isIncome = movement.tipo === "entrada";
                 const isTransfer = movement.kind === "transfer";
                 return (
-                  <div className="transaction-row transaction-row-actions" key={`${movement.kind}-${movement.id}`}>
+                  <div className="transaction-row transaction-row-actions" key={`${movement.kind}-${movement.kind === "transaction" ? movement.origem : "manual"}-${movement.id}`}>
                     <span className={`transaction-icon ${isTransfer ? "transfer" : isIncome ? "income" : "expense"}`}>{isTransfer ? <ArrowRightLeft size={18} /> : isIncome ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />}</span>
-                    <span className="transaction-info"><strong>{movement.descricao || (isTransfer ? "Transferência" : isIncome ? "Receita" : "Despesa")}</strong><small>{isTransfer ? `${movement.contaOrigem} → ${movement.contaDestino}` : `${movement.categoria || "Sem categoria"} · ${movement.conta}`} · {formatDate(movement.data)}</small></span>
+                    <span className="transaction-info"><strong>{movement.descricao || (isTransfer ? "Transferência" : isIncome ? "Receita" : "Despesa")}</strong><small>{isTransfer ? `${movement.contaOrigem} → ${movement.contaDestino}` : `${movement.categoria || "Sem categoria"} · ${movement.conta}`} · {formatDate(movement.data)}</small>{movement.kind === "transaction" ? <span className="transaction-origin-line"><span className={`transaction-origin ${movement.conciliadaComBanco ? "reconciled" : movement.origem === "open_finance" ? "bank" : "manual"}`}>{movement.conciliadaComBanco ? <><Check size={12} />Manual + Banco</> : movement.origem === "open_finance" ? <><Landmark size={12} />Banco</> : "Manual"}</span>{movement.statusConciliacao === "possivel_correspondencia" ? <span className="transaction-origin possible">Possível duplicação</span> : null}{movement.neutra ? <span className="transaction-origin neutral">Transferência interna</span> : null}{movement.instituicaoNome ? <small>{movement.instituicaoNome}</small> : null}</span> : null}</span>
                     <strong className={isIncome ? "amount-income" : isTransfer ? "" : "amount-expense"}>{isIncome ? "+" : isTransfer ? "" : "−"} {formatCurrency(movement.valor)}</strong>
-                    <span className="movement-actions"><button aria-label={`Editar ${movement.descricao || "movimentação"}`} className="icon-button" onClick={() => setEditing(movement)} type="button"><Pencil size={15} /></button><button aria-label={`Excluir ${movement.descricao || "movimentação"}`} className="icon-button danger-icon-button" onClick={() => void deleteMovement(movement)} type="button"><Trash2 size={15} /></button></span>
+                    {movement.kind === "transfer" || movement.editavel ? <span className="movement-actions"><button aria-label={`Editar ${movement.descricao || "movimentação"}`} className="icon-button" onClick={() => setEditing(movement)} type="button"><Pencil size={15} /></button><button aria-label={`Excluir ${movement.descricao || "movimentação"}`} className="icon-button danger-icon-button" onClick={() => void deleteMovement(movement)} type="button"><Trash2 size={15} /></button></span> : movement.statusConciliacao === "possivel_correspondencia" ? <span className="movement-actions reconciliation-actions"><button aria-label={`Confirmar correspondência de ${movement.descricao}`} className="icon-button reconciliation-confirm" disabled={saving} onClick={() => void reconcileBankTransaction(movement, true)} title="Confirmar correspondência" type="button"><Check size={15} /></button><button aria-label={`Rejeitar correspondência de ${movement.descricao}`} className="icon-button danger-icon-button" disabled={saving} onClick={() => void reconcileBankTransaction(movement, false)} title="Não corresponde" type="button"><X size={15} /></button></span> : null}
                   </div>
                 );
               })}

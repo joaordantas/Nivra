@@ -300,6 +300,10 @@ transacoes_bancarias = Table(
         "external_transaction_id",
         name="uq_transacoes_bancarias_conta_transacao",
     ),
+    UniqueConstraint(
+        "transacao_nivra_id",
+        name="uq_transacoes_bancarias_transacao_nivra",
+    ),
     CheckConstraint("direcao IN ('entrada', 'saida')", name="ck_transacoes_bancarias_direcao"),
     CheckConstraint(
         "status_conciliacao IN ('pendente', 'possivel_correspondencia', 'conciliada', 'ignorada')",

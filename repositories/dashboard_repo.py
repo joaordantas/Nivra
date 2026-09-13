@@ -1,33 +1,6 @@
 from database.connection import get_connection
 
 
-def lucro_por_periodo(data_inicio: str, data_fim: str, usuario_id: int) -> dict:
-    conn = get_connection()
-    try:
-        transacoes = conn.execute("""
-            SELECT tipo, SUM(valor)
-            FROM transacoes
-            WHERE usuario_id = ?
-                AND data BETWEEN ? AND ?
-            GROUP BY tipo
-        """, (usuario_id, data_inicio, data_fim)).fetchall()
-
-        resultado = {"entrada": 0.0, "saida": 0.0}
-        for tipo, total in transacoes:
-            resultado[tipo] = float(total or 0)
-
-        compras_cartao = conn.execute("""
-            SELECT COALESCE(SUM(valor), 0)
-            FROM compras_cartao
-            WHERE usuario_id = ? AND data BETWEEN ? AND ?
-        """, (usuario_id, data_inicio, data_fim)).fetchone()
-        resultado["saida"] += float(compras_cartao[0] if compras_cartao else 0)
-        resultado["lucro"] = resultado["entrada"] - resultado["saida"]
-        return resultado
-    finally:
-        conn.close()
-
-
 def total_a_receber(usuario_id: int) -> float:
     conn = get_connection()
     try:

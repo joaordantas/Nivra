@@ -1,12 +1,17 @@
 from repositories.dashboard_repo import (
     a_receber_por_cliente,
-    lucro_por_periodo,
     total_a_receber,
 )
+from services.transacao_service import obter_resumo_financeiro
 
 
 def obter_lucro_por_periodo(data_inicio: str, data_fim: str, usuario_id: int) -> dict:
-    return lucro_por_periodo(data_inicio, data_fim, usuario_id)
+    resumo = obter_resumo_financeiro(usuario_id, data_inicio, data_fim)
+    return {
+        "entrada": resumo["entradas"],
+        "saida": resumo["saidas"],
+        "lucro": resumo["saldo"],
+    }
 
 
 def obter_total_a_receber(usuario_id: int) -> float:

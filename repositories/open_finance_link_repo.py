@@ -42,6 +42,32 @@ def vincular_conta_externa(
     conn = get_connection()
     try:
         conn.lock_row("contas_bancarias_externas", "id", conta_externa_id)
+        current_link = conn.execute(
+            """
+            SELECT ce.conta_nivra_id
+            FROM contas_bancarias_externas ce
+            JOIN conexoes_bancarias cb ON cb.id = ce.conexao_id
+            WHERE ce.id = ? AND cb.usuario_id = ? AND cb.desconectada_em IS NULL
+            """,
+            (conta_externa_id, usuario_id),
+        ).fetchone()
+        if current_link is None:
+            conn.rollback()
+            return False
+        if current_link[0] is not None and int(current_link[0]) != conta_nivra_id:
+            conn.execute(
+                """
+                UPDATE transacoes_bancarias
+                SET status_conciliacao = 'pendente',
+                    transacao_nivra_id = NULL,
+                    atualizada_em = CURRENT_TIMESTAMP
+                WHERE conta_bancaria_externa_id = ?
+                  AND status_conciliacao IN (
+                      'possivel_correspondencia', 'conciliada'
+                  )
+                """,
+                (conta_externa_id,),
+            )
         result = conn.execute(
             """
             UPDATE contas_bancarias_externas

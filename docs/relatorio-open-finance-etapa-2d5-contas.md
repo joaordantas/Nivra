@@ -1,112 +1,115 @@
-# Relatório — Open Finance 2D.5: vínculo de contas e saldo bancário
+# Relatório — Open Finance 2D.5: integração com o núcleo
 
 Data: 13 de setembro de 2026  
-Status: implementado e validado localmente; ativação no Neon/Vercel pendente
+Status: concluída e validada localmente; migration final e deploy pendentes
 
 ## Escopo concluído
 
-Esta atualização conclui a primeira unidade lógica da Etapa 2D.5. Uma conta bancária externa sincronizada pode ser vinculada a uma conta Nivra existente ou originar uma nova conta Nivra. Depois do vínculo, o saldo informado pelo provider passa a ser o saldo atual apresentado pela Nivra.
+A Etapa 2D.5 integra ao núcleo da Nivra os dados bancários que as Etapas 2C e 2D já sincronizam. Contas externas podem criar ou ser vinculadas a contas Nivra, o saldo informado pelo provider passa a ser a fonte do saldo atual e as transações bancárias vinculadas aparecem no histórico e nos totais financeiros.
 
-O histórico principal, as receitas e despesas externas, a categorização bancária e a conciliação ainda não fazem parte desta entrega.
+Os registros externos continuam em `contas_bancarias_externas` e `transacoes_bancarias`. A consulta combina dados manuais e bancários sem copiar transações para `transacoes`.
 
-## Modelagem e migration
+## Vínculo de contas e saldo
 
-A relação já existente `contas_bancarias_externas.conta_nivra_id` continua sendo a única fonte do vínculo. Não foi criada uma segunda tabela nem um campo de origem duplicado.
+- contas externas `BANK` em BRL podem criar ou vincular uma conta Nivra;
+- cartões externos permanecem fora do núcleo de contas e aguardam integração própria;
+- uma conta Nivra não pode ser vinculada a duas contas externas;
+- criação da conta e vínculo são atômicos;
+- o vínculo só pode usar recursos do usuário autenticado;
+- o saldo sincronizado é a fonte do saldo atual da conta vinculada;
+- contas sem vínculo preservam o cálculo manual;
+- origem, instituição e horário da última sincronização aparecem na interface.
 
-A migration `f4a7c2d9e510` adiciona a constraint única `uq_contas_externas_conta_nivra`. Ela garante que uma conta Nivra não possa ser vinculada simultaneamente a duas contas externas. Como o campo é anulável, contas externas ainda não vinculadas continuam válidas.
+## Histórico unificado
 
-O vínculo usa bloqueio de linha no PostgreSQL e a criação de conta mais vínculo ocorre em uma única transação. Se qualquer parte falhar, toda a operação sofre rollback.
+A listagem principal reúne:
 
-## Regras aplicadas
+- lançamentos de `transacoes`;
+- transações bancárias de contas externas vinculadas;
+- origem `Manual`, `Banco` ou `Manual + Banco`;
+- categoria resolvida pela `chave_sistema` da categoria padrão pertencente ao usuário;
+- fallback `other` para categorias externas desconhecidas;
+- busca, filtros, ordenação e isolamento por usuário.
 
-- apenas contas externas do tipo bancário (`BANK`) e em BRL podem ser vinculadas ao núcleo de contas;
-- cartões externos não são convertidos em contas financeiras;
-- a conta Nivra de destino deve pertencer ao usuário autenticado e estar ativa;
-- outra conta externa não pode ocupar a mesma conta Nivra;
-- o usuário pode trocar o vínculo para outra conta própria disponível;
-- uma conta criada a partir do banco recebe saldo inicial zero e usa o saldo sincronizado como saldo atual;
-- contas manuais continuam calculando saldo inicial mais movimentações manuais;
-- quando o provider não informa saldo, a conta vinculada mantém o cálculo manual como fallback;
-- a sincronização atualiza o saldo externo sem remover o vínculo.
+Transações bancárias são somente leitura na Nivra. Editar ou excluir uma transação manual conciliada desfaz a associação para impedir uma deduplicação incorreta.
 
-## API
+## Conciliação básica
 
-Foram adicionadas duas operações protegidas por sessão e CSRF:
+O detector determinístico considera:
 
-- `PATCH /api/open-finance/external-accounts/{id}/link`: vincula a uma conta Nivra existente;
-- `POST /api/open-finance/external-accounts/{id}/nivra-account`: cria e vincula uma conta Nivra na mesma transação.
+- a mesma conta Nivra vinculada;
+- a mesma direção financeira;
+- o mesmo valor monetário com duas casas decimais;
+- diferença máxima de dois dias;
+- correspondência única e sem ambiguidade.
 
-A listagem de contas externas agora informa o vínculo atual e se aquela conta pode ser vinculada. A listagem comum de contas informa origem, instituição, conta externa e horário da última sincronização.
+Um candidato permanece contado e visível até o usuário confirmar. Na confirmação, os dois registros originais são preservados, o histórico exibe um único lançamento como `Manual + Banco` e os totais deixam de contar a duplicação. Na rejeição, os registros continuam separados e a decisão sobrevive a novas sincronizações.
 
-## Interface
+A constraint `uq_transacoes_bancarias_transacao_nivra` impede que a mesma transação manual seja conciliada com mais de uma transação bancária.
 
-Na seção Open Finance da página Contas, cada conta bancária sincronizada permite:
+## Transferências e cartão
 
-- escolher uma conta Nivra disponível;
-- salvar ou alterar o vínculo;
-- criar uma nova conta Nivra;
-- visualizar qual conta já está vinculada.
+- transferências manuais permanecem neutras;
+- pares bancários entre contas próprias, com valor oposto e datas próximas, são tratados como transferência interna neutra;
+- categorias bancárias de transferência para a mesma pessoa também são neutras;
+- pagamentos de cartão são neutros para não registrar novamente a despesa já representada pelas compras do cartão.
 
-As contas vinculadas recebem o indicador discreto `Banco`, exibem a instituição e a última sincronização. A edição visual do saldo inicial fica desabilitada porque o saldo atual vem do provider. Cartões sincronizados mostram que sua integração ocorrerá na área própria de cartões.
+## Dashboard
 
-## Efeito no dashboard
+O dashboard usa o mesmo resumo central do histórico unificado. Ele combina receitas e despesas manuais com transações bancárias de contas vinculadas, depois aplica conciliação e neutralidade de transferências. O saldo consolidado continua usando o saldo do provider para contas vinculadas e o cálculo manual para as demais.
 
-O dashboard já soma a resposta de `/api/accounts`. Por isso, o saldo de uma conta bancária vinculada entra automaticamente no saldo consolidado uma única vez. Uma conta Nivra sem vínculo continua usando o saldo manual.
+## API e interface
 
-Entradas, gastos, economia e movimentações recentes continuam baseados em `transacoes`. As transações de `transacoes_bancarias` ainda não entram nesses valores.
+Além das operações de vínculo, foram adicionadas operações protegidas por sessão e CSRF para confirmar ou rejeitar uma possível correspondência bancária. A página Transações mostra a origem de cada lançamento e oferece essas ações somente nos candidatos pertencentes ao usuário autenticado.
 
-## Validações realizadas
+## Migrations
 
-- compilação dos módulos Python: aprovada;
-- testes específicos de persistência e sincronização Open Finance: 15 aprovados;
-- suíte Python completa: 80 testes aprovados;
-- frontend React/TypeScript: build aprovado;
-- upgrade completo em banco descartável até `f4a7c2d9e510`: aprovado;
-- `alembic current`: `f4a7c2d9e510 (head)` no banco descartável;
-- `alembic check`: nenhuma nova operação de upgrade detectada;
-- verificação de isolamento: usuário B não acessa nem vincula conta externa do usuário A;
-- verificação de CSRF: operação sem token é recusada;
-- verificação de idempotência e conflito: o mesmo destino não pode ser usado por duas contas externas;
-- re-sync: atualiza o saldo e preserva o vínculo.
+- `f4a7c2d9e510`: unicidade do vínculo entre conta externa e conta Nivra;
+- `8d2f6a4c1b70`: unicidade da conciliação entre transação bancária e transação manual.
 
-## Ativação manual no Neon e na Vercel
-
-Antes de publicar o código, aplicar a migration no Neon principal usando a conexão sem pool já configurada:
+A migration final deve ser aplicada no Neon antes do deploy do código desta etapa:
 
 ```powershell
 alembic upgrade head
 alembic current
 ```
 
-O resultado esperado de `alembic current` é:
+O resultado esperado é `8d2f6a4c1b70 (head)`.
 
-```text
-f4a7c2d9e510 (head)
-```
+## Validação
 
-Depois disso, o commit pode ser enviado ao GitHub para disparar o deploy na Vercel. Nenhuma credencial deve ser incluída nos comandos registrados, na documentação ou no repositório.
+Foram cobertos:
 
-## Verificação recomendada em produção
+- histórico bancário vinculado e categoria padrão renomeada sem perda da chave;
+- fallback para `Outros`;
+- sugestão, confirmação e rejeição de conciliação;
+- ausência de dupla contagem após confirmação;
+- persistência das decisões após re-sync;
+- isolamento entre usuários e proteção CSRF;
+- transferências bancárias internas neutras;
+- pagamento de cartão neutro;
+- vínculo, saldo, sincronização e idempotência já existentes.
 
-1. entrar com uma conta de teste;
-2. sincronizar a conexão Sandbox;
-3. vincular a conta corrente externa a uma conta Nivra existente;
-4. confirmar o indicador `Banco`, o saldo e a última sincronização;
-5. conferir que o saldo consolidado e o saldo do dashboard incluem o valor uma única vez;
-6. trocar o vínculo para outra conta própria e confirmar que a anterior volta ao cálculo manual;
-7. executar nova sincronização e confirmar que saldo e horário mudam sem perder o vínculo;
-8. confirmar que o cartão externo não oferece criação de conta financeira.
+Resultados finais:
+
+- compilação dos módulos Python: aprovada;
+- suíte Python completa: 83 testes aprovados;
+- frontend React/TypeScript: build de produção aprovado;
+- migrations aplicadas do zero em banco descartável até `8d2f6a4c1b70`;
+- `alembic current`: `8d2f6a4c1b70 (head)` no banco descartável;
+- `alembic check`: nenhuma operação de upgrade pendente;
+- verificação de diferenças do Git: nenhum erro de whitespace.
 
 ## Limitações conhecidas
 
-- o histórico principal ainda não exibe transações bancárias;
-- os totais de entradas e gastos ainda usam somente transações manuais;
-- transações manuais ainda podem ser cadastradas em uma conta vinculada, mas não alteram o saldo bancário exibido;
-- a conciliação entre lançamentos manuais e bancários ainda não foi implementada;
-- a migration ainda precisa ser aplicada no Neon principal antes do deploy desta versão.
+- cartões externos ainda não entram no histórico financeiro principal;
+- a conciliação atual atende somente pares simples e não ambíguos;
+- revisão em lote, regras configuráveis e casos de múltiplos lançamentos permanecem na Etapa 2H;
+- atualização automática depende da futura Etapa 2E — Webhooks;
+- a migration `8d2f6a4c1b70` e o deploy ainda precisam ser ativados no Neon/Vercel.
 
 ## Próxima tarefa recomendada
 
-**Etapa 2D.5 — histórico unificado de transações manuais e bancárias.**
+**Etapa 2E — Webhooks.**
 
-Essa unidade deve preservar busca, filtros, ordenação e isolamento, indicar a origem `Manual` ou `Banco`, resolver categorias pela chave estável e preparar a conciliação básica. A Etapa 2E — Webhooks permanece posterior à conclusão da integração visível com o núcleo.
+A próxima etapa deve receber eventos autenticados do provider, manter idempotência e implementar retry e logs estruturados. Ela não faz parte desta entrega.

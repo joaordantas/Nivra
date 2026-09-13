@@ -10,7 +10,11 @@ from database.migrations import get_alembic_config, upgrade_database
 from services.categoria_service import criar_categoria_service, renomear_categoria_service
 from tests.auth_support import csrf_headers, register_client
 from tests.db_support import remove_test_database, reset_test_database
-from utils.categorias_padrao import DEFAULT_CATEGORIES, map_provider_category
+from utils.categorias_padrao import (
+    DEFAULT_CATEGORIES,
+    is_provider_neutral_movement,
+    map_provider_category,
+)
 
 
 class StandardCategoryTests(unittest.TestCase):
@@ -96,8 +100,23 @@ class StandardCategoryTests(unittest.TestCase):
 
     def test_mapper_uses_provider_data_and_unknown_category_falls_back_to_other(self) -> None:
         self.assertEqual(map_provider_category("pluggy", 123, "Groceries"), "groceries")
+        self.assertEqual(map_provider_category("pluggy", 123, "Food delivery"), "food")
+        self.assertEqual(map_provider_category("pluggy", 123, "Transfer - PIX"), "transfers")
         self.assertEqual(map_provider_category("pluggy", 456, "Categoria desconhecida"), "other")
         self.assertEqual(map_provider_category("outro-provider", None, "Groceries"), "other")
+        self.assertTrue(
+            is_provider_neutral_movement(
+                "pluggy", "05000000", "Same person transfer - PIX"
+            )
+        )
+        self.assertTrue(
+            is_provider_neutral_movement(
+                "pluggy", None, "Credit card payment"
+            )
+        )
+        self.assertFalse(
+            is_provider_neutral_movement("pluggy", None, "Transfer - PIX")
+        )
 
 
 class StandardCategoryMigrationTests(unittest.TestCase):

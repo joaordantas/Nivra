@@ -57,6 +57,12 @@ export function DashboardPage() {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
   const totalBalance = accounts?.reduce((total, account) => total + account.saldo_atual, 0) ?? 0;
+  const bankAccounts = accounts?.filter((account) => account.origem === "open_finance") ?? [];
+  const bankSyncDates = bankAccounts
+    .map((account) => account.ultima_sincronizacao_em)
+    .filter((value): value is string => Boolean(value))
+    .sort();
+  const latestBankSync = bankSyncDates[bankSyncDates.length - 1];
   let attentionTitle = "Resumo parcialmente indisponível";
   let attentionDescription = "Os dados que foram carregados continuam disponíveis enquanto tentamos recuperar o restante.";
   if (profit !== null && transactions !== null) {
@@ -87,7 +93,7 @@ export function DashboardPage() {
         <div>
           <span className="card-label">Saldo registrado</span>
           {loading ? <span className="skeleton skeleton-value" /> : <strong>{accounts === null ? "—" : formatCurrency(totalBalance)}</strong>}
-          <small>{accounts === null ? "Não foi possível carregar este valor." : accounts.length ? `Somado entre ${accounts.length} ${accounts.length === 1 ? "conta" : "contas"}` : "Adicione suas contas para acompanhar o patrimônio disponível"}</small>
+          <small>{accounts === null ? "Não foi possível carregar este valor." : accounts.length ? `Somado entre ${accounts.length} ${accounts.length === 1 ? "conta" : "contas"}${bankAccounts.length ? ` · ${bankAccounts.length} ${bankAccounts.length === 1 ? "saldo bancário" : "saldos bancários"}${latestBankSync ? ` atualizados em ${new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(latestBankSync))}` : ""}` : ""}` : "Adicione suas contas para acompanhar o patrimônio disponível"}</small>
         </div>
         <span className="balance-icon"><CircleDollarSign aria-hidden="true" size={26} /></span>
       </Card>
@@ -155,13 +161,14 @@ export function DashboardPage() {
               {transactions.map((transaction) => {
                 const isIncome = transaction.tipo === "entrada";
                 return (
-                  <div className="transaction-row" key={transaction.id}>
+                  <div className="transaction-row" key={`${transaction.origem}-${transaction.id}`}>
                     <span className={`transaction-icon ${isIncome ? "income" : "expense"}`}>
                       {isIncome ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />}
                     </span>
                     <span className="transaction-info">
                       <strong>{transaction.comentario || transaction.categoria || (isIncome ? "Receita" : "Despesa")}</strong>
                       <small>{transaction.categoria || "Sem categoria"} · {transaction.conta} · {formatDate(transaction.data)}</small>
+                      <span className="transaction-origin-line"><span className={`transaction-origin ${transaction.conciliada_com_banco ? "reconciled" : transaction.origem === "open_finance" ? "bank" : "manual"}`}>{transaction.conciliada_com_banco ? "Manual + Banco" : transaction.origem === "open_finance" ? "Banco" : "Manual"}</span>{transaction.neutra ? <span className="transaction-origin neutral">Transferência interna</span> : null}</span>
                     </span>
                     <strong className={isIncome ? "amount-income" : "amount-expense"}>
                       {isIncome ? "+" : "−"} {formatCurrency(transaction.valor)}

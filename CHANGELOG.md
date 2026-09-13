@@ -34,6 +34,10 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 - criação atômica de uma conta Nivra a partir de uma conta bancária sincronizada;
 - saldo bancário como fonte do saldo atual para contas vinculadas, com origem e horário da sincronização;
 - proteção de unicidade para impedir que duas contas externas usem a mesma conta Nivra.
+- histórico unificado de lançamentos manuais e bancários sem copiar os registros externos;
+- categorização bancária por chave interna estável, com fallback seguro para `Outros`;
+- conciliação básica de possíveis duplicações, com confirmação, rejeição e preservação dos registros de origem;
+- proteção de unicidade para impedir que um lançamento manual seja conciliado com mais de uma transação bancária.
 
 ### Changed
 
@@ -42,8 +46,9 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 - todas as APIs protegidas passam a obter o usuário da sessão no backend;
 - o frontend deixou de armazenar a identidade autenticada no `localStorage` e de enviar `usuario_id`.
 - a confirmação visual do Pluggy Connect agora ocorre somente depois que o backend valida e persiste a conexão.
-- dados bancários sincronizados permanecem separados dos lançamentos financeiros manuais até a futura etapa de conciliação.
+- dados bancários sincronizados permanecem em tabelas próprias e são combinados com lançamentos manuais na camada de consulta;
 - contas manuais preservam seu cálculo de saldo; contas bancárias vinculadas passam a exibir o saldo informado pelo provider.
+- o dashboard considera receitas e despesas das contas bancárias vinculadas, ignora duplicações confirmadas e mantém transferências internas neutras.
 
 ### Security
 

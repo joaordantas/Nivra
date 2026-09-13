@@ -4,8 +4,15 @@ from backend.dependencies.auth import CurrentUser, CurrentUserCsrf
 from backend.schemas.transactions import (
     TransactionCreate,
     TransactionListItem,
+    ReconciliationResponse,
     TransactionSummary,
     TransactionUpdate,
+)
+from services.open_finance_reconciliation_service import (
+    ReconciliationConflictError,
+    ReconciliationNotFoundError,
+    confirmar_conciliacao_service,
+    rejeitar_conciliacao_service,
 )
 from services.transacao_service import (
     atualizar_transacao_service,
@@ -75,3 +82,44 @@ def delete_transaction(
 @router.get("/summary", response_model=TransactionSummary)
 def get_summary(current_user: CurrentUser) -> TransactionSummary:
     return TransactionSummary(**obter_resumo_financeiro(current_user.id))
+
+
+def _reconciliation_response(operation) -> ReconciliationResponse:
+    try:
+        return ReconciliationResponse(**operation())
+    except ReconciliationNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ReconciliationConflictError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post(
+    "/bank/{transacao_bancaria_id}/reconciliation/confirm",
+    response_model=ReconciliationResponse,
+)
+def confirm_bank_reconciliation(
+    transacao_bancaria_id: int,
+    current_user: CurrentUserCsrf,
+) -> ReconciliationResponse:
+    return _reconciliation_response(
+        lambda: confirmar_conciliacao_service(
+            current_user.id,
+            transacao_bancaria_id,
+        )
+    )
+
+
+@router.post(
+    "/bank/{transacao_bancaria_id}/reconciliation/reject",
+    response_model=ReconciliationResponse,
+)
+def reject_bank_reconciliation(
+    transacao_bancaria_id: int,
+    current_user: CurrentUserCsrf,
+) -> ReconciliationResponse:
+    return _reconciliation_response(
+        lambda: rejeitar_conciliacao_service(
+            current_user.id,
+            transacao_bancaria_id,
+        )
+    )

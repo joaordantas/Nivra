@@ -418,6 +418,230 @@ class OpenFinanceSyncApiTests(unittest.TestCase):
         self.assertEqual(credit_link.status_code, 422, credit_link.text)
         self.assertEqual(missing_csrf.status_code, 403, missing_csrf.text)
 
+    def test_unified_history_maps_categories_and_confirmed_match_counts_once(self) -> None:
+        categories = self.a.get("/api/categories").json()
+        groceries = next(category for category in categories if category["nome"] == "Mercado")
+        renamed = self.a.put(
+            f"/api/categories/{groceries['id']}",
+            headers=csrf_headers(self.a),
+            json={"nome": "Mercado da casa"},
+        )
+        self.assertEqual(renamed.status_code, 200, renamed.text)
+        account = self.a.post(
+            "/api/accounts",
+            headers=csrf_headers(self.a),
+            json={"nome": "Conta principal", "tipo": "corrente", "saldo_inicial": 0},
+        ).json()
+        manual = self.a.post(
+            "/api/transactions",
+            headers=csrf_headers(self.a),
+            json={
+                "valor": 149.90,
+                "tipo": "saida",
+                "categoria_id": None,
+                "comentario": "Compra cadastrada manualmente",
+                "data": "2026-09-03",
+                "conta_id": account["id"],
+            },
+        )
+        self.assertEqual(manual.status_code, 201, manual.text)
+        self.assertEqual(self.sync().status_code, 200)
+        external = self.external_accounts()[0]
+        linked = self.a.patch(
+            f"/api/open-finance/external-accounts/{external['id']}/link",
+            headers=csrf_headers(self.a),
+            json={"conta_nivra_id": account["id"]},
+        )
+        self.assertEqual(linked.status_code, 200, linked.text)
+
+        history = self.a.get("/api/transactions")
+        self.assertEqual(history.status_code, 200, history.text)
+        rows = history.json()
+        bank_market = next(
+            row for row in rows
+            if row["origem"] == "open_finance" and row["comentario"] == "Mercado"
+        )
+        bank_salary = next(
+            row for row in rows
+            if row["origem"] == "open_finance" and row["comentario"] == "Salario"
+        )
+        self.assertEqual(bank_market["categoria"], "Mercado da casa")
+        self.assertEqual(bank_market["categoria_id"], groceries["id"])
+        self.assertEqual(bank_salary["categoria"], "Renda")
+        self.assertEqual(bank_market["status_conciliacao"], "possivel_correspondencia")
+        self.assertEqual(bank_market["transacao_nivra_id"], manual.json()["id"])
+        self.assertFalse(bank_market["editavel"])
+
+        before = self.a.get("/api/transactions/summary").json()
+        self.assertEqual(before, {"entradas": 2500.0, "saidas": 299.8, "saldo": 2200.2})
+        confirmed = self.a.post(
+            f"/api/transactions/bank/{bank_market['id']}/reconciliation/confirm",
+            headers=csrf_headers(self.a),
+        )
+        self.assertEqual(confirmed.status_code, 200, confirmed.text)
+        self.assertEqual(confirmed.json()["status"], "conciliada")
+
+        reconciled_rows = self.a.get("/api/transactions").json()
+        self.assertEqual(len(reconciled_rows), 2)
+        reconciled_manual = next(
+            row for row in reconciled_rows if row["origem"] == "manual"
+        )
+        self.assertTrue(reconciled_manual["conciliada_com_banco"])
+        conn = get_connection()
+        try:
+            persisted = conn.execute(
+                """
+                SELECT status_conciliacao, transacao_nivra_id
+                FROM transacoes_bancarias
+                WHERE id = ?
+                """,
+                (bank_market["id"],),
+            ).fetchone()
+        finally:
+            conn.close()
+        self.assertEqual(persisted, ("conciliada", manual.json()["id"]))
+        self.assertEqual(
+            self.a.get("/api/transactions/summary").json(),
+            {"entradas": 2500.0, "saidas": 149.9, "saldo": 2350.1},
+        )
+        dashboard = self.a.get(
+            "/api/dashboard/profit",
+            params={"data_inicio": "2026-09-01", "data_fim": "2026-09-30"},
+        )
+        self.assertEqual(
+            dashboard.json(),
+            {"entrada": 2500.0, "saida": 149.9, "lucro": 2350.1},
+        )
+
+    def test_rejected_match_remains_visible_and_other_user_cannot_decide(self) -> None:
+        account = self.a.post(
+            "/api/accounts",
+            headers=csrf_headers(self.a),
+            json={"nome": "Conta A", "tipo": "corrente", "saldo_inicial": 0},
+        ).json()
+        self.a.post(
+            "/api/transactions",
+            headers=csrf_headers(self.a),
+            json={
+                "valor": 149.90,
+                "tipo": "saida",
+                "categoria_id": None,
+                "comentario": "Outro mercado",
+                "data": "2026-09-02",
+                "conta_id": account["id"],
+            },
+        )
+        self.assertEqual(self.sync().status_code, 200)
+        external = self.external_accounts()[0]
+        self.a.patch(
+            f"/api/open-finance/external-accounts/{external['id']}/link",
+            headers=csrf_headers(self.a),
+            json={"conta_nivra_id": account["id"]},
+        )
+        bank_market = next(
+            row for row in self.a.get("/api/transactions").json()
+            if row["origem"] == "open_finance" and row["comentario"] == "Mercado"
+        )
+
+        forbidden = self.b.post(
+            f"/api/transactions/bank/{bank_market['id']}/reconciliation/confirm",
+            headers=csrf_headers(self.b),
+        )
+        missing_csrf = self.a.post(
+            f"/api/transactions/bank/{bank_market['id']}/reconciliation/confirm"
+        )
+        rejected = self.a.post(
+            f"/api/transactions/bank/{bank_market['id']}/reconciliation/reject",
+            headers=csrf_headers(self.a),
+        )
+
+        self.assertEqual(forbidden.status_code, 404, forbidden.text)
+        self.assertEqual(missing_csrf.status_code, 403, missing_csrf.text)
+        self.assertEqual(rejected.status_code, 200, rejected.text)
+        self.assertEqual(self.sync().status_code, 200)
+        rows = self.a.get("/api/transactions").json()
+        rejected_bank = next(row for row in rows if row["id"] == bank_market["id"] and row["origem"] == "open_finance")
+        self.assertEqual(rejected_bank["status_conciliacao"], "ignorada")
+        self.assertIsNone(rejected_bank["transacao_nivra_id"])
+        self.assertEqual(
+            self.a.get("/api/transactions/summary").json()["saidas"],
+            299.8,
+        )
+
+    def test_unknown_category_falls_back_and_internal_bank_transfer_is_neutral(self) -> None:
+        second_account = replace(
+            self.provider.accounts[0],
+            id="external-account-2",
+            name="Conta Reserva",
+            balance=Decimal("500.00"),
+        )
+        self.provider.accounts.append(second_account)
+        self.provider.transactions["external-account-1"] = [
+            OpenFinanceTransaction(
+                id="transfer-out",
+                description="PIX para minha reserva",
+                amount=Decimal("300.00"),
+                date=date(2026, 9, 5),
+                direction="saida",
+                status="POSTED",
+                category_id="05000000",
+                category_name="Transfer - PIX",
+            ),
+            OpenFinanceTransaction(
+                id="unknown-expense",
+                description="Categoria nova",
+                amount=Decimal("10.00"),
+                date=date(2026, 9, 6),
+                direction="saida",
+                status="POSTED",
+                category_id="99999999",
+                category_name="Categoria futura",
+            ),
+            OpenFinanceTransaction(
+                id="credit-card-payment",
+                description="Pagamento da fatura",
+                amount=Decimal("50.00"),
+                date=date(2026, 9, 7),
+                direction="saida",
+                status="POSTED",
+                category_id="05090000",
+                category_name="Credit card payment",
+            ),
+        ]
+        self.provider.transactions["external-account-2"] = [
+            OpenFinanceTransaction(
+                id="transfer-in",
+                description="PIX da conta principal",
+                amount=Decimal("300.00"),
+                date=date(2026, 9, 5),
+                direction="entrada",
+                status="POSTED",
+                category_id="05010000",
+                category_name="Same person transfer - PIX",
+            )
+        ]
+        self.assertEqual(self.sync().status_code, 200)
+        external_by_name = {row["nome"]: row for row in self.external_accounts()}
+        for name in ("Conta Sandbox", "Conta Reserva"):
+            created = self.a.post(
+                f"/api/open-finance/external-accounts/{external_by_name[name]['id']}/nivra-account",
+                headers=csrf_headers(self.a),
+            )
+            self.assertEqual(created.status_code, 201, created.text)
+
+        rows = self.a.get("/api/transactions").json()
+        transfers = [row for row in rows if row["comentario"].startswith("PIX")]
+        unknown = next(row for row in rows if row["comentario"] == "Categoria nova")
+        card_payment = next(row for row in rows if row["comentario"] == "Pagamento da fatura")
+        self.assertEqual(len(transfers), 2)
+        self.assertTrue(all(row["neutra"] for row in transfers))
+        self.assertEqual(unknown["categoria"], "Outros")
+        self.assertTrue(card_payment["neutra"])
+        self.assertEqual(
+            self.a.get("/api/transactions/summary").json(),
+            {"entradas": 0.0, "saidas": 10.0, "saldo": -10.0},
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

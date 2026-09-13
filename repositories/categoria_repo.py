@@ -43,6 +43,21 @@ def listar_categorias(usuario_id: int) -> list[tuple]:
         conn.close()
 
 
+def listar_categorias_sistema(usuario_id: int) -> list[tuple]:
+    conn = get_connection()
+    try:
+        return conn.execute(
+            """
+            SELECT id, nome, chave_sistema
+            FROM categorias
+            WHERE usuario_id = ? AND chave_sistema IS NOT NULL
+            """,
+            (usuario_id,),
+        ).fetchall()
+    finally:
+        conn.close()
+
+
 def buscar_categoria_por_id(categoria_id: int, usuario_id: int) -> tuple | None:
     conn = get_connection()
     try:

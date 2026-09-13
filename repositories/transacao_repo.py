@@ -5,10 +5,20 @@ TRANSACTION_SELECT = """
     SELECT t.id, t.valor, t.tipo, t.categoria_id,
            COALESCE(c.nome, 'Sem categoria') AS categoria,
            t.comentario, t.data, t.conta_id,
-           COALESCE(conta.nome, 'Sem conta') AS conta
+           COALESCE(conta.nome, 'Sem conta') AS conta,
+           tb.id AS transacao_bancaria_id,
+           cb.instituicao_nome,
+           cb.ultima_sincronizacao_em
     FROM transacoes t
     LEFT JOIN categorias c ON c.id = t.categoria_id
     LEFT JOIN contas conta ON conta.id = t.conta_id
+    LEFT JOIN transacoes_bancarias tb
+      ON tb.transacao_nivra_id = t.id
+     AND tb.status_conciliacao = 'conciliada'
+    LEFT JOIN contas_bancarias_externas ce
+      ON ce.id = tb.conta_bancaria_externa_id
+    LEFT JOIN conexoes_bancarias cb
+      ON cb.id = ce.conexao_id AND cb.usuario_id = t.usuario_id
 """
 
 
@@ -38,16 +48,69 @@ def adicionar_transacao(
         conn.close()
 
 
-def listar_transacoes(usuario_id: int) -> list[tuple]:
+def listar_transacoes(
+    usuario_id: int,
+    data_inicio: str | None = None,
+    data_fim: str | None = None,
+) -> list[tuple]:
     conn = get_connection()
     try:
+        filtros = ["t.usuario_id = ?"]
+        parametros: list[object] = [usuario_id]
+        if data_inicio is not None:
+            filtros.append("t.data >= ?")
+            parametros.append(data_inicio)
+        if data_fim is not None:
+            filtros.append("t.data <= ?")
+            parametros.append(data_fim)
         return conn.execute(
             f"""
             {TRANSACTION_SELECT}
-            WHERE t.usuario_id = ?
+            WHERE {' AND '.join(filtros)}
             ORDER BY t.data DESC, t.id DESC
             """,
-            (usuario_id,),
+            parametros,
+        ).fetchall()
+    finally:
+        conn.close()
+
+
+def listar_transacoes_bancarias_vinculadas(
+    usuario_id: int,
+    data_inicio: str | None = None,
+    data_fim: str | None = None,
+) -> list[tuple]:
+    conn = get_connection()
+    try:
+        filtros = [
+            "cb.usuario_id = ?",
+            "cb.desconectada_em IS NULL",
+            "ce.conta_nivra_id IS NOT NULL",
+            "NOT (tb.status_conciliacao = 'conciliada' AND tb.transacao_nivra_id IS NOT NULL)",
+        ]
+        parametros: list[object] = [usuario_id]
+        if data_inicio is not None:
+            filtros.append("tb.data >= ?")
+            parametros.append(data_inicio)
+        if data_fim is not None:
+            filtros.append("tb.data <= ?")
+            parametros.append(data_fim)
+        return conn.execute(
+            f"""
+            SELECT tb.id, tb.valor, tb.direcao, tb.descricao, tb.data,
+                   ce.conta_nivra_id, c.nome, tb.metadata_provider,
+                   tb.status_conciliacao, tb.transacao_nivra_id,
+                   cb.instituicao_nome, cb.ultima_sincronizacao_em
+            FROM transacoes_bancarias tb
+            JOIN contas_bancarias_externas ce
+              ON ce.id = tb.conta_bancaria_externa_id
+            JOIN conexoes_bancarias cb ON cb.id = ce.conexao_id
+            JOIN contas c
+              ON c.id = ce.conta_nivra_id AND c.usuario_id = cb.usuario_id
+            WHERE {' AND '.join(filtros)}
+            ORDER BY tb.data DESC, tb.id DESC
+            """,
+            parametros,
         ).fetchall()
     finally:
         conn.close()
@@ -78,6 +141,16 @@ def atualizar_transacao(
 ) -> bool:
     conn = get_connection()
     try:
+        conn.execute(
+            """
+            UPDATE transacoes_bancarias
+            SET status_conciliacao = 'pendente',
+                transacao_nivra_id = NULL,
+                atualizada_em = CURRENT_TIMESTAMP
+            WHERE transacao_nivra_id = ?
+            """,
+            (transacao_id,),
+        )
         cursor = conn.execute(
             """
             UPDATE transacoes
@@ -104,6 +177,20 @@ def atualizar_transacao(
 def deletar_transacao(transacao_id: int, usuario_id: int) -> bool:
     conn = get_connection()
     try:
+        conn.execute(
+            """
+            UPDATE transacoes_bancarias
+            SET status_conciliacao = 'pendente',
+                transacao_nivra_id = NULL,
+                atualizada_em = CURRENT_TIMESTAMP
+            WHERE transacao_nivra_id = ?
+              AND EXISTS (
+                  SELECT 1 FROM transacoes
+                  WHERE id = ? AND usuario_id = ?
+              )
+            """,
+            (transacao_id, transacao_id, usuario_id),
+        )
         cursor = conn.execute(
             "DELETE FROM transacoes WHERE id = ? AND usuario_id = ?",
             (transacao_id, usuario_id),
@@ -114,24 +201,29 @@ def deletar_transacao(transacao_id: int, usuario_id: int) -> bool:
         conn.close()
 
 
-def calcular_resumo(usuario_id: int) -> tuple[float, float, float]:
+def calcular_total_compras_cartao(
+    usuario_id: int,
+    data_inicio: str | None = None,
+    data_fim: str | None = None,
+) -> float:
     conn = get_connection()
     try:
-        entradas, saidas_transacoes = conn.execute(
-            """
-            SELECT
-                COALESCE(SUM(CASE WHEN tipo = 'entrada' THEN valor ELSE 0 END), 0),
-                COALESCE(SUM(CASE WHEN tipo = 'saida' THEN valor ELSE 0 END), 0)
-            FROM transacoes
-            WHERE usuario_id = ?
+        filtros = ["usuario_id = ?"]
+        parametros: list[object] = [usuario_id]
+        if data_inicio is not None:
+            filtros.append("data >= ?")
+            parametros.append(data_inicio)
+        if data_fim is not None:
+            filtros.append("data <= ?")
+            parametros.append(data_fim)
+        row = conn.execute(
+            f"""
+            SELECT COALESCE(SUM(valor), 0)
+            FROM compras_cartao
+            WHERE {' AND '.join(filtros)}
             """,
-            (usuario_id,),
+            parametros,
         ).fetchone()
-        saidas_cartao = conn.execute(
-            "SELECT COALESCE(SUM(valor), 0) FROM compras_cartao WHERE usuario_id = ?",
-            (usuario_id,),
-        ).fetchone()[0]
-        saidas = float(saidas_transacoes) + float(saidas_cartao)
-        return float(entradas), float(saidas), float(entradas - saidas)
+        return float(row[0] if row else 0)
     finally:
         conn.close()

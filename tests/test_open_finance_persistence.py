@@ -203,6 +203,7 @@ class OpenFinanceMigrationTests(unittest.TestCase):
             for constraint in inspector.get_unique_constraints("transacoes_bancarias")
         }
         self.assertIn("uq_transacoes_bancarias_conta_transacao", transaction_uniques)
+        self.assertIn("uq_transacoes_bancarias_transacao_nivra", transaction_uniques)
         external_account_uniques = {
             constraint["name"]
             for constraint in inspector.get_unique_constraints("contas_bancarias_externas")

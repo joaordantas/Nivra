@@ -12,6 +12,7 @@ import type {
   OpenFinanceExternalAccount,
   OpenFinanceSyncResult,
   ProfitSummary,
+  ReconciliationResult,
   ReceivableByClient,
   Sale,
   Transaction,
@@ -119,6 +120,10 @@ export const api = {
   updateTransaction: (transactionId: number, payload: { valor: number; tipo: "entrada" | "saida"; categoria_id: number | null; comentario: string; data: string; conta_id: number | null }) =>
     request<Transaction>(`/transactions/${transactionId}`, { method: "PUT", body: JSON.stringify(payload) }),
   deleteTransaction: (transactionId: number) => request<void>(`/transactions/${transactionId}`, { method: "DELETE" }),
+  confirmBankReconciliation: (bankTransactionId: number) =>
+    request<ReconciliationResult>(`/transactions/bank/${bankTransactionId}/reconciliation/confirm`, { method: "POST" }),
+  rejectBankReconciliation: (bankTransactionId: number) =>
+    request<ReconciliationResult>(`/transactions/bank/${bankTransactionId}/reconciliation/reject`, { method: "POST" }),
 
   getAccounts: (includeInactive = false) => request<Account[]>(`/accounts?incluir_inativas=${includeInactive}`),
   createAccount: (payload: { nome: string; tipo: AccountType; saldo_inicial: number }) =>
