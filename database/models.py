@@ -5,6 +5,7 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
+    ForeignKeyConstraint,
     Index,
     Integer,
     JSON,
@@ -109,6 +110,22 @@ Index(
     sqlite_where=and_(contas.c.principal.is_(True), contas.c.ativo.is_(True)),
 )
 
+parcelamentos = Table(
+    "parcelamentos", metadata,
+    Column("id", Integer, primary_key=True),
+    Column("usuario_id", ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False),
+    Column("descricao", Text, nullable=False),
+    Column("valor_total", money, nullable=False),
+    Column("quantidade_parcelas", Integer, nullable=False),
+    Column("data_inicial", Date, nullable=False),
+    Column("criado_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    Column("atualizado_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    UniqueConstraint("id", "usuario_id", name="uq_parcelamentos_id_usuario"),
+    CheckConstraint("valor_total > 0", name="ck_parcelamentos_valor_positivo"),
+    CheckConstraint("quantidade_parcelas >= 2", name="ck_parcelamentos_quantidade"),
+)
+Index("ix_parcelamentos_usuario_data", parcelamentos.c.usuario_id, parcelamentos.c.data_inicial)
+
 transacoes = Table(
     "transacoes", metadata,
     Column("id", Integer, primary_key=True),
@@ -119,12 +136,33 @@ transacoes = Table(
     Column("comentario", Text),
     Column("data", Date, nullable=False),
     Column("usuario_id", ForeignKey("usuarios.id"), nullable=False),
+    Column("parcelamento_id", Integer),
+    Column("numero_parcela", Integer),
+    ForeignKeyConstraint(
+        ["parcelamento_id", "usuario_id"],
+        ["parcelamentos.id", "parcelamentos.usuario_id"],
+        name="fk_transacoes_parcelamento_usuario",
+        ondelete="RESTRICT",
+    ),
+    UniqueConstraint(
+        "parcelamento_id", "numero_parcela", name="uq_transacoes_parcelamento_numero"
+    ),
     CheckConstraint("valor > 0", name="ck_transacoes_valor_positivo"),
     CheckConstraint("tipo IN ('entrada', 'saida')", name="ck_transacoes_tipo"),
+    CheckConstraint(
+        "(parcelamento_id IS NULL AND numero_parcela IS NULL) OR "
+        "(parcelamento_id IS NOT NULL AND numero_parcela IS NOT NULL)",
+        name="ck_transacoes_parcelamento_completo",
+    ),
+    CheckConstraint(
+        "numero_parcela IS NULL OR numero_parcela >= 1",
+        name="ck_transacoes_numero_parcela",
+    ),
 )
 Index("ix_transacoes_usuario_data", transacoes.c.usuario_id, transacoes.c.data)
 Index("ix_transacoes_conta", transacoes.c.conta_id)
 Index("ix_transacoes_categoria", transacoes.c.categoria_id)
+Index("ix_transacoes_parcelamento", transacoes.c.parcelamento_id)
 
 transferencias = Table(
     "transferencias", metadata,
@@ -389,7 +427,7 @@ Index(
 )
 
 TABLES_IN_DEPENDENCY_ORDER = [
-    usuarios, sessoes, auth_tokens, auth_rate_events, categorias, contas, transacoes, transferencias, cartoes,
+    usuarios, sessoes, auth_tokens, auth_rate_events, categorias, contas, parcelamentos, transacoes, transferencias, cartoes,
     faturas, compras_cartao, pagamentos_fatura, vendas, parcelas, limites, conexoes_bancarias,
     contas_bancarias_externas, transacoes_bancarias, correspondencias_conciliacao, eventos_sincronizacao,
     eventos_webhook_open_finance,

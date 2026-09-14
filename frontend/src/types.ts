@@ -31,6 +31,53 @@ export interface Transaction {
   neutra: boolean;
   instituicao_nome: string | null;
   ultima_sincronizacao_em: string | null;
+  parcelamento_id: number | null;
+  numero_parcela: number | null;
+  quantidade_parcelas: number | null;
+}
+
+export type InstallmentTemporalStatus = "data_atingida" | "futura";
+
+export interface InstallmentPlanInstallment {
+  id: number;
+  numero_parcela: number;
+  quantidade_parcelas: number;
+  valor: number;
+  data: string;
+  tipo: "entrada" | "saida";
+  categoria_id: number | null;
+  categoria: string;
+  conta_id: number | null;
+  conta: string;
+  comentario: string | null;
+  status_temporal: InstallmentTemporalStatus;
+}
+
+export interface InstallmentPlanSummary {
+  id: number;
+  descricao: string;
+  valor_total: number;
+  quantidade_parcelas: number;
+  data_inicial: string;
+  criado_em: string;
+  atualizado_em: string;
+  parcelas_persistidas: number;
+  valor_persistido: number;
+  primeira_parcela_data: string;
+  ultima_parcela_data: string;
+  parcelas_com_data_atingida: number;
+  parcelas_futuras: number;
+  proxima_parcela_data: string | null;
+}
+
+export interface InstallmentPlanDetail extends InstallmentPlanSummary {
+  parcelas: InstallmentPlanInstallment[];
+}
+
+export interface InstallmentPlanUpdate {
+  descricao: string;
+  categoria_id: number | null;
+  conta_id: number | null;
 }
 
 export interface ReconciliationResult {
@@ -215,6 +262,8 @@ export interface MovementFormValues {
   contaId: number | null;
   contaOrigemId: number;
   contaDestinoId: number;
+  forma: "avista" | "parcelado";
+  quantidadeParcelas: number;
 }
 
 export interface TransactionSummary {

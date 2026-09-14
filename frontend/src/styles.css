@@ -288,6 +288,11 @@ select:focus-visible {
   background: var(--positive-soft);
   color: var(--positive);
 }
+.feedback-info {
+  border-color: color-mix(in srgb, var(--primary) 28%, var(--border));
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+}
 
 .balance-card {
   display: flex;
@@ -352,6 +357,12 @@ select:focus-visible {
 .transaction-origin.bank, .transaction-origin.reconciled { background: var(--primary-soft); color: var(--primary); }
 .transaction-origin.possible { background: var(--warning-soft); color: var(--warning); }
 .transaction-origin.neutral { background: var(--warning-soft); color: var(--warning); }
+.transaction-origin.future { background: var(--primary-soft); color: var(--primary); }
+.transaction-title-line { display: flex; min-width: 0; align-items: center; gap: 7px; }
+.transaction-title-line > strong { min-width: 0; }
+.installment-badge { display: inline-flex; min-height: 24px; flex: 0 0 auto; align-items: center; padding: 0 7px; border: 1px solid color-mix(in srgb, var(--primary) 25%, var(--border)); border-radius: 99px; background: var(--primary-soft); color: var(--primary); font-size: 0.64rem; font-weight: 750; }
+.installment-badge:hover { border-color: var(--primary); }
+.installment-badge.static { min-height: 20px; pointer-events: none; }
 .reconciliation-actions { padding-left: 0; }
 .reconciliation-confirm { color: var(--positive); }
 .amount-income { color: var(--positive); }
@@ -426,6 +437,15 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
 .search-field input { min-height: 40px; padding-left: 0; border: 0; box-shadow: none !important; }
 .movement-type-control { grid-template-columns: repeat(3, 1fr); }
 .movement-type-control.single-option { grid-template-columns: 1fr; }
+.installment-choice { min-width: 0; margin: 0; padding: 0; border: 0; }
+.installment-choice legend { margin-bottom: 7px; color: var(--text-secondary); font-size: 0.76rem; font-weight: 650; }
+.installment-type-control { grid-template-columns: repeat(2, 1fr); }
+.installment-fields { display: grid; gap: 12px; padding: 14px; border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--border)); border-radius: var(--radius-md); background: color-mix(in srgb, var(--primary-soft) 38%, var(--surface)); }
+.installment-preview { display: flex; align-items: flex-start; gap: 10px; color: var(--primary); }
+.installment-preview > svg { flex: 0 0 auto; margin-top: 1px; }
+.installment-preview > span { display: grid; min-width: 0; gap: 3px; }
+.installment-preview strong { color: var(--text); font-size: 0.76rem; }
+.installment-preview small { color: var(--text-secondary); font-size: 0.67rem; line-height: 1.45; }
 .inline-category-form { display: grid; grid-template-columns: 1fr auto auto; align-items: start; gap: 8px; }
 .inline-category-form .field-error { grid-column: 1 / -1; }
 .text-button { display: inline-flex; min-height: 32px; align-items: center; justify-content: center; gap: 6px; padding: 0; border: 0; background: transparent; color: var(--primary); font-size: 0.73rem; font-weight: 700; }
@@ -444,6 +464,38 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
 .modal-panel { width: min(100%, 520px); max-height: calc(100vh - 40px); overflow-y: auto; padding: 22px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-md); }
 .modal-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
 .modal-heading h2 { font-size: 1rem; }
+
+.installment-plans-card { display: grid; gap: 14px; padding: 22px; }
+.installment-plans-card .card-heading { margin-bottom: 0; }
+.installment-section-description { margin: -7px 0 0; color: var(--text-secondary); font-size: 0.74rem; line-height: 1.5; }
+.installment-plan-list { display: grid; }
+.installment-plan-row { display: grid; min-width: 0; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 13px 4px; border: 0; border-bottom: 1px solid var(--border); background: transparent; color: var(--text); text-align: left; }
+.installment-plan-row:last-child { border-bottom: 0; }
+.installment-plan-row:hover, .installment-plan-row:focus-visible { background: var(--surface-subtle); }
+.installment-plan-icon { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 10px; background: var(--primary-soft); color: var(--primary); }
+.installment-plan-main { display: grid; min-width: 0; gap: 6px; }
+.installment-plan-main > span:first-child { display: flex; min-width: 0; justify-content: space-between; gap: 12px; }
+.installment-plan-main strong { overflow: hidden; font-size: 0.82rem; text-overflow: ellipsis; white-space: nowrap; }
+.installment-plan-main b { flex: 0 0 auto; font-size: 0.75rem; }
+.installment-plan-main small { color: var(--text-secondary); font-size: 0.67rem; }
+.installment-progress { height: 5px; overflow: hidden; border-radius: 99px; background: var(--neutral-soft); }
+.installment-progress i { display: block; height: 100%; border-radius: inherit; background: var(--primary); }
+.installment-detail, .installment-detail-loading { display: grid; gap: 16px; }
+.installment-detail-summary { display: grid; grid-template-columns: 1fr 0.7fr 1.3fr; gap: 8px; }
+.installment-detail-summary > span { display: grid; align-content: center; gap: 5px; min-height: 76px; padding: 12px; border-radius: 10px; background: var(--surface-subtle); }
+.installment-detail-summary small { color: var(--text-secondary); font-size: 0.64rem; }
+.installment-detail-summary strong { font-size: 0.78rem; line-height: 1.4; }
+.installment-detail-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.installment-detail-list { display: grid; max-height: 360px; overflow-y: auto; border-top: 1px solid var(--border); }
+.installment-detail-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 11px; padding: 12px 2px; border-bottom: 1px solid var(--border); }
+.installment-detail-row > span:nth-child(2) { display: grid; min-width: 0; gap: 3px; }
+.installment-detail-row strong { font-size: 0.77rem; }
+.installment-detail-row small { overflow: hidden; color: var(--text-secondary); font-size: 0.65rem; text-overflow: ellipsis; white-space: nowrap; }
+.installment-number { display: grid; min-width: 42px; min-height: 30px; place-items: center; border-radius: 8px; background: var(--neutral-soft); color: var(--text-secondary); font-size: 0.68rem; font-weight: 750; }
+.installment-temporal-status { display: inline-flex; align-items: center; gap: 4px; padding: 5px 7px; border-radius: 99px; font-size: 0.61rem; font-weight: 700; white-space: nowrap; }
+.installment-temporal-status.data_atingida { background: var(--positive-soft); color: var(--positive); }
+.installment-temporal-status.futura { background: var(--primary-soft); color: var(--primary); }
+.installment-edit-form .feedback { margin-bottom: 0; }
 
 .accounts-total-card {
   display: grid;
@@ -803,10 +855,22 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
   .movement-type-control { grid-template-columns: 1fr; }
   .transaction-row-actions > strong { margin-left: 45px; }
   .transaction-row-actions .movement-actions { margin-left: auto; }
+  .transaction-title-line { align-items: flex-start; flex-wrap: wrap; }
   .inline-category-form { grid-template-columns: 1fr auto; }
   .inline-category-form .text-button { grid-column: 1 / -1; justify-self: start; }
   .transfer-accounts { grid-template-columns: 1fr; }
   .transfer-accounts > svg { display: none; }
+  .installment-plans-card { padding: 18px; }
+  .installment-plan-row { grid-template-columns: auto minmax(0, 1fr); }
+  .installment-plan-row > svg { display: none; }
+  .installment-plan-main > span:first-child { display: grid; gap: 3px; }
+  .installment-plan-main b { color: var(--text-secondary); }
+  .installment-detail-summary { grid-template-columns: 1fr 1fr; }
+  .installment-detail-summary > span:last-child { grid-column: 1 / -1; }
+  .installment-detail-row { grid-template-columns: auto minmax(0, 1fr); }
+  .installment-temporal-status { grid-column: 2; width: fit-content; }
+  .installment-detail-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .installment-detail-actions .button { width: 100%; }
   .account-form-card, .transfer-form-card, .transfer-history-card { padding: 18px; }
   .open-finance-connect-card { padding: 18px; }
   .open-finance-demo-guide-heading { align-items: flex-start; flex-direction: column; }

@@ -32,7 +32,7 @@ export function DashboardPage() {
 
         const [profitResult, transactionResult, accountResult] = await Promise.allSettled([
           api.getProfit(period.start, period.end),
-          api.getTransactions(),
+          api.getTransactions(undefined, new Date().toISOString().slice(0, 10)),
           api.getAccounts(),
         ]);
 
@@ -166,7 +166,7 @@ export function DashboardPage() {
                       {isIncome ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />}
                     </span>
                     <span className="transaction-info">
-                      <strong>{transaction.comentario || transaction.categoria || (isIncome ? "Receita" : "Despesa")}</strong>
+                      <span className="transaction-title-line"><strong>{transaction.comentario || transaction.categoria || (isIncome ? "Receita" : "Despesa")}</strong>{transaction.numero_parcela && transaction.quantidade_parcelas ? <span className="installment-badge static">{transaction.numero_parcela}/{transaction.quantidade_parcelas}</span> : null}</span>
                       <small>{transaction.categoria || "Sem categoria"} · {transaction.conta} · {formatDate(transaction.data)}</small>
                       <span className="transaction-origin-line"><span className={`transaction-origin ${transaction.conciliada_com_banco ? "reconciled" : transaction.origem === "open_finance" ? "bank" : "manual"}`}>{transaction.conciliada_com_banco ? "Manual + Banco" : transaction.origem === "open_finance" ? "Banco" : "Manual"}</span>{transaction.neutra ? <span className="transaction-origin neutral">Transferência interna</span> : null}</span>
                     </span>

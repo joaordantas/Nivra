@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import { useAuth } from "../app/providers";
+import { InstallmentPlans } from "../components/finance/InstallmentPlans";
 import { MovementForm } from "../components/finance/MovementForm";
 import { ReconciliationReview } from "../components/finance/ReconciliationReview";
 import { Card } from "../components/ui/Card";
@@ -15,7 +16,7 @@ import type { Account, Category, MovementFormValues, MovementType, Transaction, 
 import { formatCurrency, formatDate } from "../utils/formatters";
 
 type Movement =
-  | { kind: "transaction"; id: number; tipo: "entrada" | "saida"; valor: number; descricao: string; data: string; categoriaId: number | null; categoria: string; contaId: number | null; conta: string; origem: "manual" | "open_finance"; editavel: boolean; statusConciliacao: Transaction["status_conciliacao"]; conciliadaComBanco: boolean; neutra: boolean; instituicaoNome: string | null }
+  | { kind: "transaction"; id: number; tipo: "entrada" | "saida"; valor: number; descricao: string; data: string; categoriaId: number | null; categoria: string; contaId: number | null; conta: string; origem: "manual" | "open_finance"; editavel: boolean; statusConciliacao: Transaction["status_conciliacao"]; conciliadaComBanco: boolean; neutra: boolean; instituicaoNome: string | null; parcelamentoId: number | null; numeroParcela: number | null; quantidadeParcelas: number | null }
   | { kind: "transfer"; id: number; tipo: "transferencia"; valor: number; descricao: string; data: string; contaOrigemId: number; contaOrigem: string; contaDestinoId: number; contaDestino: string };
 
 type TypeFilter = "todos" | MovementType;
@@ -33,6 +34,8 @@ function initialForm(accounts: Account[]): MovementFormValues {
     contaId: defaultAccount?.id ?? null,
     contaOrigemId: defaultAccount?.id ?? 0,
     contaDestinoId: secondAccount?.id ?? 0,
+    forma: "avista",
+    quantidadeParcelas: 2,
   };
 }
 
@@ -47,6 +50,8 @@ function movementFormValues(movement: Movement): MovementFormValues {
       contaId: null,
       contaOrigemId: movement.contaOrigemId,
       contaDestinoId: movement.contaDestinoId,
+      forma: "avista",
+      quantidadeParcelas: 2,
     };
   }
   return {
@@ -58,6 +63,8 @@ function movementFormValues(movement: Movement): MovementFormValues {
     contaId: movement.contaId,
     contaOrigemId: 0,
     contaDestinoId: 0,
+    forma: "avista",
+    quantidadeParcelas: 2,
   };
 }
 
@@ -82,6 +89,7 @@ export function TransactionsPage() {
   const [originFilter, setOriginFilter] = useState<OriginFilter>("todas");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [selectedInstallmentPlanId, setSelectedInstallmentPlanId] = useState<number | null>(null);
 
   const movements = useMemo<Movement[]>(() => [
     ...transactions.map((transaction): Movement => ({
@@ -101,6 +109,9 @@ export function TransactionsPage() {
       conciliadaComBanco: transaction.conciliada_com_banco,
       neutra: transaction.neutra,
       instituicaoNome: transaction.instituicao_nome,
+      parcelamentoId: transaction.parcelamento_id,
+      numeroParcela: transaction.numero_parcela,
+      quantidadeParcelas: transaction.quantidade_parcelas,
     })),
     ...transfers.map((transfer): Movement => ({
       kind: "transfer",
@@ -139,6 +150,7 @@ export function TransactionsPage() {
 
   const summary = useMemo(() => filteredMovements.reduce((result, movement) => {
     if (movement.kind === "transaction" && movement.neutra) return result;
+    if (movement.data > new Date().toISOString().slice(0, 10)) return result;
     if (movement.tipo === "entrada") result.entradas += movement.valor;
     if (movement.tipo === "saida") result.saidas += movement.valor;
     result.saldo = result.entradas - result.saidas;
@@ -190,11 +202,21 @@ export function TransactionsPage() {
       setSaving(true);
       if (values.tipo === "transferencia") {
         await api.createTransfer({ conta_origem_id: values.contaOrigemId, conta_destino_id: values.contaDestinoId, valor: values.valor, descricao: values.descricao, data: values.data });
+      } else if (values.forma === "parcelado") {
+        await api.createInstallmentPlan({
+          descricao: values.descricao,
+          valor_total: values.valor,
+          quantidade_parcelas: values.quantidadeParcelas,
+          data_inicial: values.data,
+          tipo: values.tipo,
+          categoria_id: values.categoriaId,
+          conta_id: values.contaId,
+        });
       } else {
         await api.createTransaction({ valor: values.valor, tipo: values.tipo, categoria_id: values.categoriaId, comentario: values.descricao, data: values.data, conta_id: values.contaId });
       }
       setFormVersion((current) => current + 1);
-      setMessage(values.tipo === "transferencia" ? "Transferência registrada sem alterar receitas e despesas." : "Movimentação adicionada com sucesso.");
+      setMessage(values.tipo === "transferencia" ? "Transferência registrada sem alterar receitas e despesas." : values.forma === "parcelado" ? "Parcelamento criado com todas as parcelas." : "Movimentação adicionada com sucesso.");
       setError("");
       await load();
     } catch (err) {
@@ -297,7 +319,7 @@ export function TransactionsPage() {
                 return (
                   <div className="transaction-row transaction-row-actions" key={`${movement.kind}-${movement.kind === "transaction" ? movement.origem : "manual"}-${movement.id}`}>
                     <span className={`transaction-icon ${isTransfer ? "transfer" : isIncome ? "income" : "expense"}`}>{isTransfer ? <ArrowRightLeft size={18} /> : isIncome ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />}</span>
-                    <span className="transaction-info"><strong>{movement.descricao || (isTransfer ? "Transferência" : isIncome ? "Receita" : "Despesa")}</strong><small>{isTransfer ? `${movement.contaOrigem} → ${movement.contaDestino}` : `${movement.categoria || "Sem categoria"} · ${movement.conta}`} · {formatDate(movement.data)}</small>{movement.kind === "transaction" ? <span className="transaction-origin-line"><span className={`transaction-origin ${movement.conciliadaComBanco ? "reconciled" : movement.origem === "open_finance" ? "bank" : "manual"}`}>{movement.conciliadaComBanco ? <><Check size={12} />Manual + Banco</> : movement.origem === "open_finance" ? <><Landmark size={12} />Banco</> : "Manual"}</span>{movement.statusConciliacao === "possivel_correspondencia" || movement.statusConciliacao === "ambigua" ? <span className="transaction-origin possible">{movement.statusConciliacao === "ambigua" ? "Mais de uma correspondência" : "Possível correspondência"}</span> : null}{movement.neutra ? <span className="transaction-origin neutral">Transferência interna</span> : null}{movement.instituicaoNome ? <small>{movement.instituicaoNome}</small> : null}</span> : null}</span>
+                    <span className="transaction-info"><span className="transaction-title-line"><strong>{movement.descricao || (isTransfer ? "Transferência" : isIncome ? "Receita" : "Despesa")}</strong>{movement.kind === "transaction" && movement.parcelamentoId && movement.numeroParcela && movement.quantidadeParcelas ? <button className="installment-badge" onClick={() => setSelectedInstallmentPlanId(movement.parcelamentoId)} type="button">{movement.numeroParcela}/{movement.quantidadeParcelas}</button> : null}</span><small>{isTransfer ? `${movement.contaOrigem} → ${movement.contaDestino}` : `${movement.categoria || "Sem categoria"} · ${movement.conta}`} · {formatDate(movement.data)}</small>{movement.kind === "transaction" ? <span className="transaction-origin-line"><span className={`transaction-origin ${movement.conciliadaComBanco ? "reconciled" : movement.origem === "open_finance" ? "bank" : "manual"}`}>{movement.conciliadaComBanco ? <><Check size={12} />Manual + Banco</> : movement.origem === "open_finance" ? <><Landmark size={12} />Banco</> : "Manual"}</span>{movement.data > new Date().toISOString().slice(0, 10) ? <span className="transaction-origin future">Futura</span> : null}{movement.statusConciliacao === "possivel_correspondencia" || movement.statusConciliacao === "ambigua" ? <span className="transaction-origin possible">{movement.statusConciliacao === "ambigua" ? "Mais de uma correspondência" : "Possível correspondência"}</span> : null}{movement.neutra ? <span className="transaction-origin neutral">Transferência interna</span> : null}{movement.instituicaoNome ? <small>{movement.instituicaoNome}</small> : null}</span> : null}</span>
                     <strong className={isIncome ? "amount-income" : isTransfer ? "" : "amount-expense"}>{isIncome ? "+" : isTransfer ? "" : "−"} {formatCurrency(movement.valor)}</strong>
                     {movement.kind === "transfer" || movement.editavel ? <span className="movement-actions"><button aria-label={`Editar ${movement.descricao || "movimentação"}`} className="icon-button" onClick={() => setEditing(movement)} type="button"><Pencil size={15} /></button><button aria-label={`Excluir ${movement.descricao || "movimentação"}`} className="icon-button danger-icon-button" onClick={() => void deleteMovement(movement)} type="button"><Trash2 size={15} /></button></span> : null}
                   </div>
@@ -307,6 +329,8 @@ export function TransactionsPage() {
           )}
         </Card>
       </div>
+
+      <InstallmentPlans accounts={accounts} categories={categories} onChanged={load} onSelectPlan={setSelectedInstallmentPlanId} refreshKey={formVersion} selectedPlanId={selectedInstallmentPlanId} />
 
       {editing ? <Modal onClose={() => setEditing(null)} title="Editar movimentação"><MovementForm accounts={accounts} categories={categories} initialValues={movementFormValues(editing)} key={`${editing.kind}-${editing.id}`} mode="edit" onCreateCategory={createCategory} onSubmit={updateMovement} saving={saving} /></Modal> : null}
     </div>

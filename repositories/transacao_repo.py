@@ -8,7 +8,8 @@ TRANSACTION_SELECT = """
            COALESCE(conta.nome, 'Sem conta') AS conta,
            tb.id AS transacao_bancaria_id,
            cb.instituicao_nome,
-           cb.ultima_sincronizacao_em
+           cb.ultima_sincronizacao_em,
+           t.parcelamento_id, t.numero_parcela, p.quantidade_parcelas
     FROM transacoes t
     LEFT JOIN categorias c ON c.id = t.categoria_id
     LEFT JOIN contas conta ON conta.id = t.conta_id
@@ -20,6 +21,8 @@ TRANSACTION_SELECT = """
       ON ce.id = tb.conta_bancaria_externa_id
     LEFT JOIN conexoes_bancarias cb
       ON cb.id = ce.conexao_id AND cb.usuario_id = t.usuario_id
+    LEFT JOIN parcelamentos p
+      ON p.id = t.parcelamento_id AND p.usuario_id = t.usuario_id
 """
 
 
@@ -127,6 +130,26 @@ def buscar_transacao_por_id(transacao_id: int, usuario_id: int) -> tuple | None:
             """,
             (transacao_id, usuario_id),
         ).fetchone()
+    finally:
+        conn.close()
+
+
+def buscar_parcelamento_da_transacao(
+    transacao_id: int, usuario_id: int
+) -> tuple[int, int] | None:
+    conn = get_connection()
+    try:
+        row = conn.execute(
+            """
+            SELECT parcelamento_id, numero_parcela
+            FROM transacoes
+            WHERE id = ? AND usuario_id = ? AND parcelamento_id IS NOT NULL
+            """,
+            (transacao_id, usuario_id),
+        ).fetchone()
+        if row is None:
+            return None
+        return int(row[0]), int(row[1])
     finally:
         conn.close()
 

@@ -56,6 +56,14 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 - filtros de origem para movimentações manuais, bancárias e conciliadas;
 - arquivamento de transações bancárias removidas sem excluir o lançamento manual correspondente.
 - publicação da conciliação avançada no Sandbox, com smoke test autenticado e validação responsiva em produção.
+- fundação de parcelamentos com entidade própria, parcelas financeiras vinculadas e API autenticada para criação, consulta, listagem e exclusão do grupo;
+- divisão monetária exata em centavos e calendário mensal previsível para dias inexistentes no mês de destino;
+- migration Alembic com integridade por usuário, numeração única das parcelas e compatibilidade com transações já existentes;
+- testes de atomicidade, ownership, datas, valores, API e regressão das transações normais.
+- criação de despesas e receitas parceladas dentro do formulário normal de movimentações;
+- painel compacto de parcelamentos, detalhe de todas as parcelas e identificação `X/Y` no histórico;
+- edição atômica de descrição, categoria e conta do grupo e exclusão integral com confirmação explícita;
+- progresso baseado em datas, claramente separado de qualquer estado de pagamento.
 
 ### Changed
 
@@ -71,6 +79,8 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 - alterações bancárias recebidas por webhook atualizam somente os registros indicados; mudanças financeiras relevantes desfazem conciliações antigas para nova revisão.
 - o histórico e o dashboard mantêm uma única representação econômica após a conciliação, preservando os registros manual e bancário para auditoria;
 - rejeições permanecem válidas em sincronizações comuns, enquanto mudanças econômicas do banco reabrem a decisão.
+- transações pertencentes a parcelamentos informam plano, número e total de parcelas e não podem ser alteradas ou excluídas isoladamente.
+- parcelas futuras permanecem visíveis no histórico, mas não afetam saldo, entradas, gastos ou economia antes da respectiva data.
 
 ### Security
 
@@ -85,7 +95,7 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 
 ### Planned
 
-- parcelamentos e recorrências pessoais;
+- integração de parcelamentos com cartões/faturas e recorrências pessoais;
 - orçamentos e metas financeiras;
 - motor determinístico de insights e área “Sua atenção”;
 - Lumi, a assistente financeira da Nivra;

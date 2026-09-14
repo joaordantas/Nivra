@@ -9,6 +9,7 @@ SALDO_ATUAL_SQL = """
         SELECT SUM(CASE WHEN t.tipo = 'entrada' THEN t.valor ELSE -t.valor END)
         FROM transacoes t
         WHERE t.conta_id = c.id AND t.usuario_id = c.usuario_id
+          AND t.data <= CURRENT_DATE
     ), 0)
     + COALESCE((
         SELECT SUM(tr.valor)

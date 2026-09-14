@@ -27,12 +27,14 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.pool import NullPool
+from alembic.script import ScriptDirectory
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from database.connection import get_database_url
+from database.migrations import get_alembic_config
 from database.models import TABLES_IN_DEPENDENCY_ORDER
 
 
@@ -196,7 +198,13 @@ def find_orphan_references(
         }
         for foreign_key in table.foreign_keys:
             column_name = foreign_key.parent.name
-            if column_name not in source_columns:
+            constraint_columns = {
+                element.parent.name for element in foreign_key.constraint.elements
+            }
+            if (
+                foreign_key.column.name != "id"
+                or not constraint_columns.issubset(source_columns)
+            ):
                 continue
             target_table = foreign_key.column.table.name
             target_ids = ids_by_table.get(target_table, set())
@@ -276,7 +284,8 @@ def _ensure_schema_is_current(connection: Any) -> None:
     if "alembic_version" not in inspector.get_table_names():
         raise RuntimeError("O destino nao possui migrations. Execute 'alembic upgrade head' primeiro.")
     version = connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one_or_none()
-    if version != "c64e8a1f9b2d":
+    expected_version = ScriptDirectory.from_config(get_alembic_config()).get_current_head()
+    if version != expected_version:
         raise RuntimeError(
             f"Schema do destino esta em uma versao inesperada: {version or 'sem versao'}."
         )

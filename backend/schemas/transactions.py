@@ -38,6 +38,9 @@ class TransactionListItem(BaseModel):
     neutra: bool = False
     instituicao_nome: str | None = None
     ultima_sincronizacao_em: datetime | None = None
+    parcelamento_id: int | None = None
+    numero_parcela: int | None = None
+    quantidade_parcelas: int | None = None
 
 
 class TransactionSummary(BaseModel):

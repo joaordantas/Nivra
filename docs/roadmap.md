@@ -272,14 +272,42 @@ Validações externas complementares:
 
 ## 💳 PRIORIDADE 3 — PARCELAMENTOS E RECORRÊNCIAS
 
-### Parcelamentos
+### P3.1 — Fundação de Parcelamentos
 
-- [ ] Compras parceladas
-- [ ] Quantidade, parcela atual e parcelas restantes
-- [ ] Distribuição entre faturas
+- [x] Entidade própria para representar o parcelamento completo
+- [x] Parcelas persistidas como transações financeiras reais
+- [x] Relação estável entre plano, número da parcela e transação
+- [x] Divisão monetária determinística com soma exata
+- [x] Datas mensais com ajuste para o último dia válido
+- [x] Criação e exclusão do grupo em transações atômicas
+- [x] Isolamento por usuário, foreign keys, checks, unique constraints e índices
+- [x] API mínima para criar, listar, consultar e excluir parcelamentos
+- [x] Proteção contra edição ou exclusão isolada de uma parcela
+
+Status: **CONCLUÍDA E VALIDADA EM BANCO DESCARTÁVEL**
+
+### P3.2 — UX e integração de parcelamentos
+
+- [x] Criar despesas e receitas parceladas pelo formulário normal de movimentações
+- [x] Exibir preview honesto antes da criação e preservar o backend como fonte do cálculo monetário
+- [x] Identificar parcelas por metadado visual `X/Y` no histórico
+- [x] Listar planos e consultar todas as parcelas do grupo
+- [x] Exibir progresso temporal sem tratar data atingida como pagamento
+- [x] Editar descrição, categoria e conta de todo o grupo atomicamente
+- [x] Excluir explicitamente o grupo completo, sem exclusão isolada
+- [x] Manter parcelas futuras no histórico sem afetar saldo e resumo atuais
+- [x] Cobrir loading, erro, vazio, sucesso e bloqueio de ações repetidas
+- [x] Preservar layout responsivo e temas claro/escuro
+
+Status: **CONCLUÍDA E VALIDADA**
+
+### Próximos incrementos de parcelamentos
+
+- [ ] Integração com cartões e distribuição entre faturas
 - [ ] Comprometimento do limite
 - [ ] Projeção de faturas futuras
-- [ ] Edição segura e cancelamento quando possível
+- [ ] Alterações estruturais seguras de valor, quantidade e data inicial
+- [ ] Cancelamento parcial quando houver uma semântica financeira definida
 
 ### Recorrências
 
@@ -383,6 +411,6 @@ Lumi será a assistente financeira inteligente da Nivra. A identidade está defi
 
 ## Próxima tarefa recomendada
 
-**Prioridade 3 — Parcelamentos e Recorrências.**
+**P3.3 — Integração de parcelamentos com cartões e faturas.**
 
-O Gate Técnico da Prioridade 2 foi aprovado. O replay real do mesmo `eventId` e o roteiro com testers independentes permanecem como validações externas complementares e não foram simulados. A próxima unidade do roadmap é implementar compras parceladas e recorrências; ela não foi iniciada durante o gate.
+A P3.2 tornou os parcelamentos do núcleo utilizáveis na interface e definiu o efeito temporal no saldo atual. A próxima unidade deve distribuir compras parceladas entre faturas, comprometer o limite do cartão e projetar ciclos futuros sem dupla contabilização. Recorrências continuam pendentes e não foram iniciadas nesta etapa.

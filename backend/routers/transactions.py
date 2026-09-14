@@ -79,8 +79,11 @@ def delete_transaction(
     transacao_id: int,
     current_user: CurrentUserCsrf,
 ) -> None:
-    if not deletar_transacao_service(transacao_id, current_user.id):
-        raise HTTPException(status_code=404, detail="Transacao nao encontrada.")
+    try:
+        if not deletar_transacao_service(transacao_id, current_user.id):
+            raise HTTPException(status_code=404, detail="Transacao nao encontrada.")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.get("/summary", response_model=TransactionSummary)

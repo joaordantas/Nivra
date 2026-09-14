@@ -17,6 +17,7 @@ _engine_lock = threading.Lock()
 _iso_date = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _lockable_rows = {
     ("usuarios", "id"),
+    ("parcelamentos", "id"),
     ("faturas", "id"),
     ("conexoes_bancarias", "id"),
     ("contas_bancarias_externas", "id"),
@@ -60,6 +61,7 @@ def _criar_engine(url: str) -> Engine:
     if url.startswith("sqlite"):
         sqlite3.register_adapter(date, lambda value: value.isoformat())
         sqlite3.register_adapter(datetime, lambda value: value.isoformat())
+        sqlite3.register_adapter(Decimal, lambda value: format(value, "f"))
         return create_engine(
             url,
             future=True,

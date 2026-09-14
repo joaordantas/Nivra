@@ -1,4 +1,4 @@
-import { ArrowDownLeft, ArrowRight, ArrowRightLeft, ArrowUpRight, FolderPlus } from "lucide-react";
+import { ArrowDownLeft, ArrowRight, ArrowRightLeft, ArrowUpRight, CalendarRange, FolderPlus } from "lucide-react";
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link } from "react-router-dom";
@@ -45,6 +45,13 @@ export function MovementForm({
         : option.value !== "transferencia"
     ));
   const isTransfer = values.tipo === "transferencia";
+  const isInstallment = mode === "create" && !isTransfer && values.forma === "parcelado";
+  const totalCents = Math.round(values.valor * 100);
+  const installmentCents = values.quantidadeParcelas > 0
+    ? Math.floor(totalCents / values.quantidadeParcelas)
+    : 0;
+  const hasUnevenInstallments = values.quantidadeParcelas > 0
+    && totalCents % values.quantidadeParcelas !== 0;
   const canSubmit = values.valor > 0
     && values.descricao.trim().length > 0
     && Boolean(values.data)
@@ -52,7 +59,8 @@ export function MovementForm({
       ? values.contaOrigemId > 0
         && values.contaDestinoId > 0
         && values.contaOrigemId !== values.contaDestinoId
-      : Boolean(values.contaId));
+      : Boolean(values.contaId))
+    && (!isInstallment || values.quantidadeParcelas >= 2);
 
   function update<K extends keyof MovementFormValues>(field: K, value: MovementFormValues[K]) {
     setValues((current) => ({ ...current, [field]: value }));
@@ -64,6 +72,7 @@ export function MovementForm({
     setValues((current) => ({
       ...current,
       tipo,
+      forma: tipo === "transferencia" ? "avista" : current.forma,
       contaId: tipo === "transferencia" ? null : current.contaId ?? primaryAccount?.id ?? null,
       contaOrigemId: current.contaOrigemId || primaryAccount?.id || 0,
       contaDestinoId: current.contaDestinoId || secondAccount?.id || 0,
@@ -114,6 +123,34 @@ export function MovementForm({
         <input maxLength={255} onChange={(event) => update("descricao", event.target.value)} placeholder={isTransfer ? "Ex.: Reserva do mês" : "Ex.: Mercado, salário, academia"} value={values.descricao} />
       </label>
 
+      {mode === "create" && !isTransfer ? (
+        <fieldset className="installment-choice">
+          <legend>Forma</legend>
+          <div className="segmented-control installment-type-control" aria-label="Forma da movimentação">
+            <button className={values.forma === "avista" ? "is-active" : ""} onClick={() => update("forma", "avista")} type="button">À vista</button>
+            <button className={values.forma === "parcelado" ? "is-active" : ""} onClick={() => update("forma", "parcelado")} type="button"><CalendarRange aria-hidden="true" size={16} />Parcelado</button>
+          </div>
+        </fieldset>
+      ) : null}
+
+      {isInstallment ? (
+        <div className="installment-fields">
+          <label>
+            Quantidade de parcelas
+            <input min="2" onChange={(event) => update("quantidadeParcelas", Number(event.target.value))} step="1" type="number" value={values.quantidadeParcelas} />
+          </label>
+          <div className="installment-preview" role="status">
+            <CalendarRange aria-hidden="true" size={18} />
+            <span>
+              <strong>{values.quantidadeParcelas >= 2 ? `${values.quantidadeParcelas} parcelas` : "Informe ao menos 2 parcelas"}</strong>
+              {values.valor > 0 && values.quantidadeParcelas >= 2 ? (
+                <small>{hasUnevenInstallments ? `Total ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(values.valor)} · os centavos serão distribuídos pelo backend` : `${values.quantidadeParcelas}x de ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(installmentCents / 100)} por mês`}</small>
+              ) : <small>A primeira parcela usará a data informada abaixo.</small>}
+            </span>
+          </div>
+        </div>
+      ) : null}
+
       {isTransfer ? (
         accounts.length < 2 ? (
           <div className="inline-empty">
@@ -163,7 +200,7 @@ export function MovementForm({
       </label>
 
       <Button disabled={saving || !canSubmit} type="submit">
-        {saving ? "Salvando..." : mode === "edit" ? "Salvar alterações" : isTransfer ? "Transferir" : "Adicionar movimentação"}
+        {saving ? "Salvando..." : mode === "edit" ? "Salvar alterações" : isTransfer ? "Transferir" : isInstallment ? "Criar parcelamento" : "Adicionar movimentação"}
       </Button>
     </form>
   );

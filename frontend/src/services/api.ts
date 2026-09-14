@@ -7,6 +7,9 @@ import type {
   ClientInstallmentsResponse,
   Invoice,
   InvoiceDetail,
+  InstallmentPlanDetail,
+  InstallmentPlanSummary,
+  InstallmentPlanUpdate,
   OpenFinanceConnection,
   OpenFinanceAccountLink,
   OpenFinanceExternalAccount,
@@ -115,13 +118,41 @@ export const api = {
   updateCategory: (categoriaId: number, nome: string) => request<Category>(`/categories/${categoriaId}`, { method: "PUT", body: JSON.stringify({ nome }) }),
   deleteCategory: (categoriaId: number) => request<void>(`/categories/${categoriaId}`, { method: "DELETE" }),
 
-  getTransactions: () => request<Transaction[]>("/transactions"),
+  getTransactions: (dataInicio?: string, dataFim?: string) => {
+    const params = new URLSearchParams();
+    if (dataInicio) params.set("data_inicio", dataInicio);
+    if (dataFim) params.set("data_fim", dataFim);
+    const query = params.size ? `?${params.toString()}` : "";
+    return request<Transaction[]>(`/transactions${query}`);
+  },
   getTransactionSummary: () => request<TransactionSummary>("/transactions/summary"),
   createTransaction: (payload: { valor: number; tipo: "entrada" | "saida"; categoria_id: number | null; comentario: string; data: string; conta_id: number | null }) =>
     request<Transaction>("/transactions", { method: "POST", body: JSON.stringify(payload) }),
   updateTransaction: (transactionId: number, payload: { valor: number; tipo: "entrada" | "saida"; categoria_id: number | null; comentario: string; data: string; conta_id: number | null }) =>
     request<Transaction>(`/transactions/${transactionId}`, { method: "PUT", body: JSON.stringify(payload) }),
   deleteTransaction: (transactionId: number) => request<void>(`/transactions/${transactionId}`, { method: "DELETE" }),
+  getInstallmentPlans: () => request<InstallmentPlanSummary[]>("/installment-plans"),
+  getInstallmentPlan: (installmentPlanId: number) =>
+    request<InstallmentPlanDetail>(`/installment-plans/${installmentPlanId}`),
+  createInstallmentPlan: (payload: {
+    descricao: string;
+    valor_total: number;
+    quantidade_parcelas: number;
+    data_inicial: string;
+    tipo: "entrada" | "saida";
+    categoria_id: number | null;
+    conta_id: number | null;
+  }) => request<InstallmentPlanDetail>("/installment-plans", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  }),
+  updateInstallmentPlan: (installmentPlanId: number, payload: InstallmentPlanUpdate) =>
+    request<InstallmentPlanDetail>(`/installment-plans/${installmentPlanId}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+  deleteInstallmentPlan: (installmentPlanId: number) =>
+    request<void>(`/installment-plans/${installmentPlanId}`, { method: "DELETE" }),
   confirmBankReconciliation: (bankTransactionId: number) =>
     request<ReconciliationResult>(`/transactions/bank/${bankTransactionId}/reconciliation/confirm`, { method: "POST" }),
   rejectBankReconciliation: (bankTransactionId: number) =>

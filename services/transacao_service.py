@@ -7,6 +7,7 @@ from repositories.categoria_repo import listar_categorias_sistema
 from repositories.transacao_repo import (
     adicionar_transacao,
     atualizar_transacao,
+    buscar_parcelamento_da_transacao,
     buscar_transacao_por_id,
     calcular_total_compras_cartao,
     deletar_transacao,
@@ -26,8 +27,8 @@ from utils.categorias_padrao import (
 )
 
 
-def _validar_transacao(
-    valor: float,
+def validar_dados_transacao(
+    valor: float | Decimal,
     tipo: str,
     categoria_id: int | None,
     data: str,
@@ -59,6 +60,9 @@ def _formatar_transacao(transacao: tuple) -> dict:
         transacao_bancaria_id,
         instituicao_nome,
         ultima_sincronizacao_em,
+        parcelamento_id,
+        numero_parcela,
+        quantidade_parcelas,
     ) = transacao
     return {
         "id": transacao_id,
@@ -71,7 +75,7 @@ def _formatar_transacao(transacao: tuple) -> dict:
         "conta_id": conta_id,
         "conta": conta,
         "origem": "manual",
-        "editavel": True,
+        "editavel": parcelamento_id is None,
         "status_conciliacao": "conciliada" if transacao_bancaria_id is not None else None,
         "transacao_nivra_id": None,
         "conciliada_com_banco": transacao_bancaria_id is not None,
@@ -82,6 +86,9 @@ def _formatar_transacao(transacao: tuple) -> dict:
             if ultima_sincronizacao_em is not None
             else None
         ),
+        "parcelamento_id": parcelamento_id,
+        "numero_parcela": numero_parcela,
+        "quantidade_parcelas": quantidade_parcelas,
     }
 
 
@@ -160,6 +167,9 @@ def _formatar_transacao_bancaria(
             if ultima_sincronizacao_em is not None
             else None
         ),
+        "parcelamento_id": None,
+        "numero_parcela": None,
+        "quantidade_parcelas": None,
         "_categoria_chave": categoria_chave,
     }
 
@@ -213,7 +223,7 @@ def criar_transacao_service(
     usuario_id: int,
     conta_id: int | None = None,
 ) -> dict:
-    _validar_transacao(valor, tipo, categoria_id, data, usuario_id, conta_id)
+    validar_dados_transacao(valor, tipo, categoria_id, data, usuario_id, conta_id)
     transacao_id = adicionar_transacao(
         valor,
         tipo,
@@ -242,7 +252,9 @@ def atualizar_transacao_service(
 ) -> dict:
     if buscar_transacao_por_id(transacao_id, usuario_id) is None:
         raise ValueError("Transacao nao encontrada.")
-    _validar_transacao(valor, tipo, categoria_id, data, usuario_id, conta_id)
+    if buscar_parcelamento_da_transacao(transacao_id, usuario_id) is not None:
+        raise ValueError("Edite o parcelamento completo para alterar esta parcela.")
+    validar_dados_transacao(valor, tipo, categoria_id, data, usuario_id, conta_id)
     atualizar_transacao(
         transacao_id,
         valor,
@@ -261,6 +273,8 @@ def atualizar_transacao_service(
 
 
 def deletar_transacao_service(transacao_id: int, usuario_id: int) -> bool:
+    if buscar_parcelamento_da_transacao(transacao_id, usuario_id) is not None:
+        raise ValueError("Exclua o parcelamento completo para remover esta parcela.")
     deleted = deletar_transacao(transacao_id, usuario_id)
     if deleted:
         detectar_candidatos_conciliacao_service(usuario_id)
@@ -310,7 +324,11 @@ def obter_resumo_financeiro(
     data_inicio: str | None = None,
     data_fim: str | None = None,
 ) -> dict:
-    transacoes = listar_transacoes_formatadas(usuario_id, data_inicio, data_fim)
+    hoje = date.today().isoformat()
+    data_fim_efetiva = min(data_fim, hoje) if data_fim is not None else hoje
+    transacoes = listar_transacoes_formatadas(
+        usuario_id, data_inicio, data_fim_efetiva
+    )
     entradas_decimal = sum(
         (
             _money(item["valor"])
@@ -331,7 +349,7 @@ def obter_resumo_financeiro(
     saidas = float(saidas_decimal) + calcular_total_compras_cartao(
         usuario_id,
         data_inicio,
-        data_fim,
+        data_fim_efetiva,
     )
     saldo = entradas - saidas
     return {"entradas": entradas, "saidas": saidas, "saldo": saldo}
