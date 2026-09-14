@@ -294,7 +294,7 @@ export function TransactionsPage() {
           {loading ? (
             <div className="transaction-list">{[1, 2, 3, 4].map((item) => <span className="skeleton skeleton-row" key={item} />)}</div>
           ) : filteredMovements.length === 0 ? (
-            <EmptyState description={movements.length === 0 ? "Sua primeira movimentação aparecerá aqui assim que for adicionada." : "Ajuste ou limpe os filtros para ver outros resultados."} icon={ReceiptText} title={movements.length === 0 ? "Nenhuma movimentação registrada" : "Nenhum resultado encontrado"} />
+            <EmptyState description={movements.length === 0 ? "Suas movimentações aparecerão aqui. Você pode registrar uma agora ou conectar um banco de demonstração em Contas." : "Ajuste ou limpe os filtros para ver outros resultados."} icon={ReceiptText} title={movements.length === 0 ? "Nenhuma movimentação registrada" : "Nenhum resultado encontrado"} />
           ) : (
             <div className="transaction-list">
               {filteredMovements.map((movement) => {

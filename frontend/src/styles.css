@@ -463,6 +463,28 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
 .open-finance-copy p { max-width: 650px; margin: 0; color: var(--text-secondary); font-size: 0.76rem; line-height: 1.55; }
 .open-finance-demo-badge { display: inline-flex; margin-left: 5px; padding: 2px 6px; border-radius: 99px; background: var(--warning-soft); color: #a16207; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; vertical-align: middle; }
 :root[data-theme="dark"] .open-finance-demo-badge { color: #fbbf24; }
+.open-finance-demo-guide { display: grid; gap: 13px; padding: 15px; border: 1px solid color-mix(in srgb, var(--primary) 25%, var(--border)); border-radius: 13px; background: color-mix(in srgb, var(--primary-soft) 45%, var(--surface)); }
+.open-finance-demo-guide-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.open-finance-demo-guide-heading h3 { margin: 3px 0 0; font-size: 0.86rem; }
+.open-finance-demo-guide-heading .button { min-height: 34px; padding: 0 10px; font-size: 0.7rem; }
+.open-finance-demo-steps { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }
+.open-finance-demo-steps li { display: flex; align-items: flex-start; gap: 9px; color: var(--text-secondary); }
+.open-finance-demo-steps li > svg { flex: 0 0 auto; margin-top: 2px; color: var(--text-soft); }
+.open-finance-demo-steps li.is-complete > svg { color: var(--positive); }
+.open-finance-demo-steps span { display: grid; gap: 2px; }
+.open-finance-demo-steps strong { color: var(--text); font-size: 0.73rem; }
+.open-finance-demo-steps small { color: var(--text-secondary); font-size: 0.68rem; line-height: 1.45; }
+.open-finance-demo-history-link { width: fit-content; font-size: 0.71rem; }
+.open-finance-demo-credentials { border-top: 1px solid var(--border); padding-top: 11px; }
+.open-finance-demo-credentials summary { display: flex; align-items: center; gap: 7px; width: fit-content; cursor: pointer; color: var(--primary); font-size: 0.72rem; font-weight: 700; }
+.open-finance-demo-credentials > div { display: grid; gap: 10px; margin-top: 11px; }
+.open-finance-demo-credentials p { margin: 0; color: var(--text-secondary); font-size: 0.69rem; line-height: 1.5; }
+.open-finance-demo-credentials dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; }
+.open-finance-demo-credentials dl div { min-width: 0; padding: 8px; border-radius: 8px; background: var(--surface); }
+.open-finance-demo-credentials dt { color: var(--text-secondary); font-size: 0.61rem; }
+.open-finance-demo-credentials dd { overflow: hidden; margin: 3px 0 0; color: var(--text); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.66rem; font-weight: 700; text-overflow: ellipsis; }
+.open-finance-demo-note { display: flex; align-items: flex-start; gap: 7px; margin: 0; color: var(--text-secondary); font-size: 0.67rem; line-height: 1.45; }
+.open-finance-demo-note svg { flex: 0 0 auto; margin-top: 1px; color: var(--primary); }
 .open-finance-loading-list { display: grid; gap: 9px; }
 .open-finance-skeleton { height: 122px; border-radius: 12px; }
 .open-finance-connections { display: grid; gap: 12px; }
@@ -757,6 +779,9 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
   .transfer-accounts > svg { display: none; }
   .account-form-card, .transfer-form-card, .transfer-history-card { padding: 18px; }
   .open-finance-connect-card { padding: 18px; }
+  .open-finance-demo-guide-heading { align-items: flex-start; flex-direction: column; }
+  .open-finance-demo-guide-heading .button { width: 100%; }
+  .open-finance-demo-credentials dl { grid-template-columns: 1fr; }
   .open-finance-heading { grid-template-columns: auto minmax(0, 1fr); }
   .open-finance-heading > .button { grid-column: 1 / -1; width: 100%; }
   .open-finance-connection-header { grid-template-columns: auto minmax(0, 1fr); }

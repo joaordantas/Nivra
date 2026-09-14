@@ -178,7 +178,7 @@ export function AccountsPage() {
 
       <section className="account-cards" aria-label="Contas financeiras">
         {loading ? [1, 2].map((item) => <span className="surface-card skeleton account-card-skeleton" key={item} />) : null}
-        {!loading && accounts.length === 0 ? <Card className="accounts-empty-card"><EmptyState description="Adicione onde seu dinheiro está para acompanhar o saldo corretamente." icon={Landmark} title="Você ainda não possui contas" /></Card> : null}
+        {!loading && accounts.length === 0 ? <Card className="accounts-empty-card"><EmptyState description="Adicione uma conta manual ou conecte um banco de demonstração acima para começar a acompanhar seu saldo." icon={Landmark} title="Você ainda não possui contas" /></Card> : null}
         {!loading && accounts.map((account) => (
           <Card className={`account-card ${account.ativo ? "" : "account-card-inactive"}`} key={account.id}>
             <span className="account-icon"><WalletCards aria-hidden="true" size={21} /></span>

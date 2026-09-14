@@ -23,6 +23,7 @@ import { Card } from "../ui/Card";
 import { EmptyState } from "../ui/EmptyState";
 import { Feedback } from "../ui/Feedback";
 import { Modal } from "../ui/Modal";
+import { OpenFinanceDemoGuide } from "./OpenFinanceDemoGuide";
 
 type LinkChoice = "existing" | "create";
 
@@ -96,6 +97,15 @@ export function OpenFinanceConnectCard({ accounts, onAccountsChanged }: OpenFina
   const accountsAvailableForLink = useMemo(() => accounts.filter((account) => (
     account.ativo && (account.conta_externa_id === null || account.conta_externa_id === accountToLink?.id)
   )), [accountToLink?.id, accounts]);
+
+  const demoProgress = useMemo(() => {
+    const external = Object.values(externalAccounts).flat();
+    return {
+      hasConnection: connections.some((connection) => !connection.desconectada_em),
+      hasLinkedAccount: external.some((account) => Boolean(account.conta_nivra_id)),
+      hasTransactions: external.some((account) => account.quantidade_transacoes > 0),
+    };
+  }, [connections, externalAccounts]);
 
   async function openConnect() {
     try {
@@ -201,6 +211,7 @@ export function OpenFinanceConnectCard({ accounts, onAccountsChanged }: OpenFina
       </div>
       {error ? <Feedback>{error}</Feedback> : null}
       {message ? <Feedback tone="success">{message}</Feedback> : null}
+      {!loadingConnections ? <OpenFinanceDemoGuide hasConnection={demoProgress.hasConnection} hasLinkedAccount={demoProgress.hasLinkedAccount} hasTransactions={demoProgress.hasTransactions} isConnecting={connecting} onConnect={() => void openConnect()} /> : null}
       {loadingConnections ? <div className="open-finance-loading-list" aria-live="polite"><span className="skeleton open-finance-skeleton" /><span className="skeleton open-finance-skeleton" /></div> : null}
       {!loadingConnections && connections.length === 0 ? <EmptyState action={<Button disabled={connecting} onClick={() => void openConnect()} type="button"><Link2 aria-hidden="true" size={16} />Conectar banco</Button>} description="Conecte um banco para importar suas movimentações de demonstração." icon={Building2} title="Conecte suas contas" /> : null}
       {!loadingConnections && connections.length > 0 ? <div className="open-finance-connections" aria-live="polite">

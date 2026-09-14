@@ -93,7 +93,7 @@ export function DashboardPage() {
         <div>
           <span className="card-label">Saldo registrado</span>
           {loading ? <span className="skeleton skeleton-value" /> : <strong>{accounts === null ? "—" : formatCurrency(totalBalance)}</strong>}
-          <small>{accounts === null ? "Não foi possível carregar este valor." : accounts.length ? `Somado entre ${accounts.length} ${accounts.length === 1 ? "conta" : "contas"}${bankAccounts.length ? ` · ${bankAccounts.length} ${bankAccounts.length === 1 ? "saldo bancário" : "saldos bancários"}${latestBankSync ? ` atualizados em ${new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(latestBankSync))}` : ""}` : ""}` : "Adicione suas contas para acompanhar o patrimônio disponível"}</small>
+          <small>{accounts === null ? "Não foi possível carregar este valor." : accounts.length ? `Somado entre ${accounts.length} ${accounts.length === 1 ? "conta" : "contas"}${bankAccounts.length ? ` · ${bankAccounts.length} ${bankAccounts.length === 1 ? "saldo bancário" : "saldos bancários"}${latestBankSync ? ` atualizados em ${new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(latestBankSync))}` : ""}` : ""}` : "Adicione uma conta ou conecte um banco de demonstração em Contas."}</small>
         </div>
         <span className="balance-icon"><CircleDollarSign aria-hidden="true" size={26} /></span>
       </Card>
@@ -151,8 +151,8 @@ export function DashboardPage() {
             <p className="section-unavailable">Não foi possível carregar as transações recentes.</p>
           ) : transactions.length === 0 ? (
             <EmptyState
-              action={<Link className="button button-secondary" to="/transactions?new=1#new-transaction">Adicionar transação</Link>}
-              description="Adicione sua primeira movimentação para começar a acompanhar suas finanças."
+              action={<Link className="button button-secondary" to="/accounts">Conectar banco de demonstração</Link>}
+              description="Conecte um banco de demonstração ou adicione sua primeira movimentação para começar a acompanhar suas finanças."
               icon={ReceiptText}
               title="Nenhuma transação ainda"
             />

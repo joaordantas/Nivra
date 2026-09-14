@@ -14,7 +14,7 @@ A Nivra está sendo desenvolvida para tornar o controle financeiro mais rápido,
 [![Neon](https://img.shields.io/badge/Neon-database-00E599?logo=neon&logoColor=black)](https://neon.tech/)
 [![Vercel](https://img.shields.io/badge/Vercel-deploy-000000?logo=vercel&logoColor=white)](https://vercel.com/)
 
-[Aplicação online](https://nivra-finance.vercel.app) · [Roadmap](docs/roadmap.md) · [Arquitetura](docs/architecture.md) · [Desenvolvimento](docs/development.md) · [Release notes](docs/releases/v0.1.0-alpha.1.md) · [Releases](https://github.com/joaordantas/Nivra/releases)
+[Aplicação online](https://nivra-finance.vercel.app) · [Roadmap](docs/roadmap.md) · [Teste Open Finance Sandbox](docs/testing/open-finance-sandbox.md) · [Arquitetura](docs/architecture.md) · [Desenvolvimento](docs/development.md) · [Release notes](docs/releases/v0.1.0-alpha.1.md) · [Releases](https://github.com/joaordantas/Nivra/releases)
 
 </div>
 
@@ -151,7 +151,7 @@ Detalhes estão em [Arquitetura](docs/architecture.md).
 | Autenticação segura e hardening de conta | Concluído |
 | Parcelamentos e recorrências | Planejado |
 | Orçamentos e metas | Planejado |
-| Open Finance Sandbox | Integração técnica pronta; ativação manual pendente |
+| Open Finance Sandbox | Demonstração guiada para testers disponível |
 | Insights financeiros | Planejado |
 | Lumi | Em desenvolvimento conceitual |
 | Notificações e WhatsApp | Planejado |

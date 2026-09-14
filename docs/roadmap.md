@@ -220,10 +220,12 @@ Status: **CONCLUÍDA**
 
 ### Etapa 2G — Demo para testers
 
-- [ ] Modo Sandbox demonstrável
-- [ ] Banco, contas, saldo e histórico fictícios
-- [ ] Estado de erro demonstrável
-- [ ] Documentar como testar
+- [x] Modo Sandbox demonstrável
+- [x] Banco, contas, saldo e histórico fictícios
+- [x] Estado de erro compreensível com nova tentativa disponível
+- [x] Guia de teste, checklist e modelo de relato de bug
+
+Status: **IMPLEMENTADA E PUBLICADA; VALIDAÇÃO EXTERNA COM TESTERS PENDENTE**
 
 ### Etapa 2H — Conciliação avançada
 
@@ -355,6 +357,6 @@ Lumi será a assistente financeira inteligente da Nivra. A identidade está defi
 
 ## Próxima tarefa recomendada
 
-**Etapa 2G — Demo para testers.**
+**Etapa 2H — Conciliação avançada.**
 
-A Etapa 2F tornou a integração Sandbox compreensível e utilizável para testers. A próxima unidade lógica é preparar uma demonstração guiada, com dados fictícios, estados de erro e documentação de teste. A validação externa final da Etapa 2E continua pendente e não deve ser marcada como concluída sem uma entrega real do provider e sua repetição idempotente.
+A Etapa 2G tornou a integração Sandbox demonstrável para testers sem contexto técnico. A próxima unidade lógica é ampliar a conciliação já existente para lidar com casos ambíguos e múltiplos lançamentos. A validação externa final da Etapa 2E continua pendente: há evidência de uma entrega real processada em produção, mas ainda falta comprovar uma repetição do mesmo evento sem duplicação.
