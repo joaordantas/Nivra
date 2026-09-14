@@ -239,7 +239,7 @@ Status: **IMPLEMENTADA E PUBLICADA; VALIDAÇÃO EXTERNA COM TESTERS PENDENTE**
 - [x] Preservar uma única representação econômica no histórico e no dashboard
 - [x] Validar ownership, CSRF, idempotência e confirmação concorrente
 
-Status: **IMPLEMENTADA E VALIDADA LOCALMENTE; MIGRATION E VALIDAÇÃO VISUAL EM PRODUÇÃO PENDENTES**
+Status: **IMPLEMENTADA, PUBLICADA E VALIDADA EM PRODUÇÃO NO SANDBOX**
 
 ### Gate final da Prioridade 2 — Open Finance MVP
 
@@ -247,12 +247,12 @@ Status: **IMPLEMENTADA E VALIDADA LOCALMENTE; MIGRATION E VALIDAÇÃO VISUAL EM 
 - [x] Re-sync não duplica dados
 - [x] Conciliação avançada passou nos testes automatizados
 - [-] Webhook repetido é idempotente nos testes; retry externo do mesmo `eventId` ainda sem evidência
-- [-] Experiência de conciliação responsiva foi implementada; validação final após deploy ainda pendente
+- [x] Experiência de conciliação validada em produção nos temas claro/escuro e em 375, 390, 430 e 1440 px
 - [x] Isolamento entre usuários e proteção CSRF validados
 - [x] Secrets permanecem fora do frontend e da documentação pública
 - [x] Suite Python, migration descartável, Alembic e build passam
 
-Status: **PENDENTE DE VALIDAÇÕES EXTERNAS FINAIS; NÃO EXECUTADO NESTA ETAPA**
+Status: **EXECUTADO PARCIALMENTE; RETRY EXTERNO DO WEBHOOK E TESTE COM TESTERS INDEPENDENTES PENDENTES**
 
 ### Evidências técnicas do Open Finance Sandbox
 
@@ -379,4 +379,4 @@ Lumi será a assistente financeira inteligente da Nivra. A identidade está defi
 
 **Gate final da Prioridade 2 — Open Finance MVP.**
 
-A 2H concluiu localmente o motor determinístico de conciliação, a revisão de ambiguidades e o fluxo em lote. O próximo trabalho deve aplicar a migration no Neon, publicar a versão, validar a interface em desktop/mobile e temas claro/escuro, executar o roteiro completo de tester e registrar uma repetição externa real do mesmo `eventId` do webhook sem duplicação. Somente essas evidências devem encerrar a Prioridade 2.
+A 2H está publicada, o novo schema respondeu em produção e a interface foi validada em desktop/mobile e nos temas claro/escuro. Para encerrar a Prioridade 2 ainda faltam duas evidências externas: executar o roteiro com testers independentes e registrar uma repetição real do mesmo `eventId` do webhook sem duplicação. Nenhuma dessas evidências deve ser simulada.

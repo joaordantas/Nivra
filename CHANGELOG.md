@@ -55,6 +55,7 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 - revisão de casos ambíguos e confirmação em lote restrita a correspondências únicas de alta confiança;
 - filtros de origem para movimentações manuais, bancárias e conciliadas;
 - arquivamento de transações bancárias removidas sem excluir o lançamento manual correspondente.
+- publicação da conciliação avançada no Sandbox, com smoke test autenticado e validação responsiva em produção.
 
 ### Changed
 

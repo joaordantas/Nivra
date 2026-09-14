@@ -63,7 +63,7 @@ A migration `d41e7b9a2c60_advanced_reconciliation.py`:
 - impede mais de uma confirmação para a mesma transação bancária ou manual;
 - migra vínculos básicos existentes sem apagar dados.
 
-A migration foi aplicada em banco descartável e o `alembic check` não encontrou diferenças. Ela ainda precisa ser aplicada manualmente no Neon antes do deploy desta versão.
+A migration foi aplicada em banco descartável e o `alembic check` não encontrou diferenças. Após a publicação, o endpoint autenticado de sugestões respondeu normalmente em produção, confirmando que o schema necessário está disponível no Neon.
 
 ## Validação executada
 
@@ -76,7 +76,12 @@ A migration foi aplicada em banco descartável e o `alembic check` não encontro
 - `alembic check` aprovado;
 - `git diff --check` aprovado;
 - revisão local da interface em 375, 390, 430 e 1440 px, sem overflow horizontal;
-- temas claro e escuro, seleção por teclado, labels e estado ambíguo validados localmente.
+- temas claro e escuro, seleção por teclado, labels e estado ambíguo validados localmente;
+- `/api/health` e `/openapi.json` retornaram HTTP 200 em produção;
+- as novas rotas de sugestões e confirmação em lote constam no OpenAPI publicado;
+- login, restauração da sessão após refresh e logout foram validados em produção;
+- Dashboard e Transações carregaram os dados do Sandbox sem erro;
+- produção validada em 375, 390, 430 e 1440 px, nos temas claro e escuro, sem overflow horizontal.
 
 Os testes cobrem match perfeito, incompatibilidades de valor/direção/conta/data, janela temporal, ambiguidade, confirmação, rejeição persistente, idempotência, lote seguro, ownership, CSRF, concorrência, reabertura, remoção externa, histórico/dashboard sem dupla contagem, transferências internas e pagamento de cartão.
 
@@ -86,17 +91,10 @@ Produção já registrou entregas reais `item/updated` e `transactions/updated` 
 
 ## Limitações e ativação
 
-O matching usa regras deliberadamente pequenas e conservadoras. Não há aprendizagem automática, conciliação de valor aproximado, divisão de um lançamento em vários ou confirmação automática de casos ambíguos. A revisão visual em produção só pode ser concluída depois da migration e do novo deploy.
+O matching usa regras deliberadamente pequenas e conservadoras. Não há aprendizagem automática, conciliação de valor aproximado, divisão de um lançamento em vários ou confirmação automática de casos ambíguos. A conta de produção validada não possuía sugestões pendentes; por isso confirmação, rejeição e ambiguidade foram exercitadas nos testes automatizados e na validação visual local com dados controlados.
 
-Para ativar:
-
-1. executar `alembic upgrade head` contra o Neon usando `DATABASE_URL_UNPOOLED`;
-2. publicar a versão na Vercel;
-3. validar Transações em 375, 390, 430 e 1440 px, nos temas claro e escuro;
-4. confirmar e rejeitar casos simples e ambíguos no Sandbox;
-5. confirmar que dashboard e histórico não duplicam o valor;
-6. registrar um retry real do mesmo `eventId` para encerrar a pendência externa da 2E.
+Migration, deploy e smoke test de produção foram concluídos. Para encerrar todo o gate Open Finance ainda é necessário executar o roteiro com testers independentes e registrar um retry real do mesmo `eventId` do webhook.
 
 ## Próxima tarefa recomendada
 
-Executar o **Gate final da Prioridade 2 — Open Finance MVP**, reunindo as evidências de migration/deploy, responsividade, roteiro completo de tester e retry externo idempotente do webhook. O gate não faz parte da implementação da 2H e não foi executado automaticamente.
+Concluir o **Gate final da Prioridade 2 — Open Finance MVP** com as duas evidências externas restantes: roteiro completo por testers independentes e retry idempotente real do mesmo `eventId`. O gate foi executado até o limite das evidências disponíveis e não foi marcado artificialmente como concluído.
