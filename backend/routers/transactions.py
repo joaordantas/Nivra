@@ -4,6 +4,8 @@ from backend.dependencies.auth import CurrentUser, CurrentUserCsrf
 from backend.schemas.transactions import (
     TransactionCreate,
     TransactionListItem,
+    ReconciliationBatchResponse,
+    ReconciliationSuggestion,
     ReconciliationResponse,
     TransactionSummary,
     TransactionUpdate,
@@ -12,6 +14,8 @@ from services.open_finance_reconciliation_service import (
     ReconciliationConflictError,
     ReconciliationNotFoundError,
     confirmar_conciliacao_service,
+    confirmar_lote_alta_confianca_service,
+    listar_sugestoes_conciliacao_service,
     rejeitar_conciliacao_service,
 )
 from services.transacao_service import (
@@ -91,6 +95,63 @@ def _reconciliation_response(operation) -> ReconciliationResponse:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ReconciliationConflictError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.get(
+    "/reconciliation/suggestions",
+    response_model=list[ReconciliationSuggestion],
+)
+def list_reconciliation_suggestions(
+    current_user: CurrentUser,
+) -> list[ReconciliationSuggestion]:
+    return [
+        ReconciliationSuggestion(**item)
+        for item in listar_sugestoes_conciliacao_service(current_user.id)
+    ]
+
+
+@router.post(
+    "/reconciliation/confirm-high-confidence",
+    response_model=ReconciliationBatchResponse,
+)
+def confirm_high_confidence_reconciliations(
+    current_user: CurrentUserCsrf,
+) -> ReconciliationBatchResponse:
+    return ReconciliationBatchResponse(
+        **confirmar_lote_alta_confianca_service(current_user.id)
+    )
+
+
+@router.post(
+    "/bank/{transacao_bancaria_id}/reconciliation/{transacao_nivra_id}/confirm",
+    response_model=ReconciliationResponse,
+)
+def confirm_selected_bank_reconciliation(
+    transacao_bancaria_id: int,
+    transacao_nivra_id: int,
+    current_user: CurrentUserCsrf,
+) -> ReconciliationResponse:
+    return _reconciliation_response(
+        lambda: confirmar_conciliacao_service(
+            current_user.id, transacao_bancaria_id, transacao_nivra_id
+        )
+    )
+
+
+@router.post(
+    "/bank/{transacao_bancaria_id}/reconciliation/{transacao_nivra_id}/reject",
+    response_model=ReconciliationResponse,
+)
+def reject_selected_bank_reconciliation(
+    transacao_bancaria_id: int,
+    transacao_nivra_id: int,
+    current_user: CurrentUserCsrf,
+) -> ReconciliationResponse:
+    return _reconciliation_response(
+        lambda: rejeitar_conciliacao_service(
+            current_user.id, transacao_bancaria_id, transacao_nivra_id
+        )
+    )
 
 
 @router.post(

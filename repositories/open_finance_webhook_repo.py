@@ -1,6 +1,7 @@
 import json
 
 from database.connection import get_connection
+from repositories.open_finance_reconciliation_repo import reabrir_correspondencias
 
 
 def buscar_conexao_por_item(provider: str, external_item_id: str) -> tuple | None:
@@ -168,10 +169,10 @@ def persistir_transacoes_webhook(
     try:
         conn.lock_row("conexoes_bancarias", "id", conexao_id)
         existing = {
-            str(row[0])
+            str(row[0]): row[1:]
             for row in conn.execute(
                 """
-                SELECT external_transaction_id
+                SELECT external_transaction_id, id, valor, data, direcao, removida_em
                 FROM transacoes_bancarias
                 WHERE conta_bancaria_externa_id = ?
                 """,
@@ -183,7 +184,8 @@ def persistir_transacoes_webhook(
         updated = 0
         for transaction in transacoes:
             external_transaction_id = str(transaction["external_transaction_id"])
-            conn.execute(
+            previous = existing.get(external_transaction_id)
+            persisted = conn.execute(
                 f"""
                 INSERT INTO transacoes_bancarias (
                     conta_bancaria_externa_id, external_transaction_id,
@@ -197,6 +199,7 @@ def persistir_transacoes_webhook(
                     data = excluded.data,
                     direcao = excluded.direcao,
                     metadata_provider = excluded.metadata_provider,
+                    removida_em = NULL,
                     status_conciliacao = CASE
                         WHEN transacoes_bancarias.valor <> excluded.valor
                           OR transacoes_bancarias.data <> excluded.data
@@ -212,6 +215,7 @@ def persistir_transacoes_webhook(
                         ELSE transacoes_bancarias.transacao_nivra_id
                     END,
                     atualizada_em = CURRENT_TIMESTAMP
+                RETURNING id
                 """,
                 (
                     conta_externa_id,
@@ -222,7 +226,19 @@ def persistir_transacoes_webhook(
                     transaction["direcao"],
                     json.dumps(transaction["metadata_provider"], ensure_ascii=False),
                 ),
-            )
+            ).fetchone()
+            if persisted is None:
+                raise RuntimeError("Nao foi possivel persistir a transacao externa.")
+            if previous is not None:
+                _, old_value, old_date, old_direction, old_removed = previous
+                changed = (
+                    float(old_value) != float(transaction["valor"])
+                    or str(old_date) != str(transaction["data"])
+                    or str(old_direction) != str(transaction["direcao"])
+                    or old_removed is not None
+                )
+                if changed:
+                    reabrir_correspondencias(conn, [int(persisted[0])])
             if external_transaction_id in existing:
                 updated += 1
             else:
@@ -257,14 +273,28 @@ def excluir_transacoes_webhook(
     try:
         conn.lock_row("conexoes_bancarias", "id", conexao_id)
         placeholders = ", ".join("?" for _ in external_transaction_ids)
-        result = conn.execute(
+        rows = conn.execute(
             f"""
-            DELETE FROM transacoes_bancarias
+            SELECT id FROM transacoes_bancarias
             WHERE conta_bancaria_externa_id = ?
               AND external_transaction_id IN ({placeholders})
+              AND removida_em IS NULL
             """,
             (conta_externa_id, *external_transaction_ids),
-        )
+        ).fetchall()
+        bank_ids = [int(row[0]) for row in rows]
+        if bank_ids:
+            id_placeholders = ", ".join("?" for _ in bank_ids)
+            reabrir_correspondencias(conn, bank_ids)
+            conn.execute(
+                f"""
+                UPDATE transacoes_bancarias
+                SET removida_em = CURRENT_TIMESTAMP, status_conciliacao = 'reaberta',
+                    transacao_nivra_id = NULL, atualizada_em = CURRENT_TIMESTAMP
+                WHERE id IN ({id_placeholders})
+                """,
+                bank_ids,
+            )
         conn.execute(
             """
             UPDATE conexoes_bancarias
@@ -275,7 +305,7 @@ def excluir_transacoes_webhook(
             (conexao_id,),
         )
         conn.commit()
-        return result.rowcount
+        return len(bank_ids)
     except Exception:
         conn.rollback()
         raise

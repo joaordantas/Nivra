@@ -204,7 +204,9 @@ Status: **CONCLUÍDA E VALIDADA EM PRODUÇÃO NO SANDBOX**
 - [x] Eventos de atualização, erro, criação, atualização e exclusão de transações
 - [x] Retry seguro, idempotência e logs estruturados
 
-Status: **IMPLEMENTADA E PUBLICADA; VALIDAÇÃO EXTERNA FINAL PENDENTE**
+Evidências reais em produção: entregas `item/updated` e `transactions/updated` receberam HTTP 200. O evento informativo `item/login_succeeded` foi ignorado com segurança. Ainda falta comprovar externamente a repetição do mesmo `eventId` sem duplicação.
+
+Status: **IMPLEMENTADA E PUBLICADA; RETRY EXTERNO DO MESMO EVENTO AINDA PENDENTE**
 
 ### Etapa 2F — UX
 
@@ -229,12 +231,30 @@ Status: **IMPLEMENTADA E PUBLICADA; VALIDAÇÃO EXTERNA COM TESTERS PENDENTE**
 
 ### Etapa 2H — Conciliação avançada
 
-- [ ] Melhorar correspondências com descrições normalizadas e regras configuráveis
-- [ ] Tratar correspondências de múltiplos lançamentos e casos ambíguos
-- [ ] Oferecer revisão em lote
-- [ ] Manter histórico completo das decisões
+- [x] Melhorar correspondências com descrição normalizada, janela temporal e regras centralizadas
+- [x] Tratar correspondências de múltiplos lançamentos e casos ambíguos
+- [x] Oferecer revisão e confirmação segura em lote para alta confiança
+- [x] Manter histórico das sugestões, confirmações, rejeições e reaberturas
+- [x] Reabrir decisões após alteração econômica relevante ou remoção bancária
+- [x] Preservar uma única representação econômica no histórico e no dashboard
+- [x] Validar ownership, CSRF, idempotência e confirmação concorrente
 
-### Gate Open Finance Sandbox
+Status: **IMPLEMENTADA E VALIDADA LOCALMENTE; MIGRATION E VALIDAÇÃO VISUAL EM PRODUÇÃO PENDENTES**
+
+### Gate final da Prioridade 2 — Open Finance MVP
+
+- [x] Connect, sincronização, vínculo, saldo e histórico funcionam no Sandbox
+- [x] Re-sync não duplica dados
+- [x] Conciliação avançada passou nos testes automatizados
+- [-] Webhook repetido é idempotente nos testes; retry externo do mesmo `eventId` ainda sem evidência
+- [-] Experiência de conciliação responsiva foi implementada; validação final após deploy ainda pendente
+- [x] Isolamento entre usuários e proteção CSRF validados
+- [x] Secrets permanecem fora do frontend e da documentação pública
+- [x] Suite Python, migration descartável, Alembic e build passam
+
+Status: **PENDENTE DE VALIDAÇÕES EXTERNAS FINAIS; NÃO EXECUTADO NESTA ETAPA**
+
+### Evidências técnicas do Open Finance Sandbox
 
 - [x] Connect funciona
 - [x] Conta, saldo e transações externas importados
@@ -357,6 +377,6 @@ Lumi será a assistente financeira inteligente da Nivra. A identidade está defi
 
 ## Próxima tarefa recomendada
 
-**Etapa 2H — Conciliação avançada.**
+**Gate final da Prioridade 2 — Open Finance MVP.**
 
-A Etapa 2G tornou a integração Sandbox demonstrável para testers sem contexto técnico. A próxima unidade lógica é ampliar a conciliação já existente para lidar com casos ambíguos e múltiplos lançamentos. A validação externa final da Etapa 2E continua pendente: há evidência de uma entrega real processada em produção, mas ainda falta comprovar uma repetição do mesmo evento sem duplicação.
+A 2H concluiu localmente o motor determinístico de conciliação, a revisão de ambiguidades e o fluxo em lote. O próximo trabalho deve aplicar a migration no Neon, publicar a versão, validar a interface em desktop/mobile e temas claro/escuro, executar o roteiro completo de tester e registrar uma repetição externa real do mesmo `eventId` do webhook sem duplicação. Somente essas evidências devem encerrar a Prioridade 2.

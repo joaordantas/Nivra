@@ -220,6 +220,7 @@ class OpenFinanceSyncApiTests(unittest.TestCase):
                 JOIN contas_bancarias_externas ce
                   ON ce.id = tb.conta_bancaria_externa_id
                 WHERE ce.conexao_id = ?
+                  AND tb.removida_em IS NULL
                 ORDER BY tb.external_transaction_id
                 """,
                 (self.connection_id,),
@@ -229,6 +230,18 @@ class OpenFinanceSyncApiTests(unittest.TestCase):
         self.assertEqual(len(rows), 2)
         self.assertEqual(rows[0], ("external-transaction-1", "Salario atualizado", 2600.0))
         self.assertEqual(rows[1][0], "external-transaction-3")
+        conn = get_connection()
+        try:
+            removed = conn.execute(
+                """
+                SELECT removida_em FROM transacoes_bancarias
+                WHERE external_transaction_id = 'external-transaction-2'
+                """
+            ).fetchone()
+        finally:
+            conn.close()
+        self.assertIsNotNone(removed)
+        self.assertIsNotNone(removed[0])
 
     def test_complete_empty_snapshot_removes_external_accounts_and_transactions(self) -> None:
         self.assertEqual(self.sync().status_code, 200)

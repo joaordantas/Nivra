@@ -31,7 +31,7 @@ class TransactionListItem(BaseModel):
     origem: Literal["manual", "open_finance"] = "manual"
     editavel: bool = True
     status_conciliacao: Literal[
-        "pendente", "possivel_correspondencia", "conciliada", "ignorada"
+        "pendente", "possivel_correspondencia", "ambigua", "conciliada", "ignorada", "reaberta"
     ] | None = None
     transacao_nivra_id: int | None = None
     conciliada_com_banco: bool = False
@@ -50,3 +50,31 @@ class ReconciliationResponse(BaseModel):
     transacao_bancaria_id: int
     transacao_nivra_id: int | None = None
     status: Literal["conciliada", "rejeitada"]
+
+
+class ReconciliationCandidate(BaseModel):
+    transacao_nivra_id: int
+    descricao: str
+    valor: float
+    data: str
+    direcao: Literal["entrada", "saida"]
+    confianca: Literal["alta", "media", "baixa"]
+    motivos: list[str]
+
+
+class ReconciliationSuggestion(BaseModel):
+    transacao_bancaria_id: int
+    descricao: str
+    valor: float
+    data: str
+    direcao: Literal["entrada", "saida"]
+    conta_id: int
+    conta: str
+    instituicao_nome: str
+    ambigua: bool
+    candidatos: list[ReconciliationCandidate]
+
+
+class ReconciliationBatchResponse(BaseModel):
+    confirmadas: int
+    solicitadas: int

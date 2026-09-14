@@ -78,7 +78,11 @@ Quando o widget conclui uma conexão, o frontend envia somente o `itemId` para `
 
 O PostgreSQL aplica unicidade por provider e Item, e o service rejeita tentativas de reivindicar uma conexão de outro usuário. `GET /api/open-finance/connections` sempre filtra pelo usuário autenticado e restaura o estado após refresh ou novo login.
 
-As tabelas `contas_bancarias_externas`, `transacoes_bancarias` e `eventos_sincronizacao` estão preparadas para a sincronização posterior. Nenhuma conta, saldo ou transação é importada nesta etapa. `metadata_provider` permanece nulo; quando for usado, receberá somente campos explicitamente necessários, nunca credenciais, documentos ou payloads completos.
+Contas, saldos e transações do Sandbox são persistidos em `contas_bancarias_externas` e `transacoes_bancarias`. Uma conta externa pode ser vinculada a uma conta Nivra; nesse caso, o saldo informado pelo provider é a fonte do saldo atual e o histórico combina os lançamentos bancários e manuais sem copiar cegamente os dados externos para `transacoes`.
+
+A conciliação compara somente movimentos do mesmo usuário e da mesma conta vinculada, com direção e valor idênticos e diferença máxima de dois dias. A descrição normalizada aumenta a confiança, sem ser requisito. `correspondencias_conciliacao` preserva candidatos, confiança, motivos e decisões. Confirmações mantêm os dois registros físicos, mas a consulta financeira exibe e contabiliza um único evento. Rejeições não reaparecem em uma sincronização comum; alterações de valor, data, direção ou restauração da transação bancária reabrem a análise. Exclusões externas são arquivadas e não removem o lançamento manual.
+
+Webhooks usam um segredo exclusivo no backend e uma caixa de entrada idempotente por `eventId`. Eventos suportados atualizam somente a conexão pertencente ao Item recebido; eventos informativos desconhecidos são reconhecidos e ignorados sem derrubar a integração. O ambiente permanece limitado ao Pluggy Sandbox.
 
 ## Evolução planejada
 

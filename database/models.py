@@ -10,6 +10,7 @@ from sqlalchemy import (
     JSON,
     MetaData,
     Numeric,
+    SmallInteger,
     String,
     Table,
     Text,
@@ -292,6 +293,7 @@ transacoes_bancarias = Table(
     Column("direcao", String(20), nullable=False),
     Column("status_conciliacao", String(30), nullable=False, server_default="pendente"),
     Column("transacao_nivra_id", ForeignKey("transacoes.id", ondelete="SET NULL")),
+    Column("removida_em", DateTime(timezone=True)),
     Column("metadata_provider", JSON().with_variant(JSONB, "postgresql")),
     Column("criada_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
     Column("atualizada_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
@@ -306,12 +308,34 @@ transacoes_bancarias = Table(
     ),
     CheckConstraint("direcao IN ('entrada', 'saida')", name="ck_transacoes_bancarias_direcao"),
     CheckConstraint(
-        "status_conciliacao IN ('pendente', 'possivel_correspondencia', 'conciliada', 'ignorada')",
+        "status_conciliacao IN ('pendente', 'possivel_correspondencia', 'ambigua', 'conciliada', 'ignorada', 'reaberta')",
         name="ck_transacoes_bancarias_conciliacao",
     ),
 )
 Index("ix_transacoes_bancarias_conta_data", transacoes_bancarias.c.conta_bancaria_externa_id, transacoes_bancarias.c.data)
 Index("ix_transacoes_bancarias_transacao_nivra", transacoes_bancarias.c.transacao_nivra_id)
+
+correspondencias_conciliacao = Table(
+    "correspondencias_conciliacao", metadata,
+    Column("id", Integer, primary_key=True),
+    Column("usuario_id", ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False),
+    Column("transacao_bancaria_id", ForeignKey("transacoes_bancarias.id", ondelete="CASCADE"), nullable=False),
+    Column("transacao_nivra_id", ForeignKey("transacoes.id", ondelete="CASCADE"), nullable=False),
+    Column("status", String(20), nullable=False, server_default="sugerida"),
+    Column("confianca", String(10), nullable=False),
+    Column("score", SmallInteger, nullable=False),
+    Column("motivos", Text, nullable=False),
+    Column("criada_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    Column("atualizada_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    Column("decidida_em", DateTime(timezone=True)),
+    UniqueConstraint("transacao_bancaria_id", "transacao_nivra_id", name="uq_correspondencias_par"),
+    CheckConstraint("status IN ('sugerida', 'confirmada', 'rejeitada', 'reaberta')", name="ck_correspondencias_status"),
+    CheckConstraint("confianca IN ('alta', 'media', 'baixa')", name="ck_correspondencias_confianca"),
+    CheckConstraint("score BETWEEN 0 AND 100", name="ck_correspondencias_score"),
+)
+Index("ix_correspondencias_usuario_status", correspondencias_conciliacao.c.usuario_id, correspondencias_conciliacao.c.status)
+Index("uq_correspondencias_bancaria_confirmada", correspondencias_conciliacao.c.transacao_bancaria_id, unique=True, postgresql_where=correspondencias_conciliacao.c.status == "confirmada", sqlite_where=correspondencias_conciliacao.c.status == "confirmada")
+Index("uq_correspondencias_manual_confirmada", correspondencias_conciliacao.c.transacao_nivra_id, unique=True, postgresql_where=correspondencias_conciliacao.c.status == "confirmada", sqlite_where=correspondencias_conciliacao.c.status == "confirmada")
 
 eventos_sincronizacao = Table(
     "eventos_sincronizacao", metadata,
@@ -367,6 +391,6 @@ Index(
 TABLES_IN_DEPENDENCY_ORDER = [
     usuarios, sessoes, auth_tokens, auth_rate_events, categorias, contas, transacoes, transferencias, cartoes,
     faturas, compras_cartao, pagamentos_fatura, vendas, parcelas, limites, conexoes_bancarias,
-    contas_bancarias_externas, transacoes_bancarias, eventos_sincronizacao,
+    contas_bancarias_externas, transacoes_bancarias, correspondencias_conciliacao, eventos_sincronizacao,
     eventos_webhook_open_finance,
 ]

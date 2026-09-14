@@ -25,7 +25,7 @@ export interface Transaction {
   conta: string;
   origem: "manual" | "open_finance";
   editavel: boolean;
-  status_conciliacao: "pendente" | "possivel_correspondencia" | "conciliada" | "ignorada" | null;
+  status_conciliacao: "pendente" | "possivel_correspondencia" | "ambigua" | "conciliada" | "ignorada" | "reaberta" | null;
   transacao_nivra_id: number | null;
   conciliada_com_banco: boolean;
   neutra: boolean;
@@ -37,6 +37,34 @@ export interface ReconciliationResult {
   transacao_bancaria_id: number;
   transacao_nivra_id: number | null;
   status: "conciliada" | "rejeitada";
+}
+
+export interface ReconciliationCandidate {
+  transacao_nivra_id: number;
+  descricao: string;
+  valor: number;
+  data: string;
+  direcao: "entrada" | "saida";
+  confianca: "alta" | "media" | "baixa";
+  motivos: string[];
+}
+
+export interface ReconciliationSuggestion {
+  transacao_bancaria_id: number;
+  descricao: string;
+  valor: number;
+  data: string;
+  direcao: "entrada" | "saida";
+  conta_id: number;
+  conta: string;
+  instituicao_nome: string;
+  ambigua: boolean;
+  candidatos: ReconciliationCandidate[];
+}
+
+export interface ReconciliationBatchResult {
+  confirmadas: number;
+  solicitadas: number;
 }
 
 export type AccountType = "corrente" | "poupanca" | "digital" | "dinheiro" | "outro";

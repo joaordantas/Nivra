@@ -13,6 +13,8 @@ import type {
   OpenFinanceSyncResult,
   ProfitSummary,
   ReconciliationResult,
+  ReconciliationSuggestion,
+  ReconciliationBatchResult,
   ReceivableByClient,
   Sale,
   Transaction,
@@ -124,6 +126,14 @@ export const api = {
     request<ReconciliationResult>(`/transactions/bank/${bankTransactionId}/reconciliation/confirm`, { method: "POST" }),
   rejectBankReconciliation: (bankTransactionId: number) =>
     request<ReconciliationResult>(`/transactions/bank/${bankTransactionId}/reconciliation/reject`, { method: "POST" }),
+  getReconciliationSuggestions: () =>
+    request<ReconciliationSuggestion[]>("/transactions/reconciliation/suggestions"),
+  confirmSelectedBankReconciliation: (bankTransactionId: number, transactionId: number) =>
+    request<ReconciliationResult>(`/transactions/bank/${bankTransactionId}/reconciliation/${transactionId}/confirm`, { method: "POST" }),
+  rejectSelectedBankReconciliation: (bankTransactionId: number, transactionId: number) =>
+    request<ReconciliationResult>(`/transactions/bank/${bankTransactionId}/reconciliation/${transactionId}/reject`, { method: "POST" }),
+  confirmHighConfidenceReconciliations: () =>
+    request<ReconciliationBatchResult>("/transactions/reconciliation/confirm-high-confidence", { method: "POST" }),
 
   getAccounts: (includeInactive = false) => request<Account[]>(`/accounts?incluir_inativas=${includeInactive}`),
   createAccount: (payload: { nome: string; tipo: AccountType; saldo_inicial: number }) =>

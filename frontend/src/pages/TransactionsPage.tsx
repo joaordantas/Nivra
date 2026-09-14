@@ -1,9 +1,10 @@
-import { ArrowDownLeft, ArrowRightLeft, ArrowUpRight, Check, FilterX, Landmark, Pencil, ReceiptText, Search, Trash2, X } from "lucide-react";
+import { ArrowDownLeft, ArrowRightLeft, ArrowUpRight, Check, FilterX, Landmark, Pencil, ReceiptText, Search, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import { useAuth } from "../app/providers";
 import { MovementForm } from "../components/finance/MovementForm";
+import { ReconciliationReview } from "../components/finance/ReconciliationReview";
 import { Card } from "../components/ui/Card";
 import { EmptyState } from "../components/ui/EmptyState";
 import { Feedback } from "../components/ui/Feedback";
@@ -18,6 +19,7 @@ type Movement =
   | { kind: "transfer"; id: number; tipo: "transferencia"; valor: number; descricao: string; data: string; contaOrigemId: number; contaOrigem: string; contaDestinoId: number; contaDestino: string };
 
 type TypeFilter = "todos" | MovementType;
+type OriginFilter = "todas" | "manual" | "open_finance" | "conciliada";
 
 function initialForm(accounts: Account[]): MovementFormValues {
   const defaultAccount = accounts.find((account) => account.principal) ?? accounts[0];
@@ -77,6 +79,7 @@ export function TransactionsPage() {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("todos");
   const [accountFilter, setAccountFilter] = useState(0);
   const [categoryFilter, setCategoryFilter] = useState(0);
+  const [originFilter, setOriginFilter] = useState<OriginFilter>("todas");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
@@ -125,11 +128,14 @@ export function TransactionsPage() {
         ? movement.contaOrigemId === accountFilter || movement.contaDestinoId === accountFilter
         : movement.contaId === accountFilter);
       const matchesCategory = categoryFilter === 0 || (movement.kind === "transaction" && movement.categoriaId === categoryFilter);
+      const matchesOrigin = originFilter === "todas" || (originFilter === "manual"
+        ? movement.kind === "transfer" || (movement.kind === "transaction" && movement.origem === "manual" && !movement.conciliadaComBanco)
+        : movement.kind === "transaction" && (originFilter === "conciliada" ? movement.conciliadaComBanco : movement.origem === "open_finance"));
       const matchesStart = !startDate || movement.data >= startDate;
       const matchesEnd = !endDate || movement.data <= endDate;
-      return matchesSearch && matchesType && matchesAccount && matchesCategory && matchesStart && matchesEnd;
+      return matchesSearch && matchesType && matchesAccount && matchesCategory && matchesOrigin && matchesStart && matchesEnd;
     });
-  }, [accountFilter, categoryFilter, endDate, movements, search, startDate, typeFilter]);
+  }, [accountFilter, categoryFilter, endDate, movements, originFilter, search, startDate, typeFilter]);
 
   const summary = useMemo(() => filteredMovements.reduce((result, movement) => {
     if (movement.kind === "transaction" && movement.neutra) return result;
@@ -139,7 +145,7 @@ export function TransactionsPage() {
     return result;
   }, { entradas: 0, saidas: 0, saldo: 0 }), [filteredMovements]);
 
-  const hasFilters = Boolean(search || typeFilter !== "todos" || accountFilter || categoryFilter || startDate || endDate);
+  const hasFilters = Boolean(search || typeFilter !== "todos" || accountFilter || categoryFilter || originFilter !== "todas" || startDate || endDate);
 
   async function load() {
     if (!user) return;
@@ -234,27 +240,12 @@ export function TransactionsPage() {
     }
   }
 
-  async function reconcileBankTransaction(movement: Extract<Movement, { kind: "transaction" }>, confirm: boolean) {
-    try {
-      setSaving(true);
-      setError("");
-      if (confirm) await api.confirmBankReconciliation(movement.id);
-      else await api.rejectBankReconciliation(movement.id);
-      setMessage(confirm ? "Correspondência confirmada. O lançamento será contado uma única vez." : "Correspondência rejeitada. Os dois lançamentos foram mantidos.");
-      await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Não foi possível atualizar a conciliação.");
-      setMessage("");
-    } finally {
-      setSaving(false);
-    }
-  }
-
   function clearFilters() {
     setSearch("");
     setTypeFilter("todos");
     setAccountFilter(0);
     setCategoryFilter(0);
+    setOriginFilter("todas");
     setStartDate("");
     setEndDate("");
   }
@@ -271,6 +262,8 @@ export function TransactionsPage() {
         <Card className="summary-card"><span>Gastos</span><strong>{formatCurrency(summary.saidas)}</strong></Card>
       </section>
 
+      <ReconciliationReview onChanged={load} />
+
       <div className="transactions-layout">
         <section id="new-transaction" ref={formRef}>
           <Card className="transaction-form-card">
@@ -286,6 +279,7 @@ export function TransactionsPage() {
             <select aria-label="Filtrar por tipo" onChange={(event) => setTypeFilter(event.target.value as TypeFilter)} value={typeFilter}><option value="todos">Todos os tipos</option><option value="saida">Despesas</option><option value="entrada">Receitas</option><option value="transferencia">Transferências</option></select>
             <select aria-label="Filtrar por conta" onChange={(event) => setAccountFilter(Number(event.target.value))} value={accountFilter}><option value={0}>Todas as contas</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.nome}</option>)}</select>
             <select aria-label="Filtrar por categoria" onChange={(event) => setCategoryFilter(Number(event.target.value))} value={categoryFilter}><option value={0}>Todas as categorias</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.nome}</option>)}</select>
+            <select aria-label="Filtrar por origem" onChange={(event) => setOriginFilter(event.target.value as OriginFilter)} value={originFilter}><option value="todas">Todas as origens</option><option value="manual">Manual</option><option value="open_finance">Banco</option><option value="conciliada">Manual + Banco</option></select>
             <label className="filter-date"><span>De</span><input aria-label="Data inicial" onChange={(event) => setStartDate(event.target.value)} type="date" value={startDate} /></label>
             <label className="filter-date"><span>Até</span><input aria-label="Data final" min={startDate || undefined} onChange={(event) => setEndDate(event.target.value)} type="date" value={endDate} /></label>
           </div>
@@ -303,9 +297,9 @@ export function TransactionsPage() {
                 return (
                   <div className="transaction-row transaction-row-actions" key={`${movement.kind}-${movement.kind === "transaction" ? movement.origem : "manual"}-${movement.id}`}>
                     <span className={`transaction-icon ${isTransfer ? "transfer" : isIncome ? "income" : "expense"}`}>{isTransfer ? <ArrowRightLeft size={18} /> : isIncome ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />}</span>
-                    <span className="transaction-info"><strong>{movement.descricao || (isTransfer ? "Transferência" : isIncome ? "Receita" : "Despesa")}</strong><small>{isTransfer ? `${movement.contaOrigem} → ${movement.contaDestino}` : `${movement.categoria || "Sem categoria"} · ${movement.conta}`} · {formatDate(movement.data)}</small>{movement.kind === "transaction" ? <span className="transaction-origin-line"><span className={`transaction-origin ${movement.conciliadaComBanco ? "reconciled" : movement.origem === "open_finance" ? "bank" : "manual"}`}>{movement.conciliadaComBanco ? <><Check size={12} />Manual + Banco</> : movement.origem === "open_finance" ? <><Landmark size={12} />Banco</> : "Manual"}</span>{movement.statusConciliacao === "possivel_correspondencia" ? <span className="transaction-origin possible">Possível duplicação</span> : null}{movement.neutra ? <span className="transaction-origin neutral">Transferência interna</span> : null}{movement.instituicaoNome ? <small>{movement.instituicaoNome}</small> : null}</span> : null}</span>
+                    <span className="transaction-info"><strong>{movement.descricao || (isTransfer ? "Transferência" : isIncome ? "Receita" : "Despesa")}</strong><small>{isTransfer ? `${movement.contaOrigem} → ${movement.contaDestino}` : `${movement.categoria || "Sem categoria"} · ${movement.conta}`} · {formatDate(movement.data)}</small>{movement.kind === "transaction" ? <span className="transaction-origin-line"><span className={`transaction-origin ${movement.conciliadaComBanco ? "reconciled" : movement.origem === "open_finance" ? "bank" : "manual"}`}>{movement.conciliadaComBanco ? <><Check size={12} />Manual + Banco</> : movement.origem === "open_finance" ? <><Landmark size={12} />Banco</> : "Manual"}</span>{movement.statusConciliacao === "possivel_correspondencia" || movement.statusConciliacao === "ambigua" ? <span className="transaction-origin possible">{movement.statusConciliacao === "ambigua" ? "Mais de uma correspondência" : "Possível correspondência"}</span> : null}{movement.neutra ? <span className="transaction-origin neutral">Transferência interna</span> : null}{movement.instituicaoNome ? <small>{movement.instituicaoNome}</small> : null}</span> : null}</span>
                     <strong className={isIncome ? "amount-income" : isTransfer ? "" : "amount-expense"}>{isIncome ? "+" : isTransfer ? "" : "−"} {formatCurrency(movement.valor)}</strong>
-                    {movement.kind === "transfer" || movement.editavel ? <span className="movement-actions"><button aria-label={`Editar ${movement.descricao || "movimentação"}`} className="icon-button" onClick={() => setEditing(movement)} type="button"><Pencil size={15} /></button><button aria-label={`Excluir ${movement.descricao || "movimentação"}`} className="icon-button danger-icon-button" onClick={() => void deleteMovement(movement)} type="button"><Trash2 size={15} /></button></span> : movement.statusConciliacao === "possivel_correspondencia" ? <span className="movement-actions reconciliation-actions"><button aria-label={`Confirmar correspondência de ${movement.descricao}`} className="icon-button reconciliation-confirm" disabled={saving} onClick={() => void reconcileBankTransaction(movement, true)} title="Confirmar correspondência" type="button"><Check size={15} /></button><button aria-label={`Rejeitar correspondência de ${movement.descricao}`} className="icon-button danger-icon-button" disabled={saving} onClick={() => void reconcileBankTransaction(movement, false)} title="Não corresponde" type="button"><X size={15} /></button></span> : null}
+                    {movement.kind === "transfer" || movement.editavel ? <span className="movement-actions"><button aria-label={`Editar ${movement.descricao || "movimentação"}`} className="icon-button" onClick={() => setEditing(movement)} type="button"><Pencil size={15} /></button><button aria-label={`Excluir ${movement.descricao || "movimentação"}`} className="icon-button danger-icon-button" onClick={() => void deleteMovement(movement)} type="button"><Trash2 size={15} /></button></span> : null}
                   </div>
                 );
               })}

@@ -1,6 +1,7 @@
 import json
 
 from database.connection import get_connection
+from repositories.open_finance_reconciliation_repo import reabrir_correspondencias
 
 
 def buscar_conexao_para_sincronizacao(conexao_id: int, usuario_id: int) -> tuple | None:
@@ -97,6 +98,38 @@ def _delete_missing(
     return result.rowcount
 
 
+def _mark_missing_transactions_removed(
+    conn,
+    external_account_id: int,
+    current_external_ids: list[str],
+) -> int:
+    filters = ["conta_bancaria_externa_id = ?", "removida_em IS NULL"]
+    params: list[object] = [external_account_id]
+    if current_external_ids:
+        placeholders = ", ".join("?" for _ in current_external_ids)
+        filters.append(f"external_transaction_id NOT IN ({placeholders})")
+        params.extend(current_external_ids)
+    rows = conn.execute(
+        f"SELECT id FROM transacoes_bancarias WHERE {' AND '.join(filters)}",
+        params,
+    ).fetchall()
+    bank_ids = [int(row[0]) for row in rows]
+    if not bank_ids:
+        return 0
+    placeholders = ", ".join("?" for _ in bank_ids)
+    reabrir_correspondencias(conn, bank_ids)
+    conn.execute(
+        f"""
+        UPDATE transacoes_bancarias
+        SET removida_em = CURRENT_TIMESTAMP, status_conciliacao = 'reaberta',
+            transacao_nivra_id = NULL, atualizada_em = CURRENT_TIMESTAMP
+        WHERE id IN ({placeholders})
+        """,
+        bank_ids,
+    )
+    return len(bank_ids)
+
+
 def persistir_snapshot_sincronizacao(
     conexao_id: int,
     usuario_id: int,
@@ -173,10 +206,10 @@ def persistir_snapshot_sincronizacao(
                 created_accounts += 1
 
             existing_transactions = {
-                str(row[0])
+                str(row[0]): row[1:]
                 for row in conn.execute(
                     """
-                    SELECT external_transaction_id
+                    SELECT external_transaction_id, id, valor, data, direcao, removida_em
                     FROM transacoes_bancarias
                     WHERE conta_bancaria_externa_id = ?
                     """,
@@ -187,7 +220,8 @@ def persistir_snapshot_sincronizacao(
             for transaction in account["transacoes"]:
                 external_transaction_id = str(transaction["external_transaction_id"])
                 current_transaction_ids.append(external_transaction_id)
-                conn.execute(
+                previous = existing_transactions.get(external_transaction_id)
+                persisted = conn.execute(
                     f"""
                     INSERT INTO transacoes_bancarias (
                         conta_bancaria_externa_id, external_transaction_id,
@@ -201,6 +235,7 @@ def persistir_snapshot_sincronizacao(
                         data = excluded.data,
                         direcao = excluded.direcao,
                         metadata_provider = excluded.metadata_provider,
+                        removida_em = NULL,
                         status_conciliacao = CASE
                             WHEN transacoes_bancarias.valor <> excluded.valor
                               OR transacoes_bancarias.data <> excluded.data
@@ -216,6 +251,7 @@ def persistir_snapshot_sincronizacao(
                             ELSE transacoes_bancarias.transacao_nivra_id
                         END,
                         atualizada_em = CURRENT_TIMESTAMP
+                    RETURNING id
                     """,
                     (
                         external_account_pk,
@@ -226,19 +262,26 @@ def persistir_snapshot_sincronizacao(
                         transaction["direcao"],
                         json.dumps(transaction["metadata_provider"], ensure_ascii=False),
                     ),
-                )
+                ).fetchone()
+                if persisted is None:
+                    raise RuntimeError("Nao foi possivel persistir a transacao externa.")
+                if previous is not None:
+                    _, old_value, old_date, old_direction, old_removed = previous
+                    changed = (
+                        float(old_value) != float(transaction["valor"])
+                        or str(old_date) != str(transaction["data"])
+                        or str(old_direction) != str(transaction["direcao"])
+                        or old_removed is not None
+                    )
+                    if changed:
+                        reabrir_correspondencias(conn, [int(persisted[0])])
                 if external_transaction_id in existing_transactions:
                     updated_transactions += 1
                 else:
                     created_transactions += 1
 
-            deleted_transactions += _delete_missing(
-                conn,
-                "transacoes_bancarias",
-                "conta_bancaria_externa_id",
-                external_account_pk,
-                "external_transaction_id",
-                current_transaction_ids,
+            deleted_transactions += _mark_missing_transactions_removed(
+                conn, external_account_pk, current_transaction_ids
             )
 
         if current_account_ids:
@@ -325,7 +368,7 @@ def listar_contas_externas(conexao_id: int, usuario_id: int) -> list[tuple]:
             JOIN conexoes_bancarias cb ON cb.id = ce.conexao_id
             LEFT JOIN contas c ON c.id = ce.conta_nivra_id
             LEFT JOIN transacoes_bancarias tb
-                   ON tb.conta_bancaria_externa_id = ce.id
+                   ON tb.conta_bancaria_externa_id = ce.id AND tb.removida_em IS NULL
             WHERE ce.conexao_id = ? AND cb.usuario_id = ?
             GROUP BY ce.id, ce.nome, ce.tipo, ce.subtipo, ce.moeda, ce.saldo,
                      ce.conta_nivra_id, c.nome

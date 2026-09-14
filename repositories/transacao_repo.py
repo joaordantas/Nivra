@@ -15,6 +15,7 @@ TRANSACTION_SELECT = """
     LEFT JOIN transacoes_bancarias tb
       ON tb.transacao_nivra_id = t.id
      AND tb.status_conciliacao = 'conciliada'
+     AND tb.removida_em IS NULL
     LEFT JOIN contas_bancarias_externas ce
       ON ce.id = tb.conta_bancaria_externa_id
     LEFT JOIN conexoes_bancarias cb
@@ -87,6 +88,7 @@ def listar_transacoes_bancarias_vinculadas(
             "cb.desconectada_em IS NULL",
             "ce.conta_nivra_id IS NOT NULL",
             "NOT (tb.status_conciliacao = 'conciliada' AND tb.transacao_nivra_id IS NOT NULL)",
+            "tb.removida_em IS NULL",
         ]
         parametros: list[object] = [usuario_id]
         if data_inicio is not None:
@@ -143,6 +145,14 @@ def atualizar_transacao(
     try:
         conn.execute(
             """
+            UPDATE correspondencias_conciliacao
+            SET status = 'reaberta', atualizada_em = CURRENT_TIMESTAMP
+            WHERE transacao_nivra_id = ? AND status IN ('sugerida', 'confirmada')
+            """,
+            (transacao_id,),
+        )
+        conn.execute(
+            """
             UPDATE transacoes_bancarias
             SET status_conciliacao = 'pendente',
                 transacao_nivra_id = NULL,
@@ -177,6 +187,14 @@ def atualizar_transacao(
 def deletar_transacao(transacao_id: int, usuario_id: int) -> bool:
     conn = get_connection()
     try:
+        conn.execute(
+            """
+            UPDATE correspondencias_conciliacao
+            SET status = 'reaberta', atualizada_em = CURRENT_TIMESTAMP
+            WHERE transacao_nivra_id = ? AND status IN ('sugerida', 'confirmada')
+            """,
+            (transacao_id,),
+        )
         conn.execute(
             """
             UPDATE transacoes_bancarias

@@ -275,13 +275,14 @@ class OpenFinanceWebhookApiTests(unittest.TestCase):
         try:
             row = conn.execute(
                 """
-                SELECT descricao, valor FROM transacoes_bancarias
+                SELECT descricao, valor, removida_em FROM transacoes_bancarias
                 WHERE external_transaction_id = 'transaction-2'
                 """
             ).fetchone()
         finally:
             conn.close()
-        self.assertIsNone(row)
+        self.assertIsNotNone(row)
+        self.assertIsNotNone(row[2])
 
     def test_provider_failure_is_persisted_and_same_event_can_retry(self) -> None:
         self.seed_from_item_event()

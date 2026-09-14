@@ -50,6 +50,11 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 - credenciais fictícias oficiais do Pluggy Bank exibidas de forma expansível, com aviso para nunca usar dados bancários reais;
 - guia público de teste Sandbox, checklist de regressão e modelo seguro de relato de bug;
 - orientações de primeiro uso sem dados no Dashboard, Contas e Transações.
+- motor determinístico de conciliação com janela de dois dias, normalização de descrições e níveis de confiança;
+- histórico persistente de sugestões, confirmações, rejeições e reaberturas de correspondências;
+- revisão de casos ambíguos e confirmação em lote restrita a correspondências únicas de alta confiança;
+- filtros de origem para movimentações manuais, bancárias e conciliadas;
+- arquivamento de transações bancárias removidas sem excluir o lançamento manual correspondente.
 
 ### Changed
 
@@ -62,6 +67,8 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 - contas manuais preservam seu cálculo de saldo; contas bancárias vinculadas passam a exibir o saldo informado pelo provider.
 - o dashboard considera receitas e despesas das contas bancárias vinculadas, ignora duplicações confirmadas e mantém transferências internas neutras.
 - alterações bancárias recebidas por webhook atualizam somente os registros indicados; mudanças financeiras relevantes desfazem conciliações antigas para nova revisão.
+- o histórico e o dashboard mantêm uma única representação econômica após a conciliação, preservando os registros manual e bancário para auditoria;
+- rejeições permanecem válidas em sincronizações comuns, enquanto mudanças econômicas do banco reabrem a decisão.
 
 ### Security
 
