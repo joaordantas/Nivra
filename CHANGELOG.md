@@ -42,6 +42,10 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 - processamento de `item/updated`, `item/error`, `item/deleted` e eventos de criação, atualização e exclusão de transações;
 - retentativa segura de eventos com falha, reivindicação atômica contra concorrência, deduplicação e logs estruturados sem payload financeiro;
 - utilitário para cadastrar ou atualizar o webhook com header secreto na API da Pluggy.
+- experiência Open Finance na página de Contas, com estado vazio, conexões, status legíveis, última atualização e feedback de sincronização;
+- modal responsivo para vincular uma conta externa a uma conta Nivra existente ou criar uma nova conta sincronizada;
+- indicação discreta de banco conectado e saldo atualizado pelo banco nas contas Nivra;
+- apresentação somente para consulta de cartões externos enquanto a integração com cartões não estiver disponível.
 
 ### Changed
 

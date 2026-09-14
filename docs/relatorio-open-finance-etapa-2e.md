@@ -1,7 +1,7 @@
 # Relatório — Open Finance 2E: webhooks
 
 Data: 13 de setembro de 2026
-Status: implementação local concluída; ativação no Neon, Vercel e Pluggy pendente
+Status: implementada e publicada; validação externa final pendente
 
 ## Entrega
 
@@ -65,17 +65,16 @@ Ela cria a caixa de entrada persistente, constraint de unicidade, checks de esta
 - compilação Python aprovada;
 - build React/TypeScript aprovado.
 
-A migration ainda não foi executada no Neon principal e nenhum webhook real foi cadastrado durante esta validação.
+A migration foi aplicada no Neon principal como `a93c7e4d5f21 (head)`. O endpoint está publicado na Vercel, as variáveis de webhook foram configuradas e o script de registro confirmou a atualização segura do webhook na Application Sandbox.
+
+A validação externa final permanece pendente: a Pluggy ainda precisa entregar um evento real e a mesma entrega deve ser repetida para confirmar a idempotência ponta a ponta. O provider limitou uma nova atualização do Item Sandbox por frequência; isso não indica falha na Nivra.
 
 ## Ativação manual
 
-1. aplicar `alembic upgrade head` usando `DATABASE_URL_UNPOOLED`;
-2. confirmar `a93c7e4d5f21 (head)`;
-3. configurar `PLUGGY_WEBHOOK_SECRET` e `PLUGGY_WEBHOOK_URL` na Vercel;
-4. publicar o código;
-5. disponibilizar as mesmas variáveis no terminal local, junto das credenciais Sandbox;
-6. executar `python scripts/register_pluggy_webhook.py`;
-7. validar e reenviar eventos pelo painel Events da Pluggy.
+1. aguardar a janela permitida pelo Sandbox e solicitar nova atualização do Item;
+2. confirmar a entrega no painel Events da Pluggy;
+3. confirmar resposta HTTP 2xx e o registro em `eventos_webhook_open_finance`;
+4. repetir o mesmo evento e verificar que não há processamento ou dado duplicado.
 
 ## Limitação operacional
 
@@ -83,4 +82,4 @@ O processamento ocorre dentro da requisição do FastAPI. As consultas de transa
 
 ## Próxima tarefa
 
-Após a ativação e validação real dos webhooks, a próxima unidade do roadmap é a **Etapa 2F — UX Open Finance**. Ela não faz parte desta entrega.
+A Etapa 2F — UX Open Finance foi concluída separadamente. A validação externa real dos webhooks continua pendente e não bloqueia a próxima unidade de produto, a **Etapa 2G — Demo para testers**.

@@ -185,7 +185,7 @@ export function AccountsPage() {
             <div><small>{accountTypeLabels[account.tipo]}</small><h2>{account.nome}</h2></div>
             <span className="account-badges">
               {account.principal ? <span className="status-badge primary"><Star size={12} />Principal</span> : null}
-              {account.origem === "open_finance" ? <span className="status-badge bank"><Landmark size={12} />Banco</span> : null}
+              {account.origem === "open_finance" ? <span className="status-badge bank"><Landmark size={12} />Banco conectado</span> : null}
               <span className={`status-badge ${account.ativo ? "active" : "inactive"}`}>{account.ativo ? "Ativa" : "Inativa"}</span>
             </span>
             <strong>{formatCurrency(account.saldo_atual)}</strong>
@@ -195,7 +195,7 @@ export function AccountsPage() {
               <button aria-label={`${account.ativo ? "Desativar" : "Reativar"} ${account.nome}`} className="icon-button" onClick={() => void toggleAccount(account)} type="button"><Power size={15} /></button>
             </span>
             {account.percentual_uso > 0 ? <small className="account-usage">{account.percentual_uso.toLocaleString("pt-BR")}% das movimentações dos últimos 90 dias{account.mais_utilizada ? " · mais utilizada" : ""}</small> : null}
-            {account.origem === "open_finance" ? <small className="account-source">Saldo sincronizado por {account.instituicao_nome ?? "Open Finance"}{account.ultima_sincronizacao_em ? ` · ${new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(account.ultima_sincronizacao_em))}` : ""}</small> : null}
+            {account.origem === "open_finance" ? <small className="account-source">Saldo atualizado pelo banco · {account.instituicao_nome ?? "Open Finance"}{account.ultima_sincronizacao_em ? ` · ${new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(account.ultima_sincronizacao_em))}` : ""}</small> : null}
           </Card>
         ))}
       </section>

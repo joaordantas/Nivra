@@ -196,7 +196,7 @@ Status: **CONCLUÍDA E VALIDADA; RE-SYNC VALIDADO EM PRODUÇÃO NO SANDBOX**
 - [x] Usuário A não acessa vínculos ou dados do usuário B
 - [x] Testes Python e build React/TypeScript passam
 
-Status: **CONCLUÍDA E VALIDADA LOCALMENTE; ATIVAÇÃO DA MIGRATION/DEPLOY PENDENTE**
+Status: **CONCLUÍDA E VALIDADA EM PRODUÇÃO NO SANDBOX**
 
 ### Etapa 2E — Webhooks
 
@@ -204,14 +204,19 @@ Status: **CONCLUÍDA E VALIDADA LOCALMENTE; ATIVAÇÃO DA MIGRATION/DEPLOY PENDE
 - [x] Eventos de atualização, erro, criação, atualização e exclusão de transações
 - [x] Retry seguro, idempotência e logs estruturados
 
-Status: **IMPLEMENTAÇÃO E TESTES LOCAIS CONCLUÍDOS; MIGRATION, DEPLOY E VALIDAÇÃO SANDBOX PENDENTES**
+Status: **IMPLEMENTADA E PUBLICADA; VALIDAÇÃO EXTERNA FINAL PENDENTE**
 
 ### Etapa 2F — UX
 
-- [ ] Botão "Conectar banco"
-- [ ] Instituição, status e última sincronização
-- [ ] Reconectar, sincronizar agora e desconectar
-- [ ] Fluxo responsivo, loading, erro e safe area no mobile
+- [x] Botão "Conectar banco"
+- [x] Instituição, status compreensível e última sincronização
+- [x] Atualizar dados com estado de carregamento, sucesso e erro
+- [x] Contas externas, saldos, vínculo e criação de conta Nivra em modal responsivo
+- [x] Fluxo responsivo, loading, empty states e safe area no mobile
+
+Reconexão e desconexão não são exibidas: ainda não existe um fluxo backend/provider completo e seguro para essas ações. Elas permanecem pendentes, sem simular uma capacidade inexistente.
+
+Status: **CONCLUÍDA**
 
 ### Etapa 2G — Demo para testers
 
@@ -350,6 +355,6 @@ Lumi será a assistente financeira inteligente da Nivra. A identidade está defi
 
 ## Próxima tarefa recomendada
 
-**Ativar e validar a Etapa 2E em produção.**
+**Etapa 2G — Demo para testers.**
 
-O código, a migration e os testes dos webhooks estão concluídos localmente. A próxima unidade é aplicar a migration `a93c7e4d5f21`, configurar o segredo no backend, publicar e validar uma entrega real e sua repetição no Sandbox da Pluggy. Depois dessa confirmação, a próxima etapa de desenvolvimento será a **Etapa 2F — UX Open Finance**. A Nivra não inicia a 2F sem uma nova solicitação.
+A Etapa 2F tornou a integração Sandbox compreensível e utilizável para testers. A próxima unidade lógica é preparar uma demonstração guiada, com dados fictícios, estados de erro e documentação de teste. A validação externa final da Etapa 2E continua pendente e não deve ser marcada como concluída sem uma entrega real do provider e sua repetição idempotente.
