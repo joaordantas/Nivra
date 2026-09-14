@@ -59,6 +59,7 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 
 ### Changed
 
+- o Gate Técnico da Prioridade 2 foi aprovado após 102 testes, build, migrations, verificação do Neon e validação dos fluxos Sandbox em produção; replay externo do mesmo `eventId` e testes independentes permanecem pendentes;
 - metadados públicos da API padronizados com a identidade Nivra;
 - roadmap do Open Finance reorganizado para integrar contas, saldos e histórico ao núcleo antes dos webhooks;
 - todas as APIs protegidas passam a obter o usuário da sessão no backend;

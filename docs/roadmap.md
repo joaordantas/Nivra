@@ -204,7 +204,7 @@ Status: **CONCLUÍDA E VALIDADA EM PRODUÇÃO NO SANDBOX**
 - [x] Eventos de atualização, erro, criação, atualização e exclusão de transações
 - [x] Retry seguro, idempotência e logs estruturados
 
-Evidências reais em produção: entregas `item/updated` e `transactions/updated` receberam HTTP 200. O evento informativo `item/login_succeeded` foi ignorado com segurança. Ainda falta comprovar externamente a repetição do mesmo `eventId` sem duplicação.
+Evidências reais em produção: entregas `item/updated`, `transactions/created` e `transactions/updated` receberam HTTP 200. O evento informativo `item/login_succeeded` foi ignorado com segurança. A inbox não possui IDs duplicados e todos os eventos reais observados tiveram uma tentativa. Ainda falta comprovar externamente a repetição do mesmo `eventId` sem duplicação.
 
 Status: **IMPLEMENTADA E PUBLICADA; RETRY EXTERNO DO MESMO EVENTO AINDA PENDENTE**
 
@@ -252,14 +252,20 @@ Status: **IMPLEMENTADA, PUBLICADA E VALIDADA EM PRODUÇÃO NO SANDBOX**
 - [x] Secrets permanecem fora do frontend e da documentação pública
 - [x] Suite Python, migration descartável, Alembic e build passam
 
-Status: **EXECUTADO PARCIALMENTE; RETRY EXTERNO DO WEBHOOK E TESTE COM TESTERS INDEPENDENTES PENDENTES**
+Status: **PRIORIDADE 2 TECNICAMENTE CONCLUÍDA; GATE EXTERNO PENDENTE**
+
+Validações externas complementares:
+
+- [-] Replay real do mesmo `eventId` enviado pela Pluggy
+- [-] Execução integral do roteiro por testers independentes
 
 ### Evidências técnicas do Open Finance Sandbox
 
 - [x] Connect funciona
 - [x] Conta, saldo e transações externas importados
 - [x] Re-sync não cria dados extras
-- [-] Webhook duplicado não cria dados extras — validado localmente; confirmação Sandbox pendente
+- [x] Webhook duplicado não cria dados extras nos testes e está protegido por constraint
+- [-] Replay real do mesmo `eventId` no Sandbox — evidência externa complementar pendente
 - [x] Isolamento entre usuários validado
 - [x] Secrets ausentes do frontend
 - [x] Build e testes passam
@@ -377,6 +383,6 @@ Lumi será a assistente financeira inteligente da Nivra. A identidade está defi
 
 ## Próxima tarefa recomendada
 
-**Gate final da Prioridade 2 — Open Finance MVP.**
+**Prioridade 3 — Parcelamentos e Recorrências.**
 
-A 2H está publicada, o novo schema respondeu em produção e a interface foi validada em desktop/mobile e nos temas claro/escuro. Para encerrar a Prioridade 2 ainda faltam duas evidências externas: executar o roteiro com testers independentes e registrar uma repetição real do mesmo `eventId` do webhook sem duplicação. Nenhuma dessas evidências deve ser simulada.
+O Gate Técnico da Prioridade 2 foi aprovado. O replay real do mesmo `eventId` e o roteiro com testers independentes permanecem como validações externas complementares e não foram simulados. A próxima unidade do roadmap é implementar compras parceladas e recorrências; ela não foi iniciada durante o gate.
