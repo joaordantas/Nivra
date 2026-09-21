@@ -223,7 +223,7 @@ O procedimento de ativação está em [Open Finance Sandbox](docs/open-finance-s
 
 PostgreSQL é o armazenamento oficial, atualmente fornecido pelo Neon. O SQLite foi usado no desenvolvimento inicial e permanece apenas como fonte legada de migração e banco isolado em testes.
 
-O schema é aplicado com Alembic e não é recriado durante o startup da API. Consulte o [relatório da migração PostgreSQL](docs/relatorio-migracao-postgresql.md) para decisões, validações e procedimento do importador legado.
+O schema é aplicado com Alembic e não é recriado durante o startup da API. Consulte o [relatório geral consolidado](docs/relatorio-geral-projeto.md) para o histórico do projeto, decisões de infraestrutura, validações e procedimento do importador legado.
 
 ## Deploy
 

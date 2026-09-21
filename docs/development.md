@@ -97,7 +97,7 @@ Importação deliberada:
 python scripts/migrate_sqlite_to_postgres.py --execute --skip-known-orphans
 ```
 
-Consulte [o relatório da migração](relatorio-migracao-postgresql.md) antes de executar a importação.
+Consulte o [relatório geral consolidado](relatorio-geral-projeto.md) antes de executar a importação.
 
 ## Deploy na Vercel
 
