@@ -5,6 +5,12 @@ import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../../app/providers";
 import { mobileMoreFinanceNavigation, mobileMoreSettingsNavigation, mobileNavigation } from "./navigation";
 
+function matchesLocation(path: string, pathname: string, hash: string) {
+  const [basePath, anchor] = path.split("#");
+  const matchesPath = pathname === basePath || pathname.startsWith(`${basePath}/`);
+  return matchesPath && (!anchor || hash === `#${anchor}`);
+}
+
 export function MobileNavigation() {
   const { logout, user } = useAuth();
   const location = useLocation();
@@ -12,11 +18,11 @@ export function MobileNavigation() {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const moreButtonRef = useRef<HTMLButtonElement>(null);
   const moreIsActive = [...mobileMoreFinanceNavigation, ...mobileMoreSettingsNavigation]
-    .some((item) => location.pathname === item.path || location.pathname.startsWith(`${item.path}/`));
+    .some((item) => matchesLocation(item.path, location.pathname, location.hash));
 
   useEffect(() => {
     setMoreOpen(false);
-  }, [location.pathname]);
+  }, [location.pathname, location.hash]);
 
   useEffect(() => {
     if (!moreOpen) return;
@@ -29,7 +35,11 @@ export function MobileNavigation() {
       }
     }
     document.addEventListener("keydown", closeOnEscape);
-    return () => document.removeEventListener("keydown", closeOnEscape);
+    document.body.classList.add("mobile-menu-open");
+    return () => {
+      document.removeEventListener("keydown", closeOnEscape);
+      document.body.classList.remove("mobile-menu-open");
+    };
   }, [moreOpen]);
 
   return (
@@ -50,7 +60,7 @@ export function MobileNavigation() {
               {mobileMoreFinanceNavigation.map((item) => {
                 const Icon = item.icon;
                 return (
-                  <NavLink className={({ isActive }) => `mobile-more-link${isActive ? " is-active" : ""}`} key={item.path} onClick={() => setMoreOpen(false)} to={item.path}>
+                  <NavLink className={`mobile-more-link${matchesLocation(item.path, location.pathname, location.hash) ? " is-active" : ""}`} key={item.path} onClick={() => setMoreOpen(false)} to={item.path}>
                     <Icon aria-hidden="true" size={20} />
                     <span>{item.label}</span>
                   </NavLink>
@@ -63,7 +73,7 @@ export function MobileNavigation() {
               {mobileMoreSettingsNavigation.map((item) => {
                 const Icon = item.icon;
                 return (
-                  <NavLink className={({ isActive }) => `mobile-more-link${isActive ? " is-active" : ""}`} key={item.path} onClick={() => setMoreOpen(false)} to={item.path}>
+                  <NavLink className={`mobile-more-link${matchesLocation(item.path, location.pathname, location.hash) ? " is-active" : ""}`} key={item.path} onClick={() => setMoreOpen(false)} to={item.path}>
                     <Icon aria-hidden="true" size={20} />
                     <span>{item.label}</span>
                   </NavLink>

@@ -6,6 +6,21 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 
 ### Added
 
+- tendência financeira determinística de seis meses, comparando meses completos ou períodos equivalentes até o mesmo dia;
+- ranking das maiores despesas com participação no total, incluindo movimentações manuais, bancárias e compras no cartão sem duplicação econômica;
+- alerta de crescimento contínuo dos gastos baseado em três períodos mensais equivalentes;
+- contexto financeiro consolidado e ferramenta somente leitura `get_financial_context` para preparar a futura Lumi sem acesso a SQL;
+- blocos responsivos de tendência recente e maiores gastos no Dashboard.
+
+- projeção mensal conservadora que separa valores realizados, compromissos futuros conhecidos e resultado projetado;
+- comprometimento individual e agregado dos cartões ativos, com limite disponível e próxima fatura pendente;
+- alertas determinísticos para projeção negativa, limite elevado ou crítico, concentração entre cartões e fatura próxima do vencimento;
+- cartões compactos de projeção e comprometimento no Dashboard, com estados responsivos, vazio, carregamento e falha isolada;
+- testes de projeção, datas de fechamento, parcelas futuras, cartões, faturas, conciliação, Open Finance e isolamento multiusuário;
+- endpoint autenticado de insights com comparação entre períodos, categorias de receita/despesa e gastos incomuns;
+- área “Sua atenção” alimentada por regras determinísticas para resultado negativo, aumento de gastos, concentração por categoria e economia positiva;
+- catálogo inicial de ferramentas da Lumi com execução restrita a services e identidade obtida pela sessão;
+- testes de cálculo, cartões, período efetivo, autenticação, isolamento e bloqueio de ferramentas não permitidas da Lumi;
 - acesso à saída da conta pelo menu mobile “Mais”, reutilizando o mesmo contexto de autenticação do desktop;
 - guia para a renomeação manual e segura do repositório GitHub e do projeto Vercel;
 - sessões server-side persistidas no PostgreSQL com expiração;
@@ -67,6 +82,18 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 
 ### Changed
 
+- o motor de insights passou a consultar o histórico da tendência em uma única leitura consolidada de seis meses;
+- o contrato de `GET /api/insights` passou a incluir `largest_expenses` e `monthly_trend`, preservando os campos existentes;
+
+- o contrato de `GET /api/insights` passou a incluir projeção mensal e comprometimento dos cartões, mantendo compatibilidade com os campos da P5.1;
+- alertas de vencimento consultam a próxima fatura realmente pendente, separada do ciclo atual exibido pelo cartão;
+- o Dashboard consulta o mês completo para projeção, mantendo o realizado limitado ao dia atual pelo backend;
+- o Dashboard passou a carregar múltiplos insights do backend e mantém saldo, contas e transações utilizáveis quando a análise automática falha;
+- a comparação mensal limita o período atual ao dia presente e usa o intervalo equivalente do mês anterior;
+- parcelamentos receberam uma rota própria, acessível diretamente pela sidebar desktop e pelo menu mobile "Mais";
+- a navegação inferior mobile prioriza Início, Histórico, criação rápida e Contas, mantendo os demais recursos no menu "Mais";
+- modais financeiros ocupam a tela no celular, respeitam safe areas e oferecem uma ação explícita de retorno;
+- o histórico deixou de focar e deslocar automaticamente para o formulário; o foco rápido permanece no atalho central `+`;
 - o Gate Técnico da Prioridade 2 foi aprovado após 102 testes, build, migrations, verificação do Neon e validação dos fluxos Sandbox em produção; replay externo do mesmo `eventId` e testes independentes permanecem pendentes;
 - metadados públicos da API padronizados com a identidade Nivra;
 - roadmap do Open Finance reorganizado para integrar contas, saldos e histórico ao núcleo antes dos webhooks;
@@ -97,7 +124,7 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 
 - integração de parcelamentos com cartões/faturas e recorrências pessoais;
 - orçamentos e metas financeiras;
-- motor determinístico de insights e área “Sua atenção”;
+- tendências, maiores despesas e demais incrementos do motor determinístico de insights;
 - Lumi, a assistente financeira da Nivra;
 - notificações internas, resumos e WhatsApp.
 

@@ -14,6 +14,7 @@ from services.open_finance_provider import (
     OpenFinanceProviderError,
     OpenFinanceTransaction,
 )
+from services.insight_service import obter_insights_financeiros_service
 from services.transacao_service import listar_transacoes_formatadas, obter_resumo_financeiro
 from tests.auth_support import csrf_headers, register_client
 from tests.db_support import remove_test_database, reset_test_database
@@ -525,6 +526,17 @@ class OpenFinanceSyncApiTests(unittest.TestCase):
             dashboard.json(),
             {"entrada": 2500.0, "saida": 149.9, "lucro": 2350.1},
         )
+        insights = obter_insights_financeiros_service(
+            self.user_a["id"],
+            "2026-09-01",
+            "2026-09-30",
+            hoje=date(2026, 9, 30),
+        )
+        self.assertEqual(
+            insights["monthly_projection"]["realized"],
+            {"income": 2500.0, "expenses": 149.9, "savings": 2350.1},
+        )
+        self.assertEqual(insights["monthly_projection"]["known_future_entries"], 0)
 
     def test_rejected_match_remains_visible_and_other_user_cannot_decide(self) -> None:
         account = self.a.post(

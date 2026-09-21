@@ -23,10 +23,12 @@ export function getCurrentMonthRange() {
   const year = today.getFullYear();
   const month = String(today.getMonth() + 1).padStart(2, "0");
   const day = String(today.getDate()).padStart(2, "0");
+  const lastDay = String(new Date(year, today.getMonth() + 1, 0).getDate()).padStart(2, "0");
 
   return {
     start: `${year}-${month}-01`,
     end: `${year}-${month}-${day}`,
+    monthEnd: `${year}-${month}-${lastDay}`,
     label: new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" }).format(today),
   };
 }

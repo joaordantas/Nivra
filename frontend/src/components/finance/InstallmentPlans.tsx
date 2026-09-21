@@ -14,6 +14,7 @@ import { Modal } from "../ui/Modal";
 interface InstallmentPlansProps {
   accounts: Account[];
   categories: Category[];
+  createHref?: string;
   onChanged: () => Promise<void>;
   onSelectPlan: (planId: number | null) => void;
   refreshKey: number;
@@ -38,6 +39,7 @@ function editValuesFromPlan(plan: InstallmentPlanDetail): EditValues {
 export function InstallmentPlans({
   accounts,
   categories,
+  createHref = "#new-transaction",
   onChanged,
   onSelectPlan,
   refreshKey,
@@ -151,7 +153,7 @@ export function InstallmentPlans({
         </div>
       ) : plans.length === 0 ? (
         <EmptyState
-          action={<a className="button button-secondary" href="#new-transaction">Criar no formulário acima</a>}
+          action={<a className="button button-secondary" href={createHref}>Criar parcelamento</a>}
           description="Selecione Parcelado ao registrar uma receita ou despesa."
           icon={CalendarRange}
           title="Nenhum parcelamento"

@@ -290,7 +290,7 @@ export function TransactionsPage() {
         <section id="new-transaction" ref={formRef}>
           <Card className="transaction-form-card">
             <div className="card-heading"><span className="section-kicker">Registro rápido</span><h2>Nova movimentação</h2></div>
-            <MovementForm accounts={accounts} categories={categories} initialValues={initialForm(accounts)} key={`create-${formVersion}-${accounts.map((account) => account.id).join("-")}`} mode="create" onCreateCategory={createCategory} onSubmit={createMovement} saving={saving} />
+            <MovementForm accounts={accounts} autoFocus={searchParams.get("new") === "1"} categories={categories} initialValues={initialForm(accounts)} key={`create-${formVersion}-${accounts.map((account) => account.id).join("-")}`} mode="create" onCreateCategory={createCategory} onSubmit={createMovement} saving={saving} />
           </Card>
         </section>
 

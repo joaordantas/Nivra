@@ -6,6 +6,7 @@ import { ComingSoonPage } from "../pages/ComingSoonPage";
 import { CardsPage } from "../pages/CardsPage";
 import { DashboardPage } from "../pages/DashboardPage";
 import { LoginPage } from "../pages/LoginPage";
+import { InstallmentsPage } from "../pages/InstallmentsPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { SettingsPage } from "../pages/SettingsPage";
 import { CategoriesPage } from "../pages/settings/CategoriesPage";
@@ -52,6 +53,7 @@ const router = createBrowserRouter([
       { index: true, element: <Navigate replace to="/dashboard" /> },
       { path: "dashboard", element: <DashboardPage /> },
       { path: "transactions", element: <TransactionsPage /> },
+      { path: "installments", element: <InstallmentsPage /> },
       { path: "accounts", element: <AccountsPage /> },
       { path: "cards", element: <CardsPage /> },
       {

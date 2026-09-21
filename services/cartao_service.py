@@ -102,16 +102,17 @@ def _formatar_cartao(cartao: tuple, fatura_atual: dict | None = None) -> dict:
         ativo,
         limite_utilizado,
     ) = cartao
-    total = float(limite_total)
-    utilizado = float(limite_utilizado)
+    total = max(float(limite_total), 0.0)
+    utilizado = max(float(limite_utilizado), 0.0)
+    disponivel = max(total - utilizado, 0.0)
     return {
         "id": cartao_id,
         "usuario_id": usuario_id,
         "nome": nome,
         "limite_total": total,
         "limite_utilizado": utilizado,
-        "limite_disponivel": total - utilizado,
-        "percentual_utilizado": round(utilizado * 100 / total, 1),
+        "limite_disponivel": disponivel,
+        "percentual_utilizado": round(utilizado * 100 / total, 1) if total > 0 else 0.0,
         "dia_fechamento": fechamento,
         "dia_vencimento": vencimento,
         "ativo": bool(ativo),
@@ -144,7 +145,7 @@ def _formatar_compra(compra: tuple) -> dict:
     }
 
 
-def _formatar_fatura(fatura: tuple) -> dict:
+def _formatar_fatura(fatura: tuple, hoje: date | None = None) -> dict:
     (
         fatura_id,
         cartao_id,
@@ -173,7 +174,11 @@ def _formatar_fatura(fatura: tuple) -> dict:
         "valor_total": float(valor_total),
         "valor_pago": float(valor_pago),
         "status": calcular_status_fatura(
-            data_fechamento, data_vencimento, float(valor_pago), float(valor_total)
+            data_fechamento,
+            data_vencimento,
+            float(valor_pago),
+            float(valor_total),
+            hoje,
         ),
         "data_pagamento": data_pagamento,
         "conta_pagamento_id": conta_pagamento_id,
@@ -211,11 +216,17 @@ def criar_cartao_service(
     return _formatar_cartao(cartao, _formatar_fatura(_garantir_fatura_cartao(cartao, date.today())))
 
 
-def listar_cartoes_formatados(usuario_id: int, incluir_inativos: bool = True) -> list[dict]:
+def listar_cartoes_formatados(
+    usuario_id: int,
+    incluir_inativos: bool = True,
+    *,
+    hoje: date | None = None,
+) -> list[dict]:
     resultado = []
+    referencia = hoje or date.today()
     for cartao in listar_cartoes(usuario_id, incluir_inativos):
-        fatura = _garantir_fatura_cartao(cartao, date.today())
-        resultado.append(_formatar_cartao(cartao, _formatar_fatura(fatura)))
+        fatura = _garantir_fatura_cartao(cartao, referencia)
+        resultado.append(_formatar_cartao(cartao, _formatar_fatura(fatura, referencia)))
     return resultado
 
 
@@ -257,12 +268,21 @@ def obter_fatura_atual_service(cartao_id: int, usuario_id: int) -> dict:
     return _formatar_fatura(_garantir_fatura_cartao(cartao, date.today()))
 
 
-def listar_faturas_service(cartao_id: int, usuario_id: int) -> list[dict]:
+def listar_faturas_service(
+    cartao_id: int,
+    usuario_id: int,
+    *,
+    hoje: date | None = None,
+) -> list[dict]:
     cartao = buscar_cartao(cartao_id, usuario_id)
     if cartao is None:
         raise ValueError("Cartao nao encontrado.")
-    _garantir_fatura_cartao(cartao, date.today())
-    return [_formatar_fatura(fatura) for fatura in listar_faturas(cartao_id, usuario_id)]
+    referencia = hoje or date.today()
+    _garantir_fatura_cartao(cartao, referencia)
+    return [
+        _formatar_fatura(fatura, referencia)
+        for fatura in listar_faturas(cartao_id, usuario_id)
+    ]
 
 
 def obter_fatura_service(fatura_id: int, usuario_id: int) -> dict:

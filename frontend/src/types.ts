@@ -278,6 +278,120 @@ export interface ProfitSummary {
   lucro: number;
 }
 
+export type InsightSeverity = "info" | "positive" | "warning" | "danger";
+
+export interface AttentionInsight {
+  code: string;
+  severity: InsightSeverity;
+  title: string;
+  description: string;
+  reason: string;
+  action_label: string | null;
+  action_path: string | null;
+}
+
+export interface FinancialInsights {
+  period: {
+    start: string;
+    end: string;
+    previous_start: string;
+    previous_end: string;
+  };
+  summary: { income: number; expenses: number; savings: number };
+  previous_summary: { income: number; expenses: number; savings: number };
+  comparison: {
+    expense_change_amount: number;
+    expense_change_percent: number | null;
+    income_change_amount: number;
+    income_change_percent: number | null;
+    savings_change_amount: number;
+  };
+  top_expense_categories: Array<{
+    category_id: number | null;
+    category: string;
+    category_key: string | null;
+    total: number;
+    percentage: number;
+  }>;
+  top_income_categories: Array<{
+    category_id: number | null;
+    category: string;
+    category_key: string | null;
+    total: number;
+    percentage: number;
+  }>;
+  unusual_expenses: Array<{
+    id: number;
+    description: string;
+    amount: number;
+    date: string;
+    category: string;
+    account: string;
+    source: "manual" | "open_finance" | "card";
+    baseline: number;
+    times_baseline: number;
+  }>;
+  largest_expenses: Array<{
+    id: number;
+    description: string;
+    amount: number;
+    date: string;
+    category: string;
+    account: string;
+    source: "manual" | "open_finance" | "card";
+    percentage: number;
+  }>;
+  monthly_trend: {
+    comparison_basis: "same_day" | "full_month";
+    months_analyzed: number;
+    points: Array<{
+      month: string;
+      start: string;
+      end: string;
+      income: number;
+      expenses: number;
+      savings: number;
+    }>;
+    expense_direction: "up" | "down" | "stable" | "insufficient_data";
+    expense_change_percent: number | null;
+    income_direction: "up" | "down" | "stable" | "insufficient_data";
+    income_change_percent: number | null;
+    savings_direction: "up" | "down" | "stable";
+    savings_change_amount: number;
+    sustained_expense_growth: boolean;
+  };
+  monthly_projection: {
+    as_of: string;
+    realized: { income: number; expenses: number; savings: number };
+    known_future: { income: number; expenses: number; savings: number };
+    projected: { income: number; expenses: number; savings: number };
+    known_future_entries: number;
+  };
+  card_commitment: {
+    total_limit: number;
+    total_committed: number;
+    total_available: number;
+    committed_percent: number | null;
+    active_cards: number;
+    cards: Array<{
+      card_id: number;
+      name: string;
+      total_limit: number;
+      committed: number;
+      available: number;
+      committed_percent: number | null;
+      current_invoice_amount: number;
+      closing_date: string | null;
+      due_date: string | null;
+      invoice_status: "aberta" | "fechada" | "paga" | "vencida" | null;
+      next_due_invoice_amount: number;
+      next_due_date: string | null;
+      next_due_status: "aberta" | "fechada" | "paga" | "vencida" | null;
+    }>;
+  };
+  attention: AttentionInsight[];
+}
+
 export interface ReceivableByClient {
   cliente: string;
   valor_pendente: number;

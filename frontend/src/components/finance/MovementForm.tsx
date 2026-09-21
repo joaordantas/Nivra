@@ -8,6 +8,7 @@ import { Button } from "../ui/Button";
 
 interface MovementFormProps {
   accounts: Account[];
+  autoFocus?: boolean;
   categories: Category[];
   initialValues: MovementFormValues;
   mode: "create" | "edit";
@@ -24,6 +25,7 @@ const typeOptions: Array<{ value: MovementType; label: string; icon: typeof Arro
 
 export function MovementForm({
   accounts,
+  autoFocus = false,
   categories,
   initialValues,
   mode,
@@ -115,7 +117,7 @@ export function MovementForm({
 
       <label className="amount-field">
         <span>Valor</span>
-        <div><span>R$</span><input autoFocus min="0.01" onChange={(event) => update("valor", Number(event.target.value))} step="0.01" type="number" value={values.valor || ""} /></div>
+        <div><span>R$</span><input autoFocus={autoFocus} min="0.01" onChange={(event) => update("valor", Number(event.target.value))} step="0.01" type="number" value={values.valor || ""} /></div>
       </label>
 
       <label>

@@ -299,7 +299,17 @@ Status: **CONCLUÍDA E VALIDADA EM BANCO DESCARTÁVEL**
 - [x] Cobrir loading, erro, vazio, sucesso e bloqueio de ações repetidas
 - [x] Preservar layout responsivo e temas claro/escuro
 
-Status: **CONCLUÍDA E VALIDADA**
+#### Gate de UX mobile da P3.2
+
+- [x] Rota dedicada de parcelamentos acessível no desktop e no menu mobile "Mais"
+- [x] Atalho central `+` abre o formulário com foco no valor
+- [x] Histórico abre sem deslocamento automático para o formulário
+- [x] Detalhe e edição usam modal de tela inteira com ação "Voltar" no mobile
+- [x] Navegação mobile mantém acesso a Início, Histórico, Contas, criação, finanças, configurações e logout
+- [x] Safe areas, rolagem e ausência de overflow validadas em 375, 390, 430, 612 e 1440 px
+- [x] Temas claro e escuro preservados
+
+Status: **CONCLUÍDA E VALIDADA; GATE DE UX MOBILE APROVADO**
 
 ### Próximos incrementos de parcelamentos
 
@@ -334,15 +344,59 @@ Status: **CONCLUÍDA E VALIDADA**
 
 ## 📊 PRIORIDADE 5 — MOTOR DE INTELIGÊNCIA FINANCEIRA
 
-- [ ] Comparação entre períodos
-- [ ] Gastos e receitas por categoria
-- [ ] Maiores despesas
-- [ ] Tendência de gastos e economia
-- [ ] Gastos fora do padrão e recorrências
-- [ ] Projeção do mês
-- [ ] Comprometimento dos cartões
+- [x] Comparação entre períodos
+- [x] Gastos e receitas por categoria
+- [x] Maiores despesas
+- [x] Tendência de gastos e economia
+- [-] Gastos fora do padrão e recorrências
+- [x] Projeção do mês
+- [x] Comprometimento dos cartões
 - [ ] Situação de orçamentos e metas
-- [ ] Área “Sua atenção” baseada em regras determinísticas
+- [x] Área “Sua atenção” baseada em regras determinísticas
+
+### P5.1 — Insights determinísticos iniciais
+
+- [x] Endpoint autenticado `GET /api/insights`
+- [x] Comparação com período anterior equivalente
+- [x] Totais de receitas e despesas por categoria
+- [x] Compras no cartão incluídas sem contar o pagamento da fatura novamente
+- [x] Transferências internas excluídas dos alertas financeiros
+- [x] Detecção inicial de gasto incomum baseada em mediana e amostra mínima
+- [x] Alertas de resultado negativo, aumento de gastos, concentração por categoria e economia positiva
+- [x] Dashboard com múltiplos avisos e falha isolada do restante do resumo
+- [x] Isolamento por sessão e testes de propriedade
+
+Status: **PRIMEIRA UNIDADE CONCLUÍDA; MOTOR AINDA EM EVOLUÇÃO**
+
+### P5.2 — Projeção mensal e comprometimento de cartões
+
+- [x] Separação entre realizado, compromissos futuros conhecidos e resultado projetado
+- [x] Parcelas e demais movimentações futuras persistidas incluídas somente no futuro conhecido
+- [x] Transferências neutras e conciliações representadas uma única vez
+- [x] Compras no cartão contabilizadas como despesa econômica sem duplicar o pagamento da fatura
+- [x] Limite total, comprometido, disponível e percentual por cartão ativo
+- [x] Resumo agregado dos cartões ativos
+- [x] Próxima fatura pendente identificada separadamente do ciclo atual
+- [x] Alertas de projeção negativa, limite elevado/crítico, concentração e vencimento
+- [x] Dashboard responsivo com projeção conservadora e resumo dos cartões
+- [x] Contrato ampliado disponível para a ferramenta somente leitura da futura Lumi
+
+Status: **CONCLUÍDA E VALIDADA; MOTOR AINDA EM EVOLUÇÃO**
+
+### P5.3 — Tendências, maiores despesas e contexto da Lumi
+
+- [x] Ranking das cinco maiores despesas do período com participação percentual
+- [x] Despesas manuais, bancárias e de cartão analisadas na mesma visão econômica
+- [x] Transferências internas e duplicações conciliadas excluídas do ranking
+- [x] Série de seis meses com receitas, despesas e economia
+- [x] Comparação por mês completo ou pelo mesmo dia, conforme o período em andamento
+- [x] Direção de tendência com faixa estável e tratamento de base zerada
+- [x] Alerta de crescimento contínuo por três períodos equivalentes
+- [x] Dashboard responsivo com evolução recente e maiores gastos
+- [x] Contexto financeiro consolidado para a futura Lumi
+- [x] Ferramenta somente leitura `get_financial_context`, com identidade da sessão
+
+Status: **CONCLUÍDA E VALIDADA; SEM MODELO DE IA CONECTADO**
 
 ## ✦ PRIORIDADE 6 — LUMI
 
@@ -353,8 +407,20 @@ Lumi será a assistente financeira inteligente da Nivra. A identidade está defi
 - [ ] Ações sobre categorias, orçamentos e metas
 - [ ] Consultas de contas, cartões e faturas
 - [ ] Tool calling para os services existentes
-- [ ] Contexto financeiro estruturado e memória de preferências
+- [-] Contexto financeiro estruturado e memória de preferências
 - [ ] Garantia de que a IA nunca acessa SQL diretamente
+
+### Preparação técnica da Lumi
+
+- [x] Catálogo inicial de ferramentas permitido por lista explícita
+- [x] Primeira ferramenta somente leitura para consultar insights financeiros
+- [x] Identidade injetada a partir da sessão, sem aceitar `usuario_id` dos argumentos
+- [x] Execução pela camada de service, sem acesso direto da futura IA a repository ou SQL
+- [x] Contexto consolidado com posição financeira, tendência, maiores gastos, projeção, cartões e alertas
+- [ ] Orquestração com modelo de linguagem e tool calling real
+- [ ] Interface de conversa
+
+Status: **PREPARAÇÃO INICIADA; LUMI AINDA NÃO IMPLEMENTADA**
 
 ## 🔔 PRIORIDADE 7 — NOTIFICAÇÕES INTERNAS
 
@@ -411,6 +477,6 @@ Lumi será a assistente financeira inteligente da Nivra. A identidade está defi
 
 ## Próxima tarefa recomendada
 
-**P3.3 — Integração de parcelamentos com cartões e faturas.**
+**P5.4 — Recorrências determinísticas e refinamento de gastos fora do padrão.**
 
-A P3.2 tornou os parcelamentos do núcleo utilizáveis na interface e definiu o efeito temporal no saldo atual. A próxima unidade deve distribuir compras parceladas entre faturas, comprometer o limite do cartão e projetar ciclos futuros sem dupla contabilização. Recorrências continuam pendentes e não foram iniciadas nesta etapa.
+A P5.3 acrescentou uma série comparável de seis meses, o ranking das maiores despesas e um contexto financeiro consolidado para a futura Lumi. A próxima unidade deve detectar recorrências apenas quando houver evidência suficiente e aprimorar anomalias sem simular orçamentos ou metas ainda inexistentes. A orquestração com modelo de linguagem continua separada e não deve começar antes dessa base determinística.

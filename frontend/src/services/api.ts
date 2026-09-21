@@ -7,6 +7,7 @@ import type {
   ClientInstallmentsResponse,
   Invoice,
   InvoiceDetail,
+  FinancialInsights,
   InstallmentPlanDetail,
   InstallmentPlanSummary,
   InstallmentPlanUpdate,
@@ -225,6 +226,8 @@ export const api = {
 
   getProfit: (dataInicio: string, dataFim: string) =>
     request<ProfitSummary>(`/dashboard/profit?data_inicio=${dataInicio}&data_fim=${dataFim}`),
+  getInsights: (dataInicio: string, dataFim: string) =>
+    request<FinancialInsights>(`/insights?data_inicio=${dataInicio}&data_fim=${dataFim}`),
   getReceivablesTotal: () => request<{ total: number }>("/dashboard/receivables/total"),
   getReceivablesByClient: () => request<ReceivableByClient[]>("/dashboard/receivables/by-client"),
 

@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 import { useEffect } from "react";
 import type { ReactNode } from "react";
 
@@ -26,8 +26,10 @@ export function Modal({ children, onClose, title }: ModalProps) {
       <div className="modal-panel">
         <div className="modal-heading">
           <h2>{title}</h2>
-          <button aria-label="Fechar" className="icon-button" onClick={onClose} type="button">
-            <X aria-hidden="true" size={18} />
+          <button aria-label="Voltar e fechar" className="icon-button modal-close-button" onClick={onClose} type="button">
+            <ArrowLeft aria-hidden="true" className="modal-back-icon" size={18} />
+            <X aria-hidden="true" className="modal-close-icon" size={18} />
+            <span className="modal-close-label">Voltar</span>
           </button>
         </div>
         {children}

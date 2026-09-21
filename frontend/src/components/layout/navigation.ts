@@ -1,5 +1,6 @@
 import {
   Bot,
+  CalendarRange,
   ChartNoAxesCombined,
   CreditCard,
   Landmark,
@@ -21,6 +22,7 @@ export interface NavigationItem {
 export const primaryNavigation: NavigationItem[] = [
   { label: "Início", path: "/dashboard", icon: ChartNoAxesCombined },
   { label: "Transações", path: "/transactions", icon: ReceiptText },
+  { label: "Parcelamentos", path: "/installments", icon: CalendarRange },
   { label: "Contas", path: "/accounts", icon: Landmark },
   { label: "Cartões", path: "/cards", icon: CreditCard },
   { label: "Orçamentos", path: "/budgets", icon: ListChecks },
@@ -34,13 +36,17 @@ export const secondaryNavigation: NavigationItem[] = [
 
 export const mobileNavigation: NavigationItem[] = [
   { label: "Início", path: "/dashboard", icon: ChartNoAxesCombined },
-  { label: "Transações", path: "/transactions", icon: ReceiptText },
-  { label: "Lumi", path: "/assistant", icon: Bot },
+  { label: "Histórico", path: "/transactions", icon: ReceiptText },
+  { label: "Contas", path: "/accounts", icon: Landmark },
 ];
 
-export const mobileMoreFinanceNavigation = primaryNavigation.filter((item) =>
-  ["/accounts", "/cards", "/budgets", "/goals"].includes(item.path),
-);
+export const mobileMoreFinanceNavigation: NavigationItem[] = [
+  { label: "Parcelamentos", path: "/installments", icon: CalendarRange },
+  { label: "Cartões", path: "/cards", icon: CreditCard },
+  { label: "Orçamentos", path: "/budgets", icon: ListChecks },
+  { label: "Metas", path: "/goals", icon: Target },
+  { label: "Lumi", path: "/assistant", icon: Bot },
+];
 
 export const mobileMoreSettingsNavigation: NavigationItem[] = [
   ...secondaryNavigation,
