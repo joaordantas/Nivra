@@ -6,6 +6,9 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 
 ### Added
 
+- trava pública server-side `LUMI_PUBLIC_ENABLED=false` por padrão; a página
+  Lumi permanece “Em breve” e os endpoints de conversa/ação não acionam o
+  provider enquanto a liberação pública não for autorizada;
 - preparação do rollout P6.5A: revisão da cadeia Alembic, baseline da versão
   pública e snapshot de recuperação no Neon principal; schema de produção ainda
   não alterado;

@@ -1,3 +1,5 @@
+import os
+
 from fastapi import APIRouter, Body, Depends, HTTPException
 
 from backend.dependencies.auth import CurrentUserCsrf
@@ -50,6 +52,20 @@ from services.rate_limit_service import RateLimitExceeded, consumir_limite, hash
 router = APIRouter(prefix="/lumi", tags=["lumi"])
 
 
+def lumi_public_enabled() -> bool:
+    return os.getenv("LUMI_PUBLIC_ENABLED", "false").strip().lower() == "true"
+
+
+def _require_lumi_public() -> None:
+    if not lumi_public_enabled():
+        raise HTTPException(status_code=503, detail="A Lumi está em desenvolvimento.")
+
+
+@router.get("/capabilities")
+def get_lumi_capabilities() -> dict[str, bool]:
+    return {"public_enabled": lumi_public_enabled()}
+
+
 def get_lumi_orchestrator() -> LumiOrchestrator:
     return LumiOrchestrator(EnvironmentLumiProvider())
 
@@ -99,6 +115,7 @@ def send_lumi_message(
     current_user: CurrentUserCsrf,
     orchestrator: LumiOrchestrator = Depends(get_lumi_orchestrator),
 ) -> LumiMessageResponse:
+    _require_lumi_public()
     requests, window = lumi_rate_limit_settings()
     try:
         consumir_limite(
@@ -199,6 +216,7 @@ def confirm_lumi_action(
     confirmation_id: str, current_user: CurrentUserCsrf,
     _body: LumiActionDecisionRequest | None = Body(default=None),
 ) -> LumiActionConfirmationResponse:
+    _require_lumi_public()
     if action_execution_enabled():
         raise HTTPException(status_code=409, detail="Atualize a página para confirmar esta proposta com segurança.")
     return _confirm_action(confirmation_id, current_user)
@@ -208,6 +226,7 @@ def confirm_lumi_action(
 def confirm_lumi_action_by_body(
     payload: LumiActionTokenRequest, current_user: CurrentUserCsrf,
 ) -> LumiActionConfirmationResponse:
+    _require_lumi_public()
     return _confirm_action(payload.confirmation_id, current_user)
 
 
@@ -243,6 +262,7 @@ def cancel_lumi_action(
     confirmation_id: str, current_user: CurrentUserCsrf,
     _body: LumiActionDecisionRequest | None = Body(default=None),
 ) -> LumiActionConfirmationResponse:
+    _require_lumi_public()
     return _cancel_action(confirmation_id, current_user)
 
 
@@ -250,6 +270,7 @@ def cancel_lumi_action(
 def cancel_lumi_action_by_body(
     payload: LumiActionTokenRequest, current_user: CurrentUserCsrf,
 ) -> LumiActionConfirmationResponse:
+    _require_lumi_public()
     return _cancel_action(payload.confirmation_id, current_user)
 
 

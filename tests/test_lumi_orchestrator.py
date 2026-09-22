@@ -445,9 +445,56 @@ class LumiProviderFactoryTests(unittest.TestCase):
                 create_lumi_provider()
 
 
+class LumiPublicGateTests(unittest.TestCase):
+    def setUp(self):
+        reset_test_database()
+        self.previous_flag = os.environ.pop("LUMI_PUBLIC_ENABLED", None)
+        conn = get_connection()
+        conn.execute("INSERT INTO usuarios (id, usuario, email, senha) VALUES (1, 'Ana', 'gate@example.com', 'hash')")
+        conn.commit()
+        conn.close()
+        self.client = TestClient(app)
+
+    def tearDown(self):
+        self.client.close()
+        app.dependency_overrides.clear()
+        if self.previous_flag is not None:
+            os.environ["LUMI_PUBLIC_ENABLED"] = self.previous_flag
+        else:
+            os.environ.pop("LUMI_PUBLIC_ENABLED", None)
+        remove_test_database()
+
+    def test_default_false_blocks_messages_and_actions_without_provider_call(self):
+        headers = authenticate_existing_user(self.client, 1)
+        respond = unittest.mock.Mock(side_effect=AssertionError("provider called"))
+        app.dependency_overrides[get_lumi_orchestrator] = lambda: SimpleNamespace(respond=respond)
+        self.assertEqual(self.client.get("/api/lumi/capabilities").json(), {"public_enabled": False})
+        self.assertEqual(
+            self.client.post("/api/lumi/message", headers=headers, json={"message": "oi"}).status_code,
+            503,
+        )
+        self.assertEqual(
+            self.client.post("/api/lumi/actions/confirm", headers=headers, json={"confirmation_id": "a" * 32}).status_code,
+            503,
+        )
+        self.assertEqual(
+            self.client.post("/api/lumi/actions/cancel", headers=headers, json={"confirmation_id": "a" * 32}).status_code,
+            503,
+        )
+        respond.assert_not_called()
+
+    def test_only_explicit_true_enables_public_capability(self):
+        os.environ["LUMI_PUBLIC_ENABLED"] = "invalid"
+        self.assertEqual(self.client.get("/api/lumi/capabilities").json(), {"public_enabled": False})
+        os.environ["LUMI_PUBLIC_ENABLED"] = "true"
+        self.assertEqual(self.client.get("/api/lumi/capabilities").json(), {"public_enabled": True})
+
+
 class LumiEndpointTests(unittest.TestCase):
     def setUp(self):
         reset_test_database()
+        self._previous_public_flag = os.environ.get("LUMI_PUBLIC_ENABLED")
+        os.environ["LUMI_PUBLIC_ENABLED"] = "true"
         self._previous_lumi_provider = os.environ.get("LUMI_PROVIDER")
         os.environ["LUMI_PROVIDER"] = "openai"
         clear_lumi_provider_cache()
@@ -464,6 +511,10 @@ class LumiEndpointTests(unittest.TestCase):
         clear_lumi_provider_cache()
         self.client.close()
         remove_test_database()
+        if self._previous_public_flag is None:
+            os.environ.pop("LUMI_PUBLIC_ENABLED", None)
+        else:
+            os.environ["LUMI_PUBLIC_ENABLED"] = self._previous_public_flag
         os.environ.pop("LUMI_RATE_LIMIT_REQUESTS", None)
         os.environ.pop("LUMI_RATE_LIMIT_WINDOW_SECONDS", None)
         if self._previous_lumi_provider is None:

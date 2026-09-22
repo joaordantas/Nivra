@@ -70,6 +70,7 @@ def preflight_empty_database(raw: str) -> tuple[str, str]:
 def prepare_test_environment(raw: str) -> None:
     os.environ["APP_ENV"] = "test"
     os.environ["TEST_DATABASE_URL"] = raw
+    os.environ["LUMI_PUBLIC_ENABLED"] = "true"
     os.environ["LUMI_ACTION_PROPOSALS_ENABLED"] = "true"
     os.environ["LUMI_ACTION_EXECUTION_ENABLED"] = "true"
     # Migration mode must not accidentally select the ordinary production URL.

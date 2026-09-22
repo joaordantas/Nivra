@@ -1247,6 +1247,53 @@ A edição de transações com confirmação continua no roadmap, fora desta eta
 
 ## 16. P6.5A — preparação do rollout seguro do schema (22/09/2026)
 
+### Continuação: trava pública e isolamento de Preview
+
+O rollout segue **não executado**. A inspeção do código mostrou que `/lumi`
+abriria o chat após o deploy, embora a versão pública `081ee06` ainda mostre
+“Em breve”. Foi adicionada a flag de backend `LUMI_PUBLIC_ENABLED`, com valor
+implícito `false` e habilitação somente pelo literal `true`. Com ela desligada,
+o frontend mostra o placeholder e os endpoints de mensagem, confirmação e
+cancelamento recusam a operação antes de chamar o provider ou serviço de ação.
+Falha ao consultar a capacidade também mantém o placeholder. A flag é
+independente de `LUMI_ACTION_PROPOSALS_ENABLED` e
+`LUMI_ACTION_EXECUTION_ENABLED`, que continuam desligadas por padrão.
+
+Na Vercel, `main` dispara Production e branches auxiliares disparam Preview.
+A variável `DATABASE_URL` consta com escopo **Production and Preview**, assim
+como outras variáveis Neon. Portanto, publicar a branch de release agora
+criaria um Preview com acesso ao banco principal. O banco descartável antigo
+`nivra-p65-gate` não será reutilizado; sua URL foi removida do `.env` local.
+As três flags `LUMI_PUBLIC_ENABLED`, `LUMI_ACTION_PROPOSALS_ENABLED` e
+`LUMI_ACTION_EXECUTION_ENABLED` foram adicionadas em **Production somente**
+com valor `false` explícito. A Vercel informou que um novo deployment é
+necessário para adotá-las; nenhum redeploy foi iniciado.
+Após o ajuste de ambiente, a Vercel ainda listava `081ee06` como deployment
+Production `Ready`, e a rota pública da Lumi continuava com “Em breve”.
+Até que exista um banco Preview isolado e as variáveis compartilhadas sejam
+restritas/substituídas, **não haverá push da branch, migration no Neon principal
+nem deploy de produção**. O snapshot e a revision principal precisam ser
+reconfirmados imediatamente antes de uma futura aplicação do schema.
+
+Uma tentativa de abrir o detalhe da variável secreta para inspecionar seu
+escopo foi barrada pela revisão automática, que apontou risco de expor seu
+valor. O escopo acima foi lido diretamente da listagem, sem abrir o segredo.
+O bloqueio não foi contornado.
+
+Após a trava pública, a suíte completa passou com **208 testes** e o teste
+focado da flag passou com **2 testes**. O build React/TypeScript e a compilação
+Python passaram. Uma tentativa de executar o teste focado em paralelo à suíte
+completa colidiu no arquivo SQLite de testes; ele foi repetido de forma
+sequencial e passou. `git diff --check` não apontou erros de whitespace, e a
+busca por padrões de segredo nos arquivos alterados não encontrou credenciais.
+Um smoke local isolado usou um SQLite temporário fora do projeto, migrado ao
+head e removido ao final. Login e dashboard de um usuário fictício funcionaram;
+`/lumi` mostrou “Em breve”, consultou apenas `/api/lumi/capabilities` e não
+enviou mensagem ao provider. Em 375, 390, 430, 612 e 1440 px, nos temas claro
+e escuro, não houve overflow horizontal na página Lumi; a navegação móvel
+apareceu nas quatro larguras menores. O badge Alpha abriu a explicação com
+Enter. Esse smoke **não substitui** o gate visual/funcional do Vercel Preview.
+
 ### Checkpoint e revisão técnica
 
 - O checkpoint inicial tinha `main` em `ee9add6`, dois commits à frente de
