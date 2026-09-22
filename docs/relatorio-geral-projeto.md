@@ -1249,9 +1249,10 @@ A edição de transações com confirmação continua no roadmap, fora desta eta
 
 ### Checkpoint e revisão técnica
 
-- `main` local em `ee9add6`, dois commits à frente de `origin/main` (`081ee06`),
-  com P5/P6 e as migrations da Lumi ainda no working tree. Não houve push nem
-  deploy nesta revisão; o código correspondente ainda não está publicado.
+- O checkpoint inicial tinha `main` em `ee9add6`, dois commits à frente de
+  `origin/main` (`081ee06`), com P5/P6 e migrations ainda no working tree.
+  Essas alterações receberam o commit local `cb13c0c`. Não houve push nem
+  deploy; o código correspondente ainda não está publicado.
 - Cadeia Alembic verificada: `f7b3c1d8e920 → e9a2d6c3b4f1 → b5c7d9e1f203`.
   A primeira revision cria `lumi_action_confirmations`, FK de usuário com
   `ON DELETE CASCADE`, token hash único, checks de tipo/status e índice por
@@ -1327,9 +1328,15 @@ tamanhos ainda requerem validação visual após deploy.
 
 **Rollout P6.5A: pendente; gate de regressão pública: pendente.** Nenhuma
 migration foi aplicada ao Neon principal, nenhum dado financeiro foi criado
-pela Lumi e nenhuma flag de execução foi ligada. Ainda faltam checkpoint Git
-publicado com autorização, conferência do snapshot e das flags imediatamente
-antes da operação, migration no banco oficial, `alembic current/check` e
+pela Lumi e nenhuma flag de execução foi ligada. A tentativa de iniciar
+`alembic upgrade head` foi **rejeitada pela revisão automática antes da
+execução**, pois o commit ainda é somente local e o checkpoint de recuperação
+e as flags não foram considerados suficientemente confirmados para alteração
+de produção. Uma nova consulta somente leitura confirmou `f7b3c1d8e920`,
+zero transações e ausência da tabela da Lumi após a rejeição. Não houve
+contorno ou execução indireta. Ainda faltam publicação do checkpoint Git com
+autorização, confirmação operacional do snapshot/flags, migration no banco
+oficial, `alembic current/check` e
 comparação pós-schema/deploy de todas as áreas críticas. A diferença grande
 entre a versão pública e o working tree exige atenção especial no smoke após
 publicação. O primeiro passo em incidente é manter a execução desligada e

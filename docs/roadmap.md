@@ -556,7 +556,7 @@ Status: **CONCLUÍDA E VALIDADA LOCALMENTE; EXECUÇÃO FINANCEIRA PERMANECE DESA
 - [x] Card mostra sucesso apenas após resposta do commit e oferece histórico normal
 - [x] Gate de execução em PostgreSQL descartável: migrations, atomicidade, replay, concorrência, isolamento e núcleo financeiro
 - [ ] Rollout de schema no Neon principal com execução desligada, após revisão separada
-- [-] P6.5A: revisão de compatibilidade, baseline pública e snapshot do Neon principal; aplicação do schema e comparação pós-rollout pendentes
+- [-] P6.5A: revisão de compatibilidade, baseline pública, snapshot do Neon principal e commit local `cb13c0c`; aplicação do schema bloqueada pela revisão automática enquanto o código não estiver publicado e as flags/checkpoint não estiverem confirmados para produção; comparação pós-rollout pendente
 - [ ] Observação em produção e habilitação explícita da execução após aprovação humana
 
 Status: **GATE POSTGRESQL APROVADO COM RESSALVAS; PRODUÇÃO SEM EXECUÇÃO FINANCEIRA**
