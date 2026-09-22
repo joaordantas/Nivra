@@ -1,4 +1,6 @@
-from database.connection import get_connection
+from decimal import Decimal
+
+from database.connection import DatabaseConnection, get_connection
 
 
 TRANSACTION_SELECT = """
@@ -27,15 +29,18 @@ TRANSACTION_SELECT = """
 
 
 def adicionar_transacao(
-    valor: float,
+    valor: float | Decimal,
     tipo: str,
     categoria_id: int | None,
     comentario: str | None,
     data: str,
     usuario_id: int,
     conta_id: int | None = None,
+    *,
+    conn: DatabaseConnection | None = None,
 ) -> int:
-    conn = get_connection()
+    own_connection = conn is None
+    conn = conn or get_connection()
     try:
         cursor = conn.execute(
             """
@@ -46,10 +51,34 @@ def adicionar_transacao(
             (valor, tipo, categoria_id, comentario, data, usuario_id, conta_id),
         )
         transacao_id = int(cursor.fetchone()[0])
-        conn.commit()
+        if own_connection:
+            conn.commit()
         return transacao_id
     finally:
-        conn.close()
+        if own_connection:
+            conn.close()
+
+
+def buscar_conta_para_criacao(
+    conta_id: int, usuario_id: int, conn: DatabaseConnection
+) -> tuple | None:
+    suffix = " FOR SHARE" if conn.dialect_name == "postgresql" else ""
+    return conn.execute(
+        "SELECT id, nome FROM contas "
+        "WHERE id = ? AND usuario_id = ? AND ativo = TRUE" + suffix,
+        (conta_id, usuario_id),
+    ).fetchone()
+
+
+def buscar_categoria_para_criacao(
+    categoria_id: int, usuario_id: int, conn: DatabaseConnection
+) -> tuple | None:
+    suffix = " FOR SHARE" if conn.dialect_name == "postgresql" else ""
+    return conn.execute(
+        "SELECT id, nome FROM categorias "
+        "WHERE id = ? AND usuario_id = ?" + suffix,
+        (categoria_id, usuario_id),
+    ).fetchone()
 
 
 def listar_transacoes(

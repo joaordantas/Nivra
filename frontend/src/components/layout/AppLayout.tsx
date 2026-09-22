@@ -2,6 +2,7 @@ import { Moon, PiggyBank, Sun } from "lucide-react";
 import { Outlet } from "react-router-dom";
 
 import { MobileNavigation } from "./MobileNavigation";
+import { AlphaBadge } from "./AlphaBadge";
 import { Sidebar } from "./Sidebar";
 import { useTheme } from "../../app/providers";
 import { useAuth } from "../../app/providers";
@@ -33,6 +34,7 @@ export function AppLayout() {
           <div className="mobile-brand">
             <PiggyBank aria-hidden="true" size={21} />
             <strong>Nivra</strong>
+            <AlphaBadge />
           </div>
           <button aria-label={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"} className="icon-button mobile-theme-button" onClick={toggleTheme} type="button">
             {theme === "dark" ? <Sun aria-hidden="true" size={18} /> : <Moon aria-hidden="true" size={18} />}

@@ -86,19 +86,18 @@ A aplicação está disponível no [domínio de produção confirmado na Vercel]
 
 ## ✦ Lumi — em desenvolvimento
 
-**Lumi** será a assistente financeira inteligente da Nivra. Ela está planejada para aplicar linguagem natural aos services financeiros existentes, oferecendo consultas e ações com confirmação.
+**Lumi** é a assistente financeira em desenvolvimento da Nivra. Consultas em linguagem natural usam services financeiros com ferramentas somente leitura. A conversa mantém apenas um contexto curto enquanto a página está aberta, sem memória persistente. A criação de receita ou despesa após confirmação explícita foi implementada localmente, mas sua execução permanece desligada por padrão e ainda não foi liberada na Vercel.
 
-Exemplos planejados:
+Exemplos disponíveis no modo de consulta:
 
 ```text
 Quanto gastei com alimentação este mês?
 Estou gastando mais que no mês passado?
-Registre R$ 42,90 de iFood.
 Quanto da minha próxima fatura já está comprometido?
-Posso gastar R$ 300 este final de semana?
+Quais despesas recorrentes estão próximas?
 ```
 
-Lumi ainda não está implementada. O motor determinístico de insights, o contexto financeiro e as operações seguras serão construídos antes da integração com IA.
+A interface fica em `/lumi`, exige sessão segura e envia a pergunta com até três turnos completos de contexto temporário para a API da Nivra. Esse contexto é limitado e descartado ao recarregar a página. O smoke com o provider real ainda depende de `OPENAI_API_KEY` configurada no ambiente; a validação local usa providers falsos e não representa esse gate externo como concluído.
 
 ## Arquitetura
 
@@ -153,7 +152,7 @@ Detalhes estão em [Arquitetura](docs/architecture.md).
 | Orçamentos e metas | Planejado |
 | Open Finance Sandbox | Demonstração guiada para testers disponível |
 | Insights financeiros | Planejado |
-| Lumi | Em desenvolvimento conceitual |
+| Lumi | Consultas e proposta de receita/despesa com confirmação; execução local validada, desligada por padrão |
 | Notificações e WhatsApp | Planejado |
 
 Consulte o [roadmap público](docs/roadmap.md) para todos os marcos.
@@ -247,7 +246,7 @@ Antes do primeiro deploy de um ambiente novo:
 - tentativas sensíveis possuem limites persistentes no PostgreSQL;
 - histórico e gerenciamento individual de dispositivos ainda estão planejados;
 - filtros são processados no frontend e ainda não possuem paginação no backend;
-- Lumi, insights automáticos e notificações ainda não estão disponíveis;
+- as ferramentas do modelo permanecem somente leitura; a execução controlada de receita/despesa depende de flags desligadas por padrão, e memória persistente, outras ações e notificações ainda não estão disponíveis;
 - a aplicação permanece em Alpha e não deve receber dados financeiros críticos.
 
 Nenhuma credencial PostgreSQL é enviada ao React. O fluxo permanece navegador → FastAPI → PostgreSQL.

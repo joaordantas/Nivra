@@ -326,7 +326,9 @@ class InstallmentFoundationTests(unittest.TestCase):
             )
 
     def test_parcelas_futuras_nao_alteram_saldo_atual_ou_resumo(self):
-        inicio_futuro = date.today() + timedelta(days=1)
+        # Mantém a data inequivocamente futura mesmo quando o teste cruza a
+        # meia-noite entre o fuso local do Python e CURRENT_DATE do banco.
+        inicio_futuro = date.today() + timedelta(days=7)
         plano = self.criar_plano(2, "200.00", inicio_futuro)
 
         conta = next(item for item in listar_contas_formatadas(1) if item["id"] == self.conta_a["id"])

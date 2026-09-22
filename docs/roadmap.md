@@ -348,7 +348,7 @@ Status: **CONCLUÍDA E VALIDADA; GATE DE UX MOBILE APROVADO**
 - [x] Gastos e receitas por categoria
 - [x] Maiores despesas
 - [x] Tendência de gastos e economia
-- [-] Gastos fora do padrão e recorrências
+- [x] Gastos fora do padrão e recorrências detectadas por regras determinísticas
 - [x] Projeção do mês
 - [x] Comprometimento dos cartões
 - [ ] Situação de orçamentos e metas
@@ -398,17 +398,43 @@ Status: **CONCLUÍDA E VALIDADA; MOTOR AINDA EM EVOLUÇÃO**
 
 Status: **CONCLUÍDA E VALIDADA; SEM MODELO DE IA CONECTADO**
 
+### P5.4 — Recorrências determinísticas e gastos fora do padrão
+
+- [x] Normalização conservadora e centralizada de descrições financeiras
+- [x] Recorrências detectadas somente com três ou mais ocorrências
+- [x] Frequências semanal, quinzenal, mensal, aproximadamente mensal e anual
+- [x] Tolerâncias temporais e de valor centralizadas e testáveis
+- [x] Confiança média/alta derivada de regularidade, amostra e estabilidade de valor
+- [x] Próxima ocorrência estimada somente quando todos os intervalos são consistentes
+- [x] Mudanças relevantes no valor típico identificadas sem alterar movimentações
+- [x] Parcelamentos, transferências e pagamentos de fatura excluídos dos padrões comuns
+- [x] Anomalias globais e por categoria com baseline exclusivamente histórica
+- [x] Mediana e MAD usados para resistir a outliers e explicar cada detecção
+- [x] Contrato tipado ampliado em `GET /api/insights`
+- [x] Contexto da futura Lumi com recorrências, próximas cobranças, mudanças e anomalias
+- [x] Dashboard responsivo com recorrências e gastos relevantes fora do padrão
+- [x] Implementação sem persistência adicional e sem nova migration
+
+Status: **CONCLUÍDA E VALIDADA; ANÁLISE SOMENTE LEITURA E SEM IA GENERATIVA**
+
 ## ✦ PRIORIDADE 6 — LUMI
 
-Lumi será a assistente financeira inteligente da Nivra. A identidade está definida, mas a IA ainda não foi implementada.
+Lumi é a assistente financeira inteligente da Nivra. A orquestração, a
+interface e um contexto curto e efêmero estão disponíveis. Consultas permanecem
+somente leitura; receita e despesa podem ser executadas após confirmação explícita
+somente quando duas flags independentes forem habilitadas. A execução permanece
+desligada por padrão e a memória persistente continua pendente.
 
-- [ ] Consultas financeiras em linguagem natural
-- [ ] Criação e edição de transações com confirmação
+- [x] Consultas financeiras em linguagem natural com contexto efêmero e somente leitura
+- [-] Fundação de propostas para criação de receitas e despesas com confirmação explícita
+- [x] Execução controlada de receita e despesa após confirmação explícita, validada localmente
+- [ ] Edição de transações com confirmação
 - [ ] Ações sobre categorias, orçamentos e metas
-- [ ] Consultas de contas, cartões e faturas
-- [ ] Tool calling para os services existentes
-- [-] Contexto financeiro estruturado e memória de preferências
-- [ ] Garantia de que a IA nunca acessa SQL diretamente
+- [x] Consultas de contas, cartões e faturas pelo contexto financeiro consolidado
+- [x] Tool calling somente leitura para os services existentes
+- [x] Contexto financeiro estruturado
+- [ ] Memória persistente de preferências e histórico de conversa
+- [x] Garantia arquitetural e testes de que a IA não acessa SQL ou repositories diretamente
 
 ### Preparação técnica da Lumi
 
@@ -417,10 +443,133 @@ Lumi será a assistente financeira inteligente da Nivra. A identidade está defi
 - [x] Identidade injetada a partir da sessão, sem aceitar `usuario_id` dos argumentos
 - [x] Execução pela camada de service, sem acesso direto da futura IA a repository ou SQL
 - [x] Contexto consolidado com posição financeira, tendência, maiores gastos, projeção, cartões e alertas
-- [ ] Orquestração com modelo de linguagem e tool calling real
-- [ ] Interface de conversa
+- [x] Contexto determinístico com recorrências, próximas cobranças, mudanças de valor e anomalias explicáveis
+- [x] Orquestração com OpenAI Responses API e tool calling real
+- [x] Provider isolado por protocolo e substituível por fake nos testes
+- [x] Endpoint autenticado `POST /api/lumi/message`, com sessão, CSRF e schema fechado
+- [x] Allowlist estrita expondo apenas `get_financial_context` ao modelo
+- [x] Perguntas não triviais exigem tool antes de qualquer resposta financeira
+- [x] Loop sequencial com validação de argumentos e limite rígido de quatro tools por mensagem
+- [x] Instruções de sistema versionadas e proteção contra prompt injection nos dados
+- [x] Execução com `store=false` e contexto efêmero limitado, sem persistência de conversa
+- [x] Timeout, limite de saída, rate limit próprio e métricas sanitizadas
+- [x] Ausência do provider isolada do restante da aplicação
+- [x] Interface de conversa responsiva na rota `/lumi`
+- [x] Seleção explícita de provider por `LUMI_PROVIDER`, sem fallback automático
+- [x] Adaptadores independentes para OpenAI Responses API e Groq Chat Completions
+- [x] Mesmo catálogo local e somente leitura de tools para ambos os providers
 
-Status: **PREPARAÇÃO INICIADA; LUMI AINDA NÃO IMPLEMENTADA**
+### P6.3a — Provider Groq alternativo
+
+- [x] `GroqProvider` implementa o contrato `LLMProvider`
+- [x] Factory central escolhe exclusivamente `openai` ou `groq`
+- [x] Modelo Groq configurável, com padrão `openai/gpt-oss-20b`
+- [x] Conversão isolada entre o contrato interno e local function calling da Groq
+- [x] Rate limit e falhas de autenticação da Groq sanitizados no backend
+- [x] OpenAIProvider preservado sem fallback automático entre providers
+- [x] Testes offline de factory, tool calling, continuação, timeout, rate limit e autenticação
+- [x] Suíte completa, build, compilação Python e Alembic validados sem migration nova
+- [x] Smoke real mínimo da Groq
+
+Status: **IMPLEMENTADA E VALIDADA; GATE EXTERNO MÍNIMO APROVADO**
+
+Gate externo mínimo executado em 22 de setembro de 2026 com
+`LUMI_PROVIDER=groq`, modelo `openai/gpt-oss-20b`, banco descartável e sessão
+autenticada. As cinco mensagens passaram com HTTP 200; `get_financial_context`
+foi a única tool usada nas consultas financeiras e nenhuma escrita ocorreu.
+O gate não habilita OpenAI Production nem altera o escopo somente leitura.
+
+### P6.1 — Orquestração segura em modo somente leitura
+
+Status: **CONCLUÍDA E VALIDADA NO BACKEND; SEM INTERFACE, MEMÓRIA OU AÇÕES**
+
+### P6.2 — Interface de conversa em modo somente leitura
+
+- [x] Rota protegida `/lumi`
+- [x] Acesso pela sidebar desktop e menu mobile “Mais”
+- [x] Estado inicial, sugestões de perguntas, mensagens e processamento
+- [x] Composer com limite de 2.000 caracteres, Enter e Shift+Enter
+- [x] Bloqueio imediato de envio duplicado
+- [x] Erros sanitizados para sessão, CSRF, limite, provider, timeout e conexão
+- [x] Retry manual para falhas temporárias, sem retentativa automática
+- [x] Tratamento do `Retry-After` sem substituir a autoridade do backend
+- [x] Renderização como texto seguro, sem HTML arbitrário ou Markdown executável
+- [x] Histórico somente em memória React e limpeza no reload
+- [x] Cancelamento da request no desmonte com `AbortController`
+- [x] Identidade visual, temas e acessibilidade básica preservados
+- [x] Layout validado em 375, 390, 430, 612 e 1440 px
+- [x] Request restrita ao contrato `{ message, history }`, sem parâmetros de identidade, modelo ou tools
+- [x] Nenhuma migration ou persistência de conversa
+- [x] Suíte Python completa com 167 testes e build React/TypeScript aprovados
+- [x] Alembic no head `f7b3c1d8e920` e sem novas operações
+- [x] Gate local de regressão pré-commit aprovado
+- [ ] Smoke real com OpenAI no ambiente externo
+
+Status: **APROVADA LOCALMENTE; INTEGRAÇÃO EXTERNA DA LUMI PENDENTE DE SMOKE REAL**
+
+### P6.3 — Contexto efêmero e multi-turn seguro
+
+- [x] Até três turnos completos anteriores enviados somente durante a página aberta
+- [x] Limite de seis mensagens e 12.000 caracteres de contexto no frontend e backend
+- [x] Papéis restritos a `user` e `assistant`, com alternância e turnos completos validados
+- [x] Histórico tratado como conteúdo não confiável pelas instruções do backend
+- [x] Pergunta financeira atual continua exigindo nova execução da tool autorizada
+- [x] Falhas sem resposta não entram no contexto enviado ao provider
+- [x] Reload e saída da rota descartam todo o contexto
+- [x] Nenhuma tabela, migration, `localStorage`, cookie ou memória persistente adicionada
+- [x] Testes offline de limites, ordenação, ownership e continuidade aprovados
+- [x] Suíte completa com 169 testes, build e gate Alembic descartável aprovados
+- [ ] Smoke multi-turn real com OpenAI e medição de latência/custo
+
+Status: **APROVADA LOCALMENTE; GATE EXTERNO MULTI-TURN PENDENTE**
+
+### P6.4 — Fundação de ações com confirmação explícita
+
+- [x] Tipos fechados `create_expense` e `create_income`, sem tool de escrita para o modelo
+- [x] Proposta estruturada e validada pelo backend, com valor decimal, conta, categoria, descrição e data explícitos
+- [x] Campos faltantes e avisos devolvidos sem inventar valores, data, conta ou categoria
+- [x] Conta e categoria resolvidas exclusivamente entre entidades do usuário autenticado
+- [x] Persistência curta server-side em `lumi_action_confirmations`, sem prompt, histórico ou reasoning
+- [x] `confirmation_id` opaco, aleatório e armazenado somente como hash
+- [x] Estados `pending`, `confirmed`, `cancelled` e `expired`, com expiração padrão de 10 minutos
+- [x] Endpoints autenticados para confirmação e cancelamento, protegidos por CSRF e ownership
+- [x] Transição atômica por condição SQL, protegendo replay e confirmações concorrentes
+- [x] Rate limit específico para propostas e operações de confirmação
+- [x] Feature flag `LUMI_ACTION_PROPOSALS_ENABLED=false` por padrão
+- [x] Card de proposta responsivo com revisão explícita, confirmação e cancelamento
+- [x] Confirmação sem execução: nenhuma receita, despesa ou outra mutação financeira é criada nesta etapa
+- [x] Migration `e9a2d6c3b4f1` e testes de proposta, ownership, CSRF, expiração, replay e concorrência
+
+Status: **CONCLUÍDA E VALIDADA LOCALMENTE; EXECUÇÃO FINANCEIRA PERMANECE DESABILITADA**
+
+### P6.5 — Execução controlada de receita e despesa
+
+- [x] Apenas `create_expense` e `create_income`, sem tool de escrita para o modelo
+- [x] `LUMI_ACTION_EXECUTION_ENABLED=false` independente da flag de propostas
+- [x] Confirmação HTTP com sessão e CSRF como única autorização
+- [x] Payload persistido revalidado no instante da execução, inclusive conta/categoria do usuário
+- [x] Valor `Decimal`, data e descrição preservados do card
+- [x] Criação pela camada de serviço financeiro na mesma transação da confirmação
+- [x] Estado `executed`, vínculo com transação e retry idempotente
+- [x] `execution_eligible=false` para propostas anteriores ao rollout e confirmações P6.4 não executáveis
+- [x] Testes locais de replay, concorrência, rollback, ownership, expiração e cancelamento
+- [x] Card mostra sucesso apenas após resposta do commit e oferece histórico normal
+- [x] Gate de execução em PostgreSQL descartável: migrations, atomicidade, replay, concorrência, isolamento e núcleo financeiro
+- [ ] Rollout de schema no Neon principal com execução desligada, após revisão separada
+- [-] P6.5A: revisão de compatibilidade, baseline pública e snapshot do Neon principal; aplicação do schema e comparação pós-rollout pendentes
+- [ ] Observação em produção e habilitação explícita da execução após aprovação humana
+
+Status: **GATE POSTGRESQL APROVADO COM RESSALVAS; PRODUÇÃO SEM EXECUÇÃO FINANCEIRA**
+
+O gate passou em `nivra_p65_gate`, projeto Neon descartável com endpoint
+distinto do principal: `upgrade → check → downgrade → upgrade → check`, duas
+confirmações P6.4 inelegíveis, execução de despesa/receita exatas, rollback,
+replay, concorrência HTTP de 2 e 5 requisições sem duplicação, ownership, CSRF,
+e histórico/saldo/insights. A leitura final mostrou sete transações fictícias,
+sete vínculos de autorização completos e nenhuma transação órfã. O teste de
+proposta estruturada *gerada pela Groq* não foi feito: o parser determinístico
+legítimo captura intenções de escrita antes do provider. Zero chamadas externas
+foram feitas neste gate. Nenhum rollout ocorreu no Neon principal ou Vercel.
 
 ## 🔔 PRIORIDADE 7 — NOTIFICAÇÕES INTERNAS
 
@@ -477,6 +626,11 @@ Status: **PREPARAÇÃO INICIADA; LUMI AINDA NÃO IMPLEMENTADA**
 
 ## Próxima tarefa recomendada
 
-**P5.4 — Recorrências determinísticas e refinamento de gastos fora do padrão.**
+**Concluir a Fase A do rollout P6.5 após o checkpoint Git e autorização de
+publicação: aplicar o schema no Neon principal com execução desligada e comparar
+a aplicação publicada com a baseline registrada.**
 
-A P5.3 acrescentou uma série comparável de seis meses, o ranking das maiores despesas e um contexto financeiro consolidado para a futura Lumi. A próxima unidade deve detectar recorrências apenas quando houver evidência suficiente e aprimorar anomalias sem simular orçamentos ou metas ainda inexistentes. A orquestração com modelo de linguagem continua separada e não deve começar antes dessa base determinística.
+A execução de receita e despesa está desligada por padrão. O gate em PostgreSQL
+descartável passou com ressalvas; aplicação de schema e habilitação em produção
+exigem decisões separadas. A próxima ação financeira funcional ainda pendente é a edição
+de transações com confirmação; ela não faz parte da P6.5.

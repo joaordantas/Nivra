@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom";
 
 import { useAuth, useTheme } from "../../app/providers";
 import { primaryNavigation, productIcon as ProductIcon, secondaryNavigation } from "./navigation";
+import { AlphaBadge } from "./AlphaBadge";
 
 function NavigationLink({ item }: { item: (typeof primaryNavigation)[number] }) {
   const Icon = item.icon;
@@ -32,6 +33,7 @@ export function Sidebar() {
           <strong>Nivra</strong>
           <small>Seu dinheiro, mais claro</small>
         </span>
+        <AlphaBadge />
       </div>
 
       <nav aria-label="Navegação principal" className="sidebar-navigation">

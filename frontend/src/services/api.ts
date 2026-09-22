@@ -11,6 +11,9 @@ import type {
   InstallmentPlanDetail,
   InstallmentPlanSummary,
   InstallmentPlanUpdate,
+  LumiHistoryMessage,
+  LumiActionConfirmationResponse,
+  LumiResponse,
   OpenFinanceConnection,
   OpenFinanceAccountLink,
   OpenFinanceExternalAccount,
@@ -27,14 +30,58 @@ import type {
   User,
 } from "../types";
 
-const API_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? "http://127.0.0.1:8000" : "");
+const localApiUrl = `${window.location.protocol}//${window.location.hostname}:8000`;
+const API_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? localApiUrl : "");
 const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 let csrfToken: string | null = null;
+
+export class ApiError extends Error {
+  readonly status: number;
+  readonly retryAfterSeconds: number | null;
+
+  constructor(message: string, status: number, retryAfterSeconds: number | null = null) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.retryAfterSeconds = retryAfterSeconds;
+  }
+}
+
+function parseRetryAfter(value: string | null): number | null {
+  if (!value) return null;
+  const seconds = Number(value);
+  if (Number.isFinite(seconds) && seconds >= 0) return Math.ceil(seconds);
+  const retryAt = Date.parse(value);
+  if (Number.isNaN(retryAt)) return null;
+  return Math.max(0, Math.ceil((retryAt - Date.now()) / 1000));
+}
+
+async function apiErrorFromResponse(response: Response, fallback: string): Promise<ApiError> {
+  let detail = fallback;
+  try {
+    const body: { detail?: unknown } = await response.json();
+    if (typeof body.detail === "string") {
+      detail = body.detail;
+    } else if (Array.isArray(body.detail)) {
+      const messages = body.detail
+        .map((item) => {
+          if (typeof item === "string") return item;
+          if (item && typeof item === "object" && "msg" in item && typeof item.msg === "string") return item.msg;
+          return null;
+        })
+        .filter((message): message is string => Boolean(message));
+      if (messages.length > 0) detail = messages.join(" ");
+    }
+  } catch {
+    detail = response.statusText || detail;
+  }
+  return new ApiError(detail, response.status, parseRetryAfter(response.headers.get("Retry-After")));
+}
 
 async function getCsrfToken(): Promise<string> {
   if (csrfToken) return csrfToken;
   const response = await fetch(`${API_URL}/api/auth/csrf`, { credentials: "include" });
-  if (!response.ok) throw new Error("Não foi possível iniciar uma conexão segura.");
+  if (!response.ok) throw await apiErrorFromResponse(response, "Não foi possível iniciar uma conexão segura.");
   const body = await response.json() as { csrf_token: string };
   csrfToken = body.csrf_token;
   return csrfToken;
@@ -54,26 +101,8 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   });
 
   if (!response.ok) {
-    let detail = "Erro ao se comunicar com a API.";
-    try {
-      const body: { detail?: unknown } = await response.json();
-      if (typeof body.detail === "string") {
-        detail = body.detail;
-      } else if (Array.isArray(body.detail)) {
-        const messages = body.detail
-          .map((item) => {
-            if (typeof item === "string") return item;
-            if (item && typeof item === "object" && "msg" in item && typeof item.msg === "string") return item.msg;
-            return null;
-          })
-          .filter((message): message is string => Boolean(message));
-        if (messages.length > 0) detail = messages.join(" ");
-      }
-    } catch {
-      detail = response.statusText || detail;
-    }
     if (response.status === 401) window.dispatchEvent(new Event("nivra:unauthorized"));
-    throw new Error(detail);
+    throw await apiErrorFromResponse(response, "Erro ao se comunicar com a API.");
   }
 
   if (response.status === 204) return undefined as T;
@@ -228,6 +257,20 @@ export const api = {
     request<ProfitSummary>(`/dashboard/profit?data_inicio=${dataInicio}&data_fim=${dataFim}`),
   getInsights: (dataInicio: string, dataFim: string) =>
     request<FinancialInsights>(`/insights?data_inicio=${dataInicio}&data_fim=${dataFim}`),
+  sendLumiMessage: (message: string, history: LumiHistoryMessage[], signal?: AbortSignal) =>
+    request<LumiResponse>("/lumi/message", {
+      method: "POST",
+      body: JSON.stringify({ message, history }),
+      signal,
+    }),
+  confirmLumiAction: (confirmationId: string) =>
+    request<LumiActionConfirmationResponse>("/lumi/actions/confirm", {
+      method: "POST", body: JSON.stringify({ confirmation_id: confirmationId }),
+    }),
+  cancelLumiAction: (confirmationId: string) =>
+    request<LumiActionConfirmationResponse>("/lumi/actions/cancel", {
+      method: "POST", body: JSON.stringify({ confirmation_id: confirmationId }),
+    }),
   getReceivablesTotal: () => request<{ total: number }>("/dashboard/receivables/total"),
   getReceivablesByClient: () => request<ReceivableByClient[]>("/dashboard/receivables/by-client"),
 

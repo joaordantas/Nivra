@@ -330,6 +330,40 @@ export interface FinancialInsights {
     source: "manual" | "open_finance" | "card";
     baseline: number;
     times_baseline: number;
+    context: "global" | "category" | "both";
+    sample_size: number;
+    global_baseline: number | null;
+    category_baseline: number | null;
+    median_absolute_deviation: number | null;
+    robust_z_score: number | null;
+    reason: string;
+    data_nature: "deterministic_inference";
+  }>;
+  recurring_expenses: Array<{
+    pattern_id: string;
+    description: string;
+    normalized_description: string;
+    category: string;
+    category_key: string | null;
+    frequency: "weekly" | "fortnightly" | "monthly" | "approximately_monthly" | "annual";
+    occurrence_count: number;
+    typical_amount: number;
+    value_variation_percent: number;
+    first_occurrence: string;
+    last_occurrence: string;
+    next_occurrence: string | null;
+    confidence: "medium" | "high";
+    reasons: string[];
+    sources: Array<"manual" | "open_finance" | "card">;
+    amount_change: {
+      previous_typical_amount: number;
+      current_amount: number;
+      change_percent: number;
+      direction: "increase" | "decrease";
+      detected_at: string;
+      reason: string;
+    } | null;
+    data_nature: "deterministic_inference";
   }>;
   largest_expenses: Array<{
     id: number;
@@ -390,6 +424,56 @@ export interface FinancialInsights {
     }>;
   };
   attention: AttentionInsight[];
+}
+
+export interface LumiMessageResponse {
+  type: "message";
+  message: string;
+  tools_used: string[];
+}
+
+export interface LumiActionEntity {
+  id: number;
+  name: string;
+}
+
+export interface LumiActionProposal {
+  type: "action_proposal";
+  execution_enabled: boolean;
+  message: string;
+  tools_used: string[];
+  action_type: "create_expense" | "create_income";
+  summary: string;
+  payload: {
+    amount: string | null;
+    description: string | null;
+    date: string | null;
+    account: LumiActionEntity | null;
+    category: LumiActionEntity | null;
+  };
+  missing_fields: string[];
+  warnings: string[];
+  confirmation: {
+    confirmation_id: string;
+    status: "pending" | "confirmed" | "cancelled" | "expired" | "executed";
+    expires_at: string;
+  } | null;
+}
+
+export type LumiResponse = LumiMessageResponse | LumiActionProposal;
+
+export interface LumiActionConfirmationResponse {
+  action_type: "create_expense" | "create_income";
+  status: "pending" | "confirmed" | "cancelled" | "expired" | "executed";
+  expires_at: string;
+  message: string;
+  execution_enabled: boolean;
+  transaction_id: number | null;
+}
+
+export interface LumiHistoryMessage {
+  role: "user" | "assistant";
+  content: string;
 }
 
 export interface ReceivableByClient {

@@ -27,7 +27,7 @@ export const primaryNavigation: NavigationItem[] = [
   { label: "Cartões", path: "/cards", icon: CreditCard },
   { label: "Orçamentos", path: "/budgets", icon: ListChecks },
   { label: "Metas", path: "/goals", icon: Target },
-  { label: "Lumi", path: "/assistant", icon: Bot },
+  { label: "Lumi", path: "/lumi", icon: Bot },
 ];
 
 export const secondaryNavigation: NavigationItem[] = [
@@ -45,7 +45,7 @@ export const mobileMoreFinanceNavigation: NavigationItem[] = [
   { label: "Cartões", path: "/cards", icon: CreditCard },
   { label: "Orçamentos", path: "/budgets", icon: ListChecks },
   { label: "Metas", path: "/goals", icon: Target },
-  { label: "Lumi", path: "/assistant", icon: Bot },
+  { label: "Lumi", path: "/lumi", icon: Bot },
 ];
 
 export const mobileMoreSettingsNavigation: NavigationItem[] = [

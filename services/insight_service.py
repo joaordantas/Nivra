@@ -2,11 +2,14 @@ import calendar
 from collections import defaultdict
 from datetime import date, timedelta
 from decimal import Decimal
-from statistics import median
 
 from repositories.categoria_repo import listar_categorias
 from repositories.insight_repo import listar_compras_cartao_periodo
 from services.cartao_service import listar_cartoes_formatados, listar_faturas_service
+from services.financial_pattern_service import (
+    detect_recurring_expenses,
+    detect_unusual_expenses,
+)
 from services.transacao_service import listar_transacoes_formatadas, obter_resumo_financeiro
 
 
@@ -16,6 +19,8 @@ CARD_CONCENTRATION_PERCENT = Decimal("70")
 INVOICE_DUE_SOON_DAYS = 3
 TREND_MONTHS = 6
 TREND_CHANGE_THRESHOLD_PERCENT = Decimal("5")
+PATTERN_HISTORY_MONTHS = 30
+ANOMALY_HISTORY_MONTHS = 12
 
 
 def _money(value: object) -> Decimal:
@@ -72,6 +77,8 @@ def _card_expenses(usuario_id: int, start: str, end: str) -> list[dict]:
             "category_key": str(category_key) if category_key is not None else None,
             "account": f"Cartão {card_name}",
             "source": "card",
+            "parcelamento_id": None,
+            "numero_parcela": None,
         }
         for (
             purchase_id,
@@ -102,6 +109,8 @@ def _period_entries(usuario_id: int, start: str, end: str) -> list[dict]:
             "account": str(transaction["conta"]),
             "source": str(transaction["origem"]),
             "neutral": bool(transaction["neutra"]),
+            "parcelamento_id": transaction.get("parcelamento_id"),
+            "numero_parcela": transaction.get("numero_parcela"),
         }
         for transaction in listar_transacoes_formatadas(usuario_id, start, end)
     ]
@@ -361,31 +370,6 @@ def _card_commitment(usuario_id: int, reference: date) -> dict:
     }
 
 
-def _unusual_expenses(entries: list[dict]) -> list[dict]:
-    expenses = [entry for entry in entries if entry["type"] == "saida" and not entry["neutral"]]
-    if len(expenses) < 3:
-        return []
-    baseline = _money(median(float(entry["amount"]) for entry in expenses))
-    if baseline <= 0:
-        return []
-    threshold = max(Decimal("100.00"), baseline * Decimal("2"))
-    return [
-        {
-            "id": entry["id"],
-            "description": entry["description"],
-            "amount": entry["amount"],
-            "date": entry["date"],
-            "category": entry["category"],
-            "account": entry["account"],
-            "source": entry["source"],
-            "baseline": float(baseline),
-            "times_baseline": round(float(_money(entry["amount"]) / baseline), 2),
-        }
-        for entry in sorted(expenses, key=lambda item: _money(item["amount"]), reverse=True)
-        if _money(entry["amount"]) >= threshold
-    ][:3]
-
-
 def _attention_items(
     current: dict,
     comparison: dict,
@@ -395,6 +379,7 @@ def _attention_items(
     projection: dict,
     card_commitment: dict,
     trend: dict,
+    recurrences: list[dict],
     reference: date,
 ) -> list[dict]:
     items: list[dict] = []
@@ -475,11 +460,49 @@ def _attention_items(
             "code": "unusual_expense",
             "severity": "warning",
             "title": "Um gasto ficou fora do padrão",
-            "description": f"{item['description']} foi {item['times_baseline']:.1f}x maior que o gasto típico do período.",
-            "reason": "A regra compara o valor com a mediana das despesas e exige ao menos três gastos.",
+            "description": item["reason"],
+            "reason": f"A comparação usa somente {item['sample_size']} despesas anteriores e uma mediana robusta.",
             "action_label": "Ver movimentações",
             "action_path": "/transactions",
         })
+
+    changed_recurrence = next(
+        (
+            item for item in recurrences
+            if item["amount_change"] is not None
+            and item["amount_change"]["direction"] == "increase"
+        ),
+        None,
+    )
+    if changed_recurrence is not None:
+        change = changed_recurrence["amount_change"]
+        items.append({
+            "code": "recurring_expense_increased",
+            "severity": "warning",
+            "title": f"{changed_recurrence['description']} ficou mais caro",
+            "description": f"O valor passou de {_format_brl(_money(change['previous_typical_amount']))} para {_format_brl(_money(change['current_amount']))}.",
+            "reason": change["reason"],
+            "action_label": "Ver recorrências",
+            "action_path": "/dashboard#recurrences",
+        })
+    else:
+        relevant_recurrence = next(
+            (
+                item for item in recurrences
+                if item["confidence"] == "high" and _money(item["typical_amount"]) >= Decimal("30.00")
+            ),
+            None,
+        )
+        if relevant_recurrence is not None:
+            items.append({
+                "code": "recurring_expense_detected",
+                "severity": "info",
+                "title": "Uma despesa recorrente foi identificada",
+                "description": f"{relevant_recurrence['description']} costuma consumir {_format_brl(_money(relevant_recurrence['typical_amount']))} por ocorrência.",
+                "reason": "O padrão possui ao menos cinco ocorrências e intervalos regulares.",
+                "action_label": "Ver recorrências",
+                "action_path": "/dashboard#recurrences",
+            })
 
     if categories and expense_count >= 3 and categories[0]["percentage"] >= 40:
         top = categories[0]
@@ -619,10 +642,31 @@ def obter_insights_financeiros_service(
     previous = obter_resumo_financeiro(
         usuario_id, previous_start.isoformat(), previous_end.isoformat()
     )
-    entries = _period_entries(usuario_id, start, end)
+    pattern_history_start = _shift_month(
+        effective_end.replace(day=1), -PATTERN_HISTORY_MONTHS
+    )
+    history_entries = _period_entries(
+        usuario_id,
+        pattern_history_start.isoformat(),
+        end,
+    )
+    entries = [
+        entry for entry in history_entries if start <= str(entry["date"]) <= end
+    ]
     expense_categories = _category_totals(entries, "saida")
     income_categories = _category_totals(entries, "entrada")
-    unusual = _unusual_expenses(entries)
+    anomaly_history_start = _shift_month(requested_start, -ANOMALY_HISTORY_MONTHS)
+    anomaly_entries = [
+        entry
+        for entry in history_entries
+        if anomaly_history_start.isoformat() <= str(entry["date"]) <= end
+    ]
+    unusual = detect_unusual_expenses(
+        anomaly_entries,
+        requested_start,
+        effective_end,
+    )
+    recurrences = detect_recurring_expenses(history_entries)
     largest_expenses = _largest_expenses(entries)
     projection = _monthly_projection(
         usuario_id,
@@ -663,6 +707,7 @@ def obter_insights_financeiros_service(
         "top_expense_categories": expense_categories[:5],
         "top_income_categories": income_categories[:5],
         "unusual_expenses": unusual,
+        "recurring_expenses": recurrences,
         "largest_expenses": largest_expenses,
         "monthly_trend": trend,
         "monthly_projection": projection,
@@ -676,6 +721,7 @@ def obter_insights_financeiros_service(
             projection,
             card_commitment,
             trend,
+            recurrences,
             reference,
         ),
     }
@@ -704,10 +750,33 @@ def obter_contexto_financeiro_lumi_service(
         "top_income_categories": insights["top_income_categories"],
         "monthly_projection": insights["monthly_projection"],
         "card_commitment": insights["card_commitment"],
+        "recurring_expenses": insights["recurring_expenses"],
+        "upcoming_recurring_charges": [
+            item for item in insights["recurring_expenses"]
+            if item["next_occurrence"] is not None
+        ][:5],
+        "recurrence_changes": [
+            {
+                "pattern_id": item["pattern_id"],
+                "description": item["description"],
+                **item["amount_change"],
+                "data_nature": "deterministic_inference",
+            }
+            for item in insights["recurring_expenses"]
+            if item["amount_change"] is not None
+        ],
+        "unusual_expenses": insights["unusual_expenses"],
         "attention": insights["attention"],
+        "evidence": {
+            "financial_position": "observed",
+            "recurrences": "deterministic_inference",
+            "unusual_expenses": "deterministic_inference",
+            "budgets": "unavailable",
+            "goals": "unavailable",
+        },
         "capabilities": {
             "budgets_available": False,
             "goals_available": False,
-            "recurrences_available": False,
+            "recurrences_available": True,
         },
     }

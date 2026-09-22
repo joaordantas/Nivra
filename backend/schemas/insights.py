@@ -42,6 +42,49 @@ class UnusualExpense(BaseModel):
     source: Literal["manual", "open_finance", "card"]
     baseline: float
     times_baseline: float
+    context: Literal["global", "category", "both"]
+    sample_size: int
+    global_baseline: float | None
+    category_baseline: float | None
+    median_absolute_deviation: float | None
+    robust_z_score: float | None
+    reason: str
+    data_nature: Literal["deterministic_inference"]
+
+
+class RecurrenceAmountChange(BaseModel):
+    previous_typical_amount: float
+    current_amount: float
+    change_percent: float
+    direction: Literal["increase", "decrease"]
+    detected_at: str
+    reason: str
+
+
+class RecurringExpense(BaseModel):
+    pattern_id: str
+    description: str
+    normalized_description: str
+    category: str
+    category_key: str | None
+    frequency: Literal[
+        "weekly",
+        "fortnightly",
+        "monthly",
+        "approximately_monthly",
+        "annual",
+    ]
+    occurrence_count: int
+    typical_amount: float
+    value_variation_percent: float
+    first_occurrence: str
+    last_occurrence: str
+    next_occurrence: str | None
+    confidence: Literal["medium", "high"]
+    reasons: list[str]
+    sources: list[Literal["manual", "open_finance", "card"]]
+    amount_change: RecurrenceAmountChange | None
+    data_nature: Literal["deterministic_inference"]
 
 
 class LargestExpense(BaseModel):
@@ -125,6 +168,7 @@ class FinancialInsights(BaseModel):
     top_expense_categories: list[CategoryInsight]
     top_income_categories: list[CategoryInsight]
     unusual_expenses: list[UnusualExpense]
+    recurring_expenses: list[RecurringExpense]
     largest_expenses: list[LargestExpense]
     monthly_trend: MonthlyTrend
     monthly_projection: MonthlyProjection

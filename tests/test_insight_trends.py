@@ -119,11 +119,12 @@ class InsightTrendTests(unittest.TestCase):
         self.assertEqual(context["capabilities"], {
             "budgets_available": False,
             "goals_available": False,
-            "recurrences_available": False,
+            "recurrences_available": True,
         })
+        self.assertEqual(context["evidence"]["recurrences"], "deterministic_inference")
         tool_context = executar_lumi_tool(
             "get_financial_context",
-            {"usuario_id": 2, "data_inicio": "2024-09-01", "data_fim": "2024-09-30"},
+            {"data_inicio": "2024-09-01", "data_fim": "2024-09-30"},
             1,
         )
         self.assertEqual(tool_context["financial_position"]["expenses"], 250.0)

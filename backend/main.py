@@ -1,8 +1,15 @@
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+
+# Em desenvolvimento, carrega a configuração local sem substituir variáveis
+# já fornecidas pelo ambiente de execução (como Vercel ou terminal).
+load_dotenv(override=False)
+
 
 from backend.routers.auth import router as auth_router
 from backend.routers.accounts import router as accounts_router
@@ -11,6 +18,7 @@ from backend.routers.cards import router as cards_router
 from backend.routers.dashboard import router as dashboard_router
 from backend.routers.installments import router as installments_router
 from backend.routers.insights import router as insights_router
+from backend.routers.lumi import router as lumi_router
 from backend.routers.open_finance import router as open_finance_router
 from backend.routers.sales import router as sales_router
 from backend.routers.transactions import router as transactions_router
@@ -45,6 +53,7 @@ app.include_router(transactions_router, prefix="/api")
 app.include_router(dashboard_router, prefix="/api")
 app.include_router(installments_router, prefix="/api")
 app.include_router(insights_router, prefix="/api")
+app.include_router(lumi_router, prefix="/api")
 app.include_router(open_finance_router, prefix="/api")
 app.include_router(sales_router, prefix="/api")
 

@@ -3,11 +3,14 @@ from collections import Counter
 from datetime import date
 from decimal import Decimal
 
+from database.connection import DatabaseConnection, get_connection
 from repositories.categoria_repo import listar_categorias_sistema
 from repositories.transacao_repo import (
     adicionar_transacao,
     atualizar_transacao,
     buscar_parcelamento_da_transacao,
+    buscar_categoria_para_criacao,
+    buscar_conta_para_criacao,
     buscar_transacao_por_id,
     calcular_total_compras_cartao,
     deletar_transacao,
@@ -34,16 +37,56 @@ def validar_dados_transacao(
     data: str,
     usuario_id: int,
     conta_id: int | None,
+    *,
+    conn: DatabaseConnection | None = None,
+    nome_conta_esperado: str | None = None,
+    nome_categoria_esperado: str | None = None,
 ) -> None:
     if valor <= 0:
         raise ValueError("O valor da transacao deve ser maior que zero.")
     if tipo not in {"entrada", "saida"}:
         raise ValueError("Tipo de transacao invalido.")
     validar_data_financeira(data)
-    if conta_id is not None and obter_conta_ativa(conta_id, usuario_id) is None:
+    if conn is None:
+        conta = obter_conta_ativa(conta_id, usuario_id) if conta_id is not None else None
+        categoria = obter_categoria(categoria_id, usuario_id) if categoria_id is not None else None
+    else:
+        conta = buscar_conta_para_criacao(conta_id, usuario_id, conn) if conta_id is not None else None
+        categoria = buscar_categoria_para_criacao(categoria_id, usuario_id, conn) if categoria_id is not None else None
+    if conta_id is not None and conta is None:
         raise ValueError("Conta nao encontrada.")
-    if categoria_id is not None and obter_categoria(categoria_id, usuario_id) is None:
+    if categoria_id is not None and categoria is None:
         raise ValueError("Categoria nao encontrada.")
+    if nome_conta_esperado is not None and (conta is None or str(conta[1]) != nome_conta_esperado):
+        raise ValueError("A conta da proposta mudou. Crie uma nova proposta.")
+    if nome_categoria_esperado is not None and (categoria is None or str(categoria[1]) != nome_categoria_esperado):
+        raise ValueError("A categoria da proposta mudou. Crie uma nova proposta.")
+
+
+def criar_transacao_em_conexao(
+    conn: DatabaseConnection,
+    valor: Decimal,
+    tipo: str,
+    categoria_id: int | None,
+    comentario: str | None,
+    data: str,
+    usuario_id: int,
+    conta_id: int | None,
+    *,
+    nome_conta_esperado: str | None = None,
+    nome_categoria_esperado: str | None = None,
+) -> int:
+    """Compartilha as regras de criação; o chamador controla commit e rollback."""
+    validar_dados_transacao(
+        valor, tipo, categoria_id, data, usuario_id, conta_id,
+        conn=conn,
+        nome_conta_esperado=nome_conta_esperado,
+        nome_categoria_esperado=nome_categoria_esperado,
+    )
+    return adicionar_transacao(
+        valor, tipo, categoria_id, limpar_descricao(comentario), data,
+        usuario_id, conta_id, conn=conn,
+    )
 
 
 def _formatar_transacao(transacao: tuple) -> dict:
@@ -223,16 +266,17 @@ def criar_transacao_service(
     usuario_id: int,
     conta_id: int | None = None,
 ) -> dict:
-    validar_dados_transacao(valor, tipo, categoria_id, data, usuario_id, conta_id)
-    transacao_id = adicionar_transacao(
-        valor,
-        tipo,
-        categoria_id,
-        limpar_descricao(comentario),
-        data,
-        usuario_id,
-        conta_id,
-    )
+    conn = get_connection()
+    try:
+        transacao_id = criar_transacao_em_conexao(
+            conn, Decimal(str(valor)), tipo, categoria_id, comentario, data, usuario_id, conta_id,
+        )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
     transacao = buscar_transacao_por_id(transacao_id, usuario_id)
     if transacao is None:
         raise ValueError("Transacao nao encontrada.")
@@ -298,6 +342,8 @@ def listar_transacoes_formatadas(
         _formatar_transacao_bancaria(transacao, categorias)
         for transacao in listar_transacoes_bancarias_vinculadas(
             usuario_id,
+            data_inicio,
+            data_fim,
         )
     ]
     todas = [*manuais, *bancarias]

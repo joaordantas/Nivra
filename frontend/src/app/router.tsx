@@ -6,6 +6,7 @@ import { ComingSoonPage } from "../pages/ComingSoonPage";
 import { CardsPage } from "../pages/CardsPage";
 import { DashboardPage } from "../pages/DashboardPage";
 import { LoginPage } from "../pages/LoginPage";
+import { LumiPage } from "../pages/LumiPage";
 import { InstallmentsPage } from "../pages/InstallmentsPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { SettingsPage } from "../pages/SettingsPage";
@@ -64,10 +65,8 @@ const router = createBrowserRouter([
         path: "goals",
         element: <ComingSoonPage description="As metas financeiras serão adicionadas depois do núcleo financeiro." title="Metas" />,
       },
-      {
-        path: "assistant",
-        element: <ComingSoonPage description="A assistente financeira da Nivra está planejada e será conectada depois do motor de insights." title="Lumi" />,
-      },
+      { path: "lumi", element: <LumiPage /> },
+      { path: "assistant", element: <Navigate replace to="/lumi" /> },
       { path: "settings", element: <SettingsPage /> },
       { path: "settings/categories", element: <CategoriesPage /> },
       { path: "settings/security", element: <SecurityPage /> },

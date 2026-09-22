@@ -83,6 +83,42 @@ Index(
     auth_rate_events.c.criado_em,
 )
 
+lumi_action_confirmations = Table(
+    "lumi_action_confirmations", metadata,
+    Column("id", Integer, primary_key=True),
+    Column("usuario_id", ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False),
+    Column("token_hash", String(64), nullable=False, unique=True),
+    Column("action_type", String(40), nullable=False),
+    Column("payload_json", Text, nullable=False),
+    Column("execution_eligible", Boolean, nullable=False, server_default=false()),
+    Column("status", String(20), nullable=False, server_default="pending"),
+    Column("criado_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    Column("expira_em", DateTime(timezone=True), nullable=False),
+    Column("confirmado_em", DateTime(timezone=True)),
+    Column("cancelado_em", DateTime(timezone=True)),
+    Column("executed_transaction_id", Integer),
+    Column("executed_at", DateTime(timezone=True)),
+    UniqueConstraint("executed_transaction_id", name="uq_lumi_action_confirmations_executed_transaction_id"),
+    CheckConstraint(
+        "action_type IN ('create_expense', 'create_income')",
+        name="ck_lumi_action_confirmations_type",
+    ),
+    CheckConstraint(
+        "status IN ('pending', 'confirmed', 'cancelled', 'expired', 'executed')",
+        name="ck_lumi_action_confirmations_status",
+    ),
+    CheckConstraint(
+        "(status = 'executed') = (executed_transaction_id IS NOT NULL AND executed_at IS NOT NULL)",
+        name="ck_lumi_action_confirmations_execution",
+    ),
+)
+Index(
+    "ix_lumi_action_confirmations_user_status_expiry",
+    lumi_action_confirmations.c.usuario_id,
+    lumi_action_confirmations.c.status,
+    lumi_action_confirmations.c.expira_em,
+)
+
 categorias = Table(
     "categorias", metadata,
     Column("id", Integer, primary_key=True),
@@ -427,7 +463,7 @@ Index(
 )
 
 TABLES_IN_DEPENDENCY_ORDER = [
-    usuarios, sessoes, auth_tokens, auth_rate_events, categorias, contas, parcelamentos, transacoes, transferencias, cartoes,
+    usuarios, sessoes, auth_tokens, auth_rate_events, lumi_action_confirmations, categorias, contas, parcelamentos, transacoes, transferencias, cartoes,
     faturas, compras_cartao, pagamentos_fatura, vendas, parcelas, limites, conexoes_bancarias,
     contas_bancarias_externas, transacoes_bancarias, correspondencias_conciliacao, eventos_sincronizacao,
     eventos_webhook_open_finance,

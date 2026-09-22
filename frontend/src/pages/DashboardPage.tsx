@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowDownLeft, ArrowRight, ArrowUpRight, CalendarRange, CheckCircle2, CircleDollarSign, CreditCard, Info, ListOrdered, Plus, ReceiptText, TrendingDown, TrendingUp } from "lucide-react";
+import { AlertTriangle, ArrowDownLeft, ArrowRight, ArrowUpRight, CalendarRange, CheckCircle2, CircleDollarSign, CreditCard, Info, ListOrdered, Plus, ReceiptText, Repeat2, ScanSearch, TrendingDown, TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -10,6 +10,14 @@ import { PageHeader } from "../components/ui/PageHeader";
 import { api } from "../services/api";
 import type { Account, FinancialInsights, InsightSeverity, ProfitSummary, Transaction } from "../types";
 import { formatCurrency, formatDate, getCurrentMonthRange } from "../utils/formatters";
+
+const frequencyLabels = {
+  weekly: "Semanal",
+  fortnightly: "Quinzenal",
+  monthly: "Mensal",
+  approximately_monthly: "Aproximadamente mensal",
+  annual: "Anual",
+} as const;
 
 export function DashboardPage() {
   const { user } = useAuth();
@@ -266,6 +274,84 @@ export function DashboardPage() {
                     <small>{expense.category} · {expense.percentage.toFixed(0)}% dos gastos</small>
                   </span>
                   <strong>{formatCurrency(expense.amount)}</strong>
+                </div>
+              ))}
+              <Link className="text-link insight-overview-link" to="/transactions">Ver movimentações <ArrowRight size={16} /></Link>
+            </div>
+          )}
+        </Card>
+      </section>
+
+      <section aria-label="Recorrências e gastos fora do padrão" className="insight-detail-grid" id="recurrences">
+        <Card className="insight-detail-card">
+          <div className="card-heading card-heading-row">
+            <div>
+              <span className="section-kicker">Recorrências</span>
+              <h2>Despesas que costumam se repetir</h2>
+            </div>
+            <span className="insight-overview-icon"><Repeat2 aria-hidden="true" size={20} /></span>
+          </div>
+          {loading ? (
+            <div aria-label="Identificando recorrências" className="insight-overview-loading">
+              {[1, 2, 3].map((item) => <span className="skeleton skeleton-row" key={item} />)}
+            </div>
+          ) : insights === null ? (
+            <p className="section-unavailable">As recorrências estão temporariamente indisponíveis.</p>
+          ) : insights.recurring_expenses.length === 0 ? (
+            <div className="insight-empty">
+              <strong>Ainda não há padrões confiáveis</strong>
+              <p>São necessárias pelo menos três ocorrências regulares para identificar uma recorrência.</p>
+            </div>
+          ) : (
+            <div className="financial-pattern-list">
+              {insights.recurring_expenses.slice(0, 3).map((recurrence) => (
+                <div className="financial-pattern-row" key={recurrence.pattern_id}>
+                  <span>
+                    <strong>{recurrence.description}</strong>
+                    <small>{frequencyLabels[recurrence.frequency]} · {recurrence.occurrence_count} ocorrências{recurrence.next_occurrence ? ` · próxima em ${formatDate(recurrence.next_occurrence)}` : ""}</small>
+                  </span>
+                  <span className="financial-pattern-amount">
+                    <strong>{formatCurrency(recurrence.typical_amount)}</strong>
+                    <small>{recurrence.confidence === "high" ? "Alta confiança" : "Provável"}</small>
+                  </span>
+                </div>
+              ))}
+              <p className="insight-overview-note">Padrões calculados pelo histórico; datas futuras são estimativas.</p>
+            </div>
+          )}
+        </Card>
+
+        <Card className="insight-detail-card">
+          <div className="card-heading card-heading-row">
+            <div>
+              <span className="section-kicker">Fora do padrão</span>
+              <h2>Gastos que se destacaram</h2>
+            </div>
+            <span className="insight-overview-icon"><ScanSearch aria-hidden="true" size={20} /></span>
+          </div>
+          {loading ? (
+            <div aria-label="Analisando gastos fora do padrão" className="insight-overview-loading">
+              {[1, 2].map((item) => <span className="skeleton skeleton-row" key={item} />)}
+            </div>
+          ) : insights === null ? (
+            <p className="section-unavailable">A análise de gastos está temporariamente indisponível.</p>
+          ) : insights.unusual_expenses.length === 0 ? (
+            <div className="insight-empty">
+              <strong>Nenhum gasto relevante fora do padrão</strong>
+              <p>A comparação usa somente o histórico anterior de cada movimentação.</p>
+            </div>
+          ) : (
+            <div className="financial-pattern-list">
+              {insights.unusual_expenses.slice(0, 3).map((expense) => (
+                <div className="financial-pattern-row" key={`${expense.source}-${expense.id}`}>
+                  <span>
+                    <strong>{expense.description}</strong>
+                    <small>{expense.reason}</small>
+                  </span>
+                  <span className="financial-pattern-amount">
+                    <strong>{formatCurrency(expense.amount)}</strong>
+                    <small>{expense.category}</small>
+                  </span>
                 </div>
               ))}
               <Link className="text-link insight-overview-link" to="/transactions">Ver movimentações <ArrowRight size={16} /></Link>

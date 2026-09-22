@@ -42,6 +42,9 @@ class FinancialInsightTests(unittest.TestCase):
         criar_transacao_service(1000, "entrada", income["id"], "Salário", "2024-08-02", 1, account["id"])
         criar_transacao_service(200, "saida", food["id"], "Mercado", "2024-08-03", 1, account["id"])
 
+        for day in range(1, 9):
+            criar_transacao_service(50, "saida", food["id"], f"Histórico {day}", f"2024-07-{day:02d}", 1, account["id"])
+
         criar_transacao_service(1200, "entrada", income["id"], "Salário", "2024-09-02", 1, account["id"])
         criar_transacao_service(50, "saida", food["id"], "Padaria", "2024-09-03", 1, account["id"])
         criar_transacao_service(60, "saida", food["id"], "Almoço", "2024-09-04", 1, account["id"])
@@ -61,6 +64,7 @@ class FinancialInsightTests(unittest.TestCase):
         self.assertEqual(result["comparison"]["expense_change_percent"], 255.0)
         self.assertEqual(result["top_expense_categories"][0]["total"], 710.0)
         self.assertEqual(result["unusual_expenses"][0]["description"], "Compra grande")
+        self.assertEqual(result["unusual_expenses"][0]["context"], "both")
         self.assertIn("expenses_increased", {item["code"] for item in result["attention"]})
         self.assertIn("unusual_expense", {item["code"] for item in result["attention"]})
 
@@ -104,7 +108,7 @@ class FinancialInsightTests(unittest.TestCase):
 
         result = executar_lumi_tool(
             "get_financial_insights",
-            {"usuario_id": 999, "data_inicio": "2024-09-01", "data_fim": "2024-09-30"},
+            {"data_inicio": "2024-09-01", "data_fim": "2024-09-30"},
             1,
             handlers={"get_financial_insights": fake_handler},
         )
@@ -113,6 +117,13 @@ class FinancialInsightTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "não permitida"):
             executar_lumi_tool("run_sql", {}, 1, handlers={"run_sql": fake_handler})
+
+        with self.assertRaisesRegex(ValueError, "Argumentos"):
+            executar_lumi_tool(
+                "get_financial_context",
+                {"usuario_id": 2, "data_inicio": "2024-09-01", "data_fim": "2024-09-30"},
+                1,
+            )
 
 
 if __name__ == "__main__":

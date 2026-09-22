@@ -6,6 +6,72 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 
 ### Added
 
+- preparação do rollout P6.5A: revisão da cadeia Alembic, baseline da versão
+  pública e snapshot de recuperação no Neon principal; schema de produção ainda
+  não alterado;
+- indicador Alpha acessível no shell desktop/mobile e aviso de estágio da Lumi,
+  preservando o aviso específico do Open Finance Sandbox.
+
+- P6.5: execução determinística de uma receita ou despesa após confirmação HTTP
+  explícita, protegida por sessão, CSRF, ownership e revalidação do payload;
+- flag independente `LUMI_ACTION_EXECUTION_ENABLED=false` por padrão, com
+  inelegibilidade das propostas anteriores ao rollout;
+- migration `b5c7d9e1f203` para estado `executed`, vínculo da transação e
+  idempotência, com criação e registro em um único commit;
+- revisão do card da Lumi para mostrar o resultado da execução e acesso ao
+  histórico financeiro após sucesso.
+
+- fundação de propostas de ação da Lumi para receitas e despesas, com schemas
+  fechados, valores decimais e resolução de conta/categoria restrita ao usuário
+  autenticado;
+- confirmação server-side temporária com token opaco armazenado somente como
+  hash, expiração, cancelamento idempotente e transição atômica contra replay;
+- endpoints de confirmação e cancelamento protegidos por sessão, CSRF,
+  ownership e rate limit próprio; na P6.4 não havia mutação financeira;
+- card responsivo de proposta da Lumi e feature flag
+  `LUMI_ACTION_PROPOSALS_ENABLED=false` por padrão;
+- migration `e9a2d6c3b4f1` para `lumi_action_confirmations`, sem prompts,
+  histórico ou reasoning persistidos.
+
+- provider Groq alternativo para a Lumi, selecionado explicitamente por
+  `LUMI_PROVIDER` e sem fallback automático para OpenAI;
+- factory central de providers e adaptador para local function calling da Groq,
+  mantendo somente `get_financial_context` como tool permitida;
+- tratamento sanitizado de rate limit e autenticação do provider, com métricas
+  de provider adicionadas aos logs técnicos da Lumi;
+- contexto conversacional efêmero da Lumi com até três turnos completos,
+  limitado a seis mensagens e 12.000 caracteres, descartado ao recarregar;
+- validação no backend de papéis, alternância, tamanho e completude do histórico,
+  mantendo a identidade da sessão e uma nova consulta às tools para perguntas
+  financeiras atuais;
+- interface de conversa responsiva da Lumi na rota protegida `/lumi`, acessível
+  pela sidebar desktop e pelo menu mobile “Mais”;
+- estado inicial com sugestões, histórico visual somente em memória, composer
+  acessível, processamento, retry manual e indicação de modo somente leitura;
+- tratamento amigável de sessão, CSRF, rate limit com `Retry-After`, provider,
+  timeout e conexão, sem expor detalhes internos;
+- renderização das respostas como texto seguro, cancelamento no desmonte e
+  bloqueio síncrono de envios duplicados;
+- endpoint autenticado `POST /api/lumi/message` para a primeira orquestração
+  stateless e somente leitura da Lumi;
+- abstração `LLMProvider` e implementação OpenAI Responses API carregada sob
+  demanda, com `store=false`, timeout e limite de saída configuráveis;
+- tool calling sequencial e limitado, expondo somente
+  `get_financial_context` por JSON Schema estrito e allowlist do backend;
+- exigência determinística de tool para mensagens não triviais, impedindo que
+  perguntas financeiras sejam respondidas sem consultar a fonte autorizada;
+- instruções de sistema versionadas, proteção contra prompt injection,
+  `safety_identifier` opaco e serialização controlada de valores financeiros;
+- rate limit persistente próprio da Lumi e métricas sanitizadas de tokens,
+  duração, modelo, sucesso e número de tools;
+- testes offline com provider falso para autenticação, CSRF, isolamento,
+  read-only, erros do provider, loops, argumentos inválidos e prompt injection;
+- detecção determinística de despesas recorrentes com amostra mínima, frequências de calendário, confiança e previsão conservadora da próxima ocorrência;
+- normalização centralizada de descrições financeiras, tolerância controlada de valores e detecção de aumento relevante em recorrências;
+- análise robusta de gastos fora do padrão com baseline histórica global e por categoria, mediana, MAD e explicação do critério;
+- contexto da futura Lumi ampliado com recorrências, próximas cobranças estimadas, mudanças de valor e anomalias, sempre identificadas como inferências determinísticas;
+- blocos responsivos de recorrências e gastos fora do padrão no Dashboard, com loading, vazio e falha isolada;
+- testes para frequências, calendário, valores, parcelamentos, cartões, Open Finance, movimentos neutros, anomalias e isolamento multiusuário;
 - tendência financeira determinística de seis meses, comparando meses completos ou períodos equivalentes até o mesmo dia;
 - ranking das maiores despesas com participação no total, incluindo movimentações manuais, bancárias e compras no cartão sem duplicação econômica;
 - alerta de crescimento contínuo dos gastos baseado em três períodos mensais equivalentes;
@@ -82,6 +148,20 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 
 ### Changed
 
+- a árvore local passou por gate de regressão antes do próximo commit, com
+  suíte Python completa, build React/TypeScript, compilação Python e validação
+  Alembic em banco descartável aprovados;
+- a navegação da Lumi passou de `/assistant` para `/lumi`, mantendo redirect de
+  compatibilidade para a rota anterior;
+- o client HTTP agora preserva status e `Retry-After` em erros tipados para que
+  a interface trate falhas sem interpretar mensagens técnicas;
+- o catálogo da Lumi passou a separar tools internas das tools efetivamente
+  expostas ao modelo; a P6.1 disponibiliza somente `get_financial_context`;
+- o teste de parcelas futuras usa uma margem temporal estável para não depender
+  da virada de data entre o fuso local e `CURRENT_DATE` do banco;
+- `GET /api/insights` preserva o contrato anterior e acrescenta recorrências tipadas e anomalias explicáveis;
+- a detecção de anomalias usa somente movimentações anteriores à despesa analisada, evitando comparar o gasto consigo mesmo;
+- consultas bancárias do histórico unificado agora recebem a janela solicitada, evitando carregar dados externos fora do período;
 - o motor de insights passou a consultar o histórico da tendência em uma única leitura consolidada de seis meses;
 - o contrato de `GET /api/insights` passou a incluir `largest_expenses` e `monthly_trend`, preservando os campos existentes;
 
@@ -111,6 +191,11 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 
 ### Security
 
+- identidade e permissões da Lumi são definidas exclusivamente pela sessão e
+  pelo backend; `usuario_id`, tools e parâmetros arbitrários do cliente são
+  rejeitados;
+- ausência ou falha da configuração OpenAI afeta somente o endpoint da Lumi e
+  não impede a inicialização das demais áreas da Nivra;
 - o banco armazena somente hashes dos tokens de sessão;
 - logout revoga a sessão no servidor;
 - CORS aceita origens locais exatas e origens adicionais configuradas explicitamente.
@@ -124,8 +209,8 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 
 - integração de parcelamentos com cartões/faturas e recorrências pessoais;
 - orçamentos e metas financeiras;
-- tendências, maiores despesas e demais incrementos do motor determinístico de insights;
-- Lumi, a assistente financeira da Nivra;
+- smoke real e multi-turn do provider da Lumi, memória persistente e ações
+  financeiras com confirmação em etapas futuras;
 - notificações internas, resumos e WhatsApp.
 
 ## [0.1.0-alpha.1] - 2026-09-11
