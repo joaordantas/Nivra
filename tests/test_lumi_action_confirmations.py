@@ -32,6 +32,8 @@ VALID_EXPENSE = (
 
 class LumiActionConfirmationTests(unittest.TestCase):
     def setUp(self):
+        self.previous_public_flag = os.environ.get("LUMI_PUBLIC_ENABLED")
+        os.environ["LUMI_PUBLIC_ENABLED"] = "true"
         self.previous_flag = os.environ.get("LUMI_ACTION_PROPOSALS_ENABLED")
         self.previous_ttl = os.environ.get("LUMI_ACTION_CONFIRMATION_TTL_SECONDS")
         os.environ["LUMI_ACTION_PROPOSALS_ENABLED"] = "true"
@@ -59,6 +61,10 @@ class LumiActionConfirmationTests(unittest.TestCase):
     def tearDown(self):
         self.client.close()
         app.dependency_overrides.clear()
+        if self.previous_public_flag is None:
+            os.environ.pop("LUMI_PUBLIC_ENABLED", None)
+        else:
+            os.environ["LUMI_PUBLIC_ENABLED"] = self.previous_public_flag
         if self.previous_flag is None:
             os.environ.pop("LUMI_ACTION_PROPOSALS_ENABLED", None)
         else:

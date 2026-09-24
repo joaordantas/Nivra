@@ -556,7 +556,8 @@ Status: **CONCLUÍDA E VALIDADA LOCALMENTE; EXECUÇÃO FINANCEIRA PERMANECE DESA
 - [x] Card mostra sucesso apenas após resposta do commit e oferece histórico normal
 - [x] Gate de execução em PostgreSQL descartável: migrations, atomicidade, replay, concorrência, isolamento e núcleo financeiro
 - [ ] Rollout de schema no Neon principal com execução desligada, após revisão separada
-- [-] P6.5A: revisão de compatibilidade, baseline pública, snapshot do Neon principal e commit local `cb13c0c`; aplicação do schema bloqueada pela revisão automática enquanto o código não estiver publicado e as flags/checkpoint não estiverem confirmados para produção; comparação pós-rollout pendente
+- [-] P6.5A: revisão de compatibilidade, baseline pública e snapshot do Neon principal preparados. A trava pública `LUMI_PUBLIC_ENABLED=false` preserva “Em breve”. A branch `release/p6-5a` está publicada em um deployment Preview isolado de Production; a branch Neon usada pelo deployment, `preview/release/p6-5a`, foi migrada a `b5c7d9e1f203` com `alembic check` limpo.
+- [x] Gate Preview P6.5A: auth, contas, transferências, transações, dashboard, categorias, cartões, parcelamentos, pagamento integral de fatura, proteção contra pagamento duplicado, Pluggy Sandbox, sincronização repetida, vínculo com o núcleo, histórico unificado, Lumi bloqueada e badge Alpha foram validados com dados fictícios. O Gate Preview foi aprovado sem merge, migration ou deploy em Production. A conciliação Open Finance não foi exercitada por falta de um par compatível; o webhook Preview também não foi redirecionado nem testado nesta execução.
 - [ ] Observação em produção e habilitação explícita da execução após aprovação humana
 
 Status: **GATE POSTGRESQL APROVADO COM RESSALVAS; PRODUÇÃO SEM EXECUÇÃO FINANCEIRA**

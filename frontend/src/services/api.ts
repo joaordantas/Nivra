@@ -257,6 +257,7 @@ export const api = {
     request<ProfitSummary>(`/dashboard/profit?data_inicio=${dataInicio}&data_fim=${dataFim}`),
   getInsights: (dataInicio: string, dataFim: string) =>
     request<FinancialInsights>(`/insights?data_inicio=${dataInicio}&data_fim=${dataFim}`),
+  getLumiCapabilities: () => request<{ public_enabled: boolean }>("/lumi/capabilities"),
   sendLumiMessage: (message: string, history: LumiHistoryMessage[], signal?: AbortSignal) =>
     request<LumiResponse>("/lumi/message", {
       method: "POST",
