@@ -1389,3 +1389,209 @@ entre a versão pública e o working tree exige atenção especial no smoke apó
 publicação. O primeiro passo em incidente é manter a execução desligada e
 avaliar reversão do deploy; restauração do snapshot Neon é medida controlada,
 não um downgrade automático.
+
+### Atualização do Gate Preview (23/09/2026)
+
+Esta atualização substitui o estado operacional provisório acima, que foi
+registrado antes da publicação da branch. O código `12c7544` está na branch
+`release/p6-5a`; `origin/main` permanece em `081ee06`. O deployment Vercel
+correspondente está **Ready** e é **Preview**. Production não recebeu merge,
+deploy ou migration nesta execução. O banco Preview foi confirmado como o
+projeto Neon `steep-fog-72702912`, separado do projeto Production.
+
+O projeto Preview possui duas branches de banco relevantes: `main` e
+`preview/release/p6-5a`. A URL local inicialmente fornecida apontava para
+`main`. Nela, `alembic upgrade head`, `alembic current` e `alembic check`
+passaram em `b5c7d9e1f203`. O deployment Vercel usa a branch filha
+`preview/release/p6-5a`, criada antes dessa migration. A inspeção do Neon
+mostrou **zero tabelas públicas** na branch filha, e o cadastro no Preview
+retornou HTTP 500. Portanto, a migration de `main` não validou o banco usado
+pelo deployment. Não foi executado reset da branch filha, que substituiria
+seus dados. A conexão local a ela também não foi forçada com a senha de
+`main`: a tentativa somente leitura retornou falha de autenticação. A
+migration na branch filha aguardava sua URL não pooled em
+`P65_PREVIEW_BRANCH_DATABASE_URL` no `.env` ignorado pelo Git. Nenhuma
+credencial foi escrita no relatório. Após a configuração dessa variável,
+foi confirmado que o endpoint era o da branch filha e que ela possuía zero
+tabelas. `alembic upgrade head`, `current` e `check` foram executados
+**somente nessa branch**: revisão `b5c7d9e1f203`, 24 tabelas públicas e
+nenhuma operação de upgrade pendente. O cadastro passou a funcionar no
+deployment Preview; o erro HTTP 500 anterior foi resolvido sem reset.
+
+Havia outro projeto Neon de teste com nome semelhante (`wispy-grass-27661681`).
+Antes de identificar o projeto integrado à Vercel, uma migration foi aplicada
+a esse projeto descartável e um usuário fictício foi criado nele. Ele não é
+Production nem o Preview da Vercel. Nenhum dado foi apagado.
+
+A validação independente passou: **208 testes** por `unittest`, build
+React/TypeScript, compilação Python e `git diff --check`. Uma execução
+adicional por `pytest` também aprovou os 208 testes, mas coletou como teste
+extra a função auxiliar `test_url_from_env` e falhou porque o antigo
+`P65_TEST_DATABASE_URL` descartável não está configurado; isso não é falha
+dos testes da aplicação. O login Preview foi inspecionado em 375, 390, 430,
+612 e 1440 px, nos temas claro e escuro: o formulário permaneceu visível,
+contido na viewport e sem overflow horizontal.
+
+No deployment Preview, um usuário fictício foi cadastrado e autenticado.
+F5 preservou a sessão; logout encerrou a sessão e novo login restaurou os
+dados. Foram criadas duas contas fictícias com R$ 1.000 e R$ 200 de saldo
+inicial, transferência de R$ 50 entre elas, receita manual de R$ 150 e
+despesa manual de R$ 40. O dashboard exibiu saldo de R$ 1.310, entradas de
+R$ 150, gastos de R$ 40 e economia de R$ 110: a transferência não entrou
+em receitas/despesas. Busca do histórico encontrou a movimentação esperada.
+As 20 categorias padrão apareceram; uma categoria personalizada foi criada
+e renomeada, mantendo o total em 21.
+
+Um cartão fictício de limite R$ 1.000 recebeu uma compra de R$ 60, formando
+fatura de R$ 60 e limite disponível de R$ 940. Um parcelamento manual de
+R$ 90 em 3 parcelas de R$ 30 foi criado e listado, com a primeira parcela
+no mês corrente e as próximas em outubro e novembro. Depois dessas
+operações, o dashboard mostrou saldo bancário de R$ 1.280, entradas de
+R$ 150, gastos econômicos de R$ 130 e economia de R$ 20. O saldo não foi
+reduzido pela compra no cartão; somente a primeira parcela afetou o saldo
+e o resultado do mês. A fatura não foi paga: o diálogo de confirmação
+interrompeu o controle do navegador, e consulta somente leitura confirmou
+zero linhas em `pagamentos_fatura`. A ação não foi repetida às cegas.
+
+Na rota `/lumi`, o Preview mostrou **“Em breve”** como a baseline pública
+`081ee06` em `/assistant`. A leitura final da branch Preview mostrou zero
+linhas em `lumi_action_confirmations`; nenhuma ação financeira foi criada
+pela Lumi e não houve chamada ao provider. O badge Alpha ficou visível e
+contido em 375, 390, 430, 612 e 1440 px nos temas claro e escuro, sem
+overflow horizontal. A explicação abriu no mobile. Dashboard, Transações,
+Contas, Cartões, Parcelamentos, Categorias e Lumi carregaram em 375 px com
+navegação móvel e sem overflow. A baseline pública continuou acessível e
+com a Lumi em “Em breve”; os bancos isolados impedem comparar os mesmos
+valores financeiros lado a lado.
+
+O fluxo Open Finance no Preview foi exercitado apenas até o Connect:
+o app identificou corretamente o ambiente de demonstração e exibiu
+credenciais fictícias e o aviso para não usar credenciais reais. O endpoint
+respondeu de maneira controlada que o Open Finance **não está configurado
+neste ambiente**. Não houve conexão com banco real nem com Sandbox nessa
+execução. O navegador bloqueou a abertura direta de `/api/health`, então
+health/OpenAPI remotos não foram confirmados diretamente; o funcionamento
+das rotas autenticadas foi verificado pela UI. Pagamento de fatura e fluxo
+Pluggy Sandbox permanecem sem validação manual completa. Por isso o
+**Gate Preview é parcial e permanece pendente**, sem autorizar merge ou
+deploy Production. Não foi identificado blocker financeiro ou de segurança
+nos fluxos efetivamente exercitados.
+
+### Conclusão do Gate Preview (24/09/2026)
+
+Esta conclusão substitui o resultado parcial do parágrafo anterior. Depois da
+configuração isolada das variáveis Pluggy no ambiente Preview, foi criado um
+novo deployment **Preview** da branch `release/p6-5a`, commit
+`12c7544a75d884b36fc26b36d2af01108847e4cc`. O deployment ficou `Ready`; a
+baseline de Production permaneceu em `origin/main` no commit `081ee06`.
+Não houve merge, migration, deploy ou alteração de variáveis em Production.
+
+O deployment continuou conectado somente ao projeto Neon Preview
+`steep-fog-72702912`, branch `preview/release/p6-5a`, banco `neondb`. A URL
+usada nas verificações locais foi validada por identificadores sanitizados
+antes de qualquer acesso. O estado final das migrations foi novamente
+confirmado:
+
+- `alembic heads`: `b5c7d9e1f203 (head)`;
+- `alembic current`: `b5c7d9e1f203 (head)`;
+- `alembic check`: nenhuma operação de upgrade pendente.
+
+As credenciais Pluggy ficaram restritas ao backend e ao escopo Preview da
+branch. O ambiente Open Finance permaneceu `sandbox`. As flags
+`LUMI_PUBLIC_ENABLED`, `LUMI_ACTION_PROPOSALS_ENABLED` e
+`LUMI_ACTION_EXECUTION_ENABLED` não foram habilitadas no Preview; a aplicação
+usou o valor seguro padrão `false`. Nenhum valor secreto foi exposto no
+frontend, no relatório ou nos logs inspecionados.
+
+O smoke autenticado foi repetido no novo deployment. Login, sessão após F5,
+Dashboard, Contas, Transações e Lumi carregaram normalmente. A rota da Lumi
+continuou apresentando **“Em breve”**, sem confirmação de ação financeira e
+sem chamada a provider. O badge Alpha e os fluxos responsivos já validados em
+375, 390, 430, 612 e 1440 px, nos temas claro e escuro, permaneceram sem
+regressão observada.
+
+#### Open Finance Sandbox
+
+O endpoint de Connect Token respondeu com sucesso, comprovado pela abertura do
+widget Pluggy. O widget exibiu o aviso de aplicação de demonstração, e o fluxo
+foi realizado somente com as credenciais fictícias oficiais do Sandbox. Uma
+conexão Pluggy Bank foi criada e persistiu após atualização da página.
+
+Antes da primeira sincronização, a conexão possuía zero contas e zero
+movimentações importadas. A sincronização manual processou **33 movimentações**
+e importou **duas contas**:
+
+- Conta Corrente: 21 movimentações e saldo informado pelo provider de
+  R$ 28.939,60;
+- Mastercard Black: 12 movimentações, exibido como cartão externo somente
+  leitura.
+
+Uma segunda sincronização equivalente manteve exatamente duas contas e 33
+movimentações. Não houve duplicação lógica. A Conta Corrente externa foi
+vinculada à conta Nivra fictícia `Conta fictícia B`; o vínculo, o indicador de
+banco conectado e o saldo do provider permaneceram após F5. A conta externa
+passou a ser a fonte do saldo atual da conta vinculada.
+
+O histórico unificado exibiu movimentações manuais e bancárias com suas
+origens, sem copiar ou somar novamente registros na segunda sincronização.
+Transferências internas bancárias permaneceram classificadas como
+transferências e não foram convertidas em receita ou despesa. A busca e os
+filtros continuaram disponíveis. Não existia um par manual/bancário adequado
+para confirmar ou rejeitar com segurança; por isso a conciliação é registrada
+como **NÃO TESTADA nesta execução**, sem inferência de resultado. O webhook do
+Preview também não foi redirecionado nem exercitado; a atualização validada
+foi a sincronização manual Sandbox.
+
+#### Pagamento integral e proteção financeira
+
+O pagamento da fatura fictícia de R$ 60 foi executado pelo mesmo service do
+backend contra a branch Preview, depois de uma guarda confirmar o endpoint e
+o banco de destino. Esse caminho foi usado porque o controle automatizado do
+navegador ficou retido no diálogo nativo de confirmação; nenhum código do
+produto foi alterado para contornar o diálogo.
+
+Na primeira execução, a fatura passou para `paga`, foi criada exatamente uma
+linha de pagamento e o saldo da conta pagadora caiu de R$ 910 para R$ 850. Na
+segunda tentativa, o backend retornou `Esta fatura ja foi paga.`. A consulta
+final confirmou uma linha e total pago de R$ 60. A interface exibiu fatura
+**Paga**, limite utilizado de R$ 0 e limite disponível de R$ 1.000.
+
+Depois da sincronização e do pagamento, o Dashboard apresentou:
+
+- saldo: R$ 29.789,60;
+- entradas do mês: R$ 8.650,00;
+- gastos do mês: R$ 1.335,00;
+- economia do mês: R$ 7.315,00;
+- limite de cartão comprometido: R$ 0 de R$ 1.000.
+
+O total de gastos permaneceu coerente com as despesas bancárias do período e
+os eventos econômicos manuais. A compra de cartão continuou sendo a despesa;
+o pagamento da fatura não foi contabilizado novamente. A transferência manual
+e as transferências internas bancárias continuaram neutras. Não foi observada
+duplicação econômica após a nova sincronização.
+
+#### Logs, endpoints e regressão final
+
+Os logs do deployment mostraram respostas HTTP 200 nas rotas autenticadas de
+auth, contas, transferências, transações, categorias, cartões, faturas,
+Open Finance, insights e dashboard. Requisições a `/api/health` e
+`/openapi.json` também chegaram ao Preview com sucesso, confirmadas nos logs;
+o acesso direto em uma aba foi bloqueado pela proteção do Preview do Vercel,
+não pelo FastAPI. Não houve ocorrência `warning`, `error` ou `fatal` no recorte
+inspecionado. Os logs não exibiram senha, cookie, token, segredo Pluggy,
+connection string ou payload financeiro bruto.
+
+A validação automatizada da mesma entrega permanece: 208 testes da aplicação
+aprovados, build React/TypeScript aprovado, compilação Python aprovada e
+`git diff --check` limpo. O erro da coleta adicional por `pytest` continua
+limitado à função auxiliar externa à suíte, que espera a variável obsoleta
+`P65_TEST_DATABASE_URL`; os 208 testes coletados da aplicação passaram.
+
+**Resultado final: Gate Preview P6.5A APROVADO.** Não foi encontrado blocker
+financeiro, de segurança, persistência ou regressão nos fluxos exercitados.
+As pendências de conciliação e webhook do Preview são lacunas explícitas de
+evidência desta execução, sem invalidar o smoke manual e a sincronização
+Sandbox aprovados. Este resultado não autoriza automaticamente merge ou
+deploy Production. A próxima ação recomendada é revisão humana desta evidência
+e, somente com autorização separada, o rollout coordenado do schema em
+Production mantendo todas as flags públicas e de execução da Lumi desligadas.
