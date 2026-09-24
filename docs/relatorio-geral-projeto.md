@@ -11,11 +11,11 @@ fontes de verdade quando houver diferença entre um relato histórico e o
 estado atual.
 
 **Atualização:** 22 de setembro de 2026
-**Produto:** Nivra  
-**Status:** Alpha funcional  
-**Aplicação:** <https://nivra-finance.vercel.app>  
-**Repositório:** `joaordantas/Nivra`  
-**Banco oficial:** PostgreSQL no Neon  
+**Produto:** Nivra\
+**Status:** Alpha funcional\
+**Aplicação:** <https://nivra-finance.vercel.app>\
+**Repositório:** `joaordantas/Nivra`\
+**Banco oficial:** PostgreSQL no Neon\
 **Hospedagem:** Vercel
 
 ## 1. Visão do produto
@@ -1174,7 +1174,7 @@ acessado somente pelo backend; a integração é lazy/on-demand.
 
 ## 12. Evidências de validação
 
-As contagens abaixo são snapshots por etapa e não devem ser somadas: 
+As contagens abaixo são snapshots por etapa e não devem ser somadas:
 
 - base de autenticação: 44 testes registrados no relatório da etapa;
 - hardening de conta: suíte geral e testes específicos de tokens, sessões,
