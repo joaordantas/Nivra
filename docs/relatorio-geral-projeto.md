@@ -1595,3 +1595,114 @@ Sandbox aprovados. Este resultado não autoriza automaticamente merge ou
 deploy Production. A próxima ação recomendada é revisão humana desta evidência
 e, somente com autorização separada, o rollout coordenado do schema em
 Production mantendo todas as flags públicas e de execução da Lumi desligadas.
+
+### Rollout coordenado P6.5A em Production (24–25/09/2026)
+
+O rollout autorizado foi concluído sem habilitar a Lumi, propostas ou execução
+financeira. Antes da alteração em Production, as evidências do Gate Preview
+foram isoladas no commit documental `4a1d6cee30554a84b1301a0074973eba4d5e0f03`.
+O deployment público usado como baseline era o commit `081ee063bd3831539b3521994d3541c906d8ebb4`,
+deployment Vercel `2fLZy926hMaFgasJYMBpXw9eEAeB`. Login, sessão,
+Dashboard, histórico, contas, cartões, Open Finance e o placeholder “Em breve”
+da Lumi estavam saudáveis antes da migration.
+
+O isolamento foi confirmado antes de acessar o banco: Production permaneceu
+no projeto Neon `nivra-db` (`super-scene-04943188`) e Preview no projeto
+`nivra-preview` (`steep-fog-72702912`). O banco Production possuía snapshot
+manual permanente da branch `main`, criado em `2026-09-22 23:14:39 UTC`, com
+restauração disponível pelo painel Backup & Restore do Neon. A revisão inicial
+era exatamente `f7b3c1d8e920`.
+
+As migrations `e9a2d6c3b4f1` e `b5c7d9e1f203` foram revisadas como expand-only:
+criam a persistência de confirmações e adicionam campos/constraints de execução,
+sem drops, renames incompatíveis, atualização de saldos, criação de transações
+ou execução de confirmações antigas. O upgrade seguiu a cadeia esperada
+`f7b3c1d8e920 → e9a2d6c3b4f1 → b5c7d9e1f203`. Depois do upgrade,
+`alembic current` e `alembic heads` apontaram para `b5c7d9e1f203 (head)` e
+`alembic check` retornou nenhuma operação pendente.
+
+Uma leitura mínima antes e depois da migration confirmou seis usuários, cinco
+contas e zero transações manuais no banco. Os fingerprints sanitizados das
+contas Nivra e dos saldos externos permaneceram idênticos. A tabela nova
+terminou com zero confirmações e zero execuções. Portanto, a migration não
+criou movimentações, não alterou saldos e não tornou registros antigos
+executáveis. O deployment anterior `081ee06` continuou funcionando contra o
+schema expandido antes da publicação do código novo, comprovando compatibilidade
+reversa sem usar o deploy para mascarar falha de schema.
+
+A branch `release/p6-5a` foi integrada a `main` pelo merge
+`7abf66a1c3da3f77e4cd3a581a88e23f4d25c48c`. A formatação histórica do
+relatório consolidado foi normalizada no commit
+`ce7e9a3ec69b1ae09d27e5a595f4d8bc32a8308a`, sem alteração funcional. Esse
+commit foi enviado a `origin/main` e gerou o deployment Production Vercel
+`Gr8Euu8nYkKG6QZetACpvwZ6iTDN`, URL imutável
+`nivra-cqjnqt9o7-joaordantas13.vercel.app`, que terminou `Ready` em 31 segundos.
+Os endpoints públicos `/api/health` e `/openapi.json` responderam HTTP 200.
+
+As três travas foram verificadas no escopo Production antes e depois do deploy:
+
+- `LUMI_PUBLIC_ENABLED=false`;
+- `LUMI_ACTION_PROPOSALS_ENABLED=false`;
+- `LUMI_ACTION_EXECUTION_ENABLED=false`.
+
+Na regressão autenticada, login, sessão após F5 e logout/login permaneceram
+funcionais. O Dashboard terminou de carregar saldo de R$ 36.180,75, entradas
+de R$ 8.500, gastos de R$ 900 e economia de R$ 7.600, além de projeção,
+tendência, recorrências, anomalia explicável, “Sua atenção” e movimentações
+recentes. Transferências internas e pagamentos de fatura bancários continuaram
+identificados como transferências, sem nova despesa econômica. O aquecimento
+das funções serverless exibiu placeholders por alguns segundos em recargas;
+as respostas correspondentes chegaram em HTTP 200 e a interface foi preenchida
+sem intervenção.
+
+O histórico unificado carregou 25 movimentações bancárias, origens, busca,
+filtros por tipo, conta, categoria, origem e período. Contas exibiu saldo do
+provider, conta Nivra vinculada, três conexões Sandbox já existentes e cartão
+externo somente leitura; duas conexões antigas continuam em estado de erro de
+atualização, condição já presente na baseline. A conta de teste possuía somente
+uma conta Nivra, por isso uma nova transferência não foi criada em Production.
+As 20 categorias padrão e uma categoria personalizada apareceram com a
+proteção de exclusão correta para as categorias do sistema. Cartões/faturas e
+parcelamentos carregaram sem erro; o usuário do smoke não possuía parcelamento
+ativo e os fluxos financeiros mutáveis completos permaneceram cobertos pelo
+Gate Preview e pela suíte automatizada, evitando criar dados descartáveis no
+banco oficial.
+
+A rota `/lumi` continuou mostrando “Em breve” e informou que ações financeiras
+ainda não estão disponíveis. Os logs registraram somente `GET
+/api/lumi/capabilities` para esse fluxo: não houve chamada de chat, proposta,
+confirmação ou execução, nem criação de receita/despesa. O badge Alpha ficou
+visível no shell desktop e mobile; sua explicação acessível abriu sob demanda
+sem modal invasivo. O smoke Production cobriu desktop a 1440 px e mobile
+pequeno a 375 px nos temas claro e escuro, sem overflow horizontal e com a
+navegação inferior preservada. As larguras 390, 430 e 612 px já haviam sido
+validadas no mesmo bundle durante o Gate Preview e não foram reapresentadas
+como nova evidência de Production.
+
+Os logs de Production inspecionados após o smoke mostraram HTTP 200 em auth,
+dashboard, insights, contas, transações, transferências, categorias, cartões,
+faturas, parcelamentos, Open Finance, health e OpenAPI. O recorte não apresentou
+warning, error, fatal, erro de SQL/schema ou resposta 500, nem expôs senha,
+cookie, token, connection string, segredo Pluggy/API ou payload financeiro
+bruto. A validação automatizada pré-push aprovou **208 testes**, build
+React/TypeScript, compilação Python e `git diff --check`; o build manteve apenas
+o aviso não bloqueante de chunk JavaScript acima de 500 kB.
+
+Comparada à baseline `081ee06`, as mudanças intencionais foram o badge Alpha,
+as rotas internas da fundação Lumi, o novo shell da Lumi ainda bloqueado e o
+schema expandido. Não foi observada alteração inesperada nos cálculos, Auth,
+Open Finance ou regras econômicas. Não foi necessário rollback. Como as
+migrations são compatíveis com o código anterior, eventual incidente de
+aplicação deve preferir rollback do deployment Vercel, mantendo as flags false;
+nenhum downgrade automático foi preparado ou executado.
+
+**Resultado: Gate Production P6.5A APROVADO COM RESSALVAS.** A ressalva é de
+evidência operacional: criação/edição/exclusão manual, transferência, pagamento
+de fatura e parcelamento foram exercitados integralmente no Preview e nos 208
+testes, mas não foram repetidos com novos dados no Neon oficial. O smoke
+direcionado de Production, os logs HTTP 200 e a integridade pós-migration não
+indicaram regressão crítica. Production permanece Alpha, com a Lumi pública,
+as propostas e a execução financeira explicitamente desligadas. A próxima
+recomendação é um período curto de observação com as três flags em `false` e
+revisão humana das métricas/logs; qualquer futura abertura da Lumi exige uma
+autorização separada. A P6.6 não foi iniciada.

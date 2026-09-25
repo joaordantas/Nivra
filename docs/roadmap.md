@@ -555,12 +555,12 @@ Status: **CONCLUÍDA E VALIDADA LOCALMENTE; EXECUÇÃO FINANCEIRA PERMANECE DESA
 - [x] Testes locais de replay, concorrência, rollback, ownership, expiração e cancelamento
 - [x] Card mostra sucesso apenas após resposta do commit e oferece histórico normal
 - [x] Gate de execução em PostgreSQL descartável: migrations, atomicidade, replay, concorrência, isolamento e núcleo financeiro
-- [ ] Rollout de schema no Neon principal com execução desligada, após revisão separada
-- [-] P6.5A: revisão de compatibilidade, baseline pública e snapshot do Neon principal preparados. A trava pública `LUMI_PUBLIC_ENABLED=false` preserva “Em breve”. A branch `release/p6-5a` está publicada em um deployment Preview isolado de Production; a branch Neon usada pelo deployment, `preview/release/p6-5a`, foi migrada a `b5c7d9e1f203` com `alembic check` limpo.
+- [x] Rollout de schema no Neon principal concluído em `b5c7d9e1f203`, com execução desligada, migrations expand-only e `alembic check` limpo
+- [x] P6.5A: Gate Production aprovado com ressalvas. O código validado no Preview foi publicado, o Neon principal foi migrado sem alterar saldos ou criar transações, e `LUMI_PUBLIC_ENABLED=false`, `LUMI_ACTION_PROPOSALS_ENABLED=false` e `LUMI_ACTION_EXECUTION_ENABLED=false` permaneceram explícitas em Production. Auth, núcleo financeiro, Open Finance, cartões, parcelamentos, responsividade e temas passaram pelo smoke direcionado; mutações completas permaneceram cobertas pelo Preview e pelos 208 testes para evitar dados desnecessários em Production.
 - [x] Gate Preview P6.5A: auth, contas, transferências, transações, dashboard, categorias, cartões, parcelamentos, pagamento integral de fatura, proteção contra pagamento duplicado, Pluggy Sandbox, sincronização repetida, vínculo com o núcleo, histórico unificado, Lumi bloqueada e badge Alpha foram validados com dados fictícios. O Gate Preview foi aprovado sem merge, migration ou deploy em Production. A conciliação Open Finance não foi exercitada por falta de um par compatível; o webhook Preview também não foi redirecionado nem testado nesta execução.
 - [ ] Observação em produção e habilitação explícita da execução após aprovação humana
 
-Status: **GATE POSTGRESQL APROVADO COM RESSALVAS; PRODUÇÃO SEM EXECUÇÃO FINANCEIRA**
+Status: **P6.5A PUBLICADA E APROVADA COM RESSALVAS; PRODUÇÃO SEM LUMI PÚBLICA OU EXECUÇÃO FINANCEIRA**
 
 O gate passou em `nivra_p65_gate`, projeto Neon descartável com endpoint
 distinto do principal: `upgrade → check → downgrade → upgrade → check`, duas
