@@ -151,6 +151,19 @@ class LumiActionExecutionTests(unittest.TestCase):
             executar_acao_confirmada(other, 1)
         self.assertEqual(self._count(), 0)
 
+    def test_missing_or_invalid_execution_flag_fails_closed_before_direct_write(self):
+        for value in (None, "enabled-later"):
+            with self.subTest(value=value):
+                token = self._token()
+                if value is None:
+                    os.environ.pop("LUMI_ACTION_EXECUTION_ENABLED", None)
+                else:
+                    os.environ["LUMI_ACTION_EXECUTION_ENABLED"] = value
+                with self.assertRaises(LumiActionConfirmationStateError):
+                    executar_acao_confirmada(token, 1)
+                self.assertEqual(self._count(), 0)
+                os.environ["LUMI_ACTION_EXECUTION_ENABLED"] = "true"
+
     def test_proposal_created_before_execution_flag_cannot_execute_later(self):
         os.environ["LUMI_ACTION_EXECUTION_ENABLED"] = "false"
         token = self._token()

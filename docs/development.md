@@ -60,6 +60,8 @@ O frontend usa `credentials: include`. A sessão fica em cookie HTTP-only, e ope
 
 Em desenvolvimento e testes, `EMAIL_PROVIDER=memory` evita entregas externas. Para validar links localmente, os testes usam uma caixa de saída em memória. Em produção, configure `EMAIL_PROVIDER=resend`, `RESEND_API_KEY`, `EMAIL_FROM` e `APP_PUBLIC_URL`. O remetente deve usar um domínio verificado no provedor.
 
+O backend recusa `memory` em produção e também recusa configuração incompleta. Em produção, `APP_PUBLIC_URL` deve ser uma origem HTTPS sem caminho, query ou fragmento. Falhas no envio de recuperação mantêm a resposta pública genérica para não revelar se a conta existe. Consulte o [guia de entrega de e-mail](email-delivery-setup.md) para a ativação manual no Resend e na Vercel.
+
 ## Testes
 
 ```bash

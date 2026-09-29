@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { ArrowLeft, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -12,12 +12,16 @@ export function ForgotPasswordPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const requestInFlight = useRef(false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setLoading(true); setError(""); setMessage("");
+    event.preventDefault();
+    if (requestInFlight.current) return;
+    requestInFlight.current = true;
+    setLoading(true); setError(""); setMessage("");
     try { setMessage((await api.forgotPassword(email)).message); }
     catch (reason) { setError(reason instanceof Error ? reason.message : "Não foi possível continuar."); }
-    finally { setLoading(false); }
+    finally { requestInFlight.current = false; setLoading(false); }
   }
 
   return <main className="standalone-auth-page"><section className="standalone-auth-card">

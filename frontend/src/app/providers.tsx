@@ -10,9 +10,10 @@ export type Theme = "light" | "dark";
 
 interface AuthContextValue {
   user: User | null;
+  authNotice: string;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (user: User) => void;
+  login: (user: User, notice?: string) => void;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -49,6 +50,7 @@ function ThemeProvider({ children }: { children: ReactNode }) {
 
 function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [authNotice, setAuthNotice] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const refreshUser = useCallback(async () => setUser(await api.getCurrentUser()), []);
 
@@ -72,6 +74,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const clearUnauthorizedSession = () => {
       setUser(null);
+      setAuthNotice("");
       setIsLoading(false);
     };
     window.addEventListener("nivra:unauthorized", clearUnauthorizedSession);
@@ -81,19 +84,24 @@ function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
+      authNotice,
       isAuthenticated: Boolean(user),
       isLoading,
-      login: setUser,
+      login: (authenticatedUser, notice = "") => {
+        setAuthNotice(notice);
+        setUser(authenticatedUser);
+      },
       refreshUser,
       logout: async () => {
         try {
           await api.logout();
         } finally {
           setUser(null);
+          setAuthNotice("");
         }
       },
     }),
-    [isLoading, refreshUser, user],
+    [authNotice, isLoading, refreshUser, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

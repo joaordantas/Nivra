@@ -24,6 +24,10 @@ class UserResponse(BaseModel):
     email_verificado_em: str | None = None
 
 
+class RegisterResponse(UserResponse):
+    verification_email_sent: bool
+
+
 class CsrfResponse(BaseModel):
     csrf_token: str
 

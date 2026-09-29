@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta, timezone
 
 from repositories.auth_token_repo import (
@@ -23,6 +24,7 @@ PASSWORD_RESET = "password_reset"
 EMAIL_VERIFICATION_HOURS = 24
 PASSWORD_RESET_MINUTES = 30
 RESEND_COOLDOWN_SECONDS = 60
+logger = logging.getLogger(__name__)
 
 
 class VerificationCooldownError(ValueError):
@@ -84,8 +86,9 @@ def solicitar_verificacao_email(
     try:
         enviar_verificacao_email(str(usuario[2]), token)
         return True
-    except EmailDeliveryError:
+    except EmailDeliveryError as exc:
         revogar_token_por_hash(hash_token(token))
+        logger.error("Falha operacional ao enviar verificação de e-mail: %s", exc)
         return False
 
 
@@ -106,8 +109,9 @@ def solicitar_redefinicao_senha(email: str) -> None:
     )
     try:
         enviar_redefinicao_senha(str(usuario[2]), token)
-    except EmailDeliveryError:
+    except EmailDeliveryError as exc:
         revogar_token_por_hash(hash_token(token))
+        logger.error("Falha operacional ao enviar recuperação de senha: %s", exc)
 
 
 def redefinir_senha_service(

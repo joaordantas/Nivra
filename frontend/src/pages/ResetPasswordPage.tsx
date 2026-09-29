@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { KeyRound } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -9,21 +9,31 @@ import { api } from "../services/api";
 
 export function ResetPasswordPage() {
   const token = useMemo(() => {
-    const value = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("token") ?? "";
-    window.history.replaceState(null, "", window.location.pathname);
-    return value;
+    return new URLSearchParams(window.location.hash.replace(/^#/, "")).get("token") ?? "";
   }, []);
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState(token ? "" : "Este link de recuperação está incompleto.");
   const [loading, setLoading] = useState(false);
+  const requestInFlight = useRef(false);
+
+  useEffect(() => {
+    window.history.replaceState(null, "", window.location.pathname);
+  }, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setLoading(true); setError("");
+    event.preventDefault();
+    if (requestInFlight.current) return;
+    if (password !== confirmation) {
+      setError("A confirmação da nova senha não corresponde.");
+      return;
+    }
+    requestInFlight.current = true;
+    setLoading(true); setError(""); setMessage("");
     try { setMessage((await api.resetPassword(token, password, confirmation)).message); }
     catch (reason) { setError(reason instanceof Error ? reason.message : "Não foi possível redefinir a senha."); }
-    finally { setLoading(false); }
+    finally { requestInFlight.current = false; setLoading(false); }
   }
 
   return <main className="standalone-auth-page"><section className="standalone-auth-card">

@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from backend.dependencies.auth import CurrentUser, CurrentUserCsrf
 from backend.schemas.auth import (
     CsrfResponse, EmailRequest, LoginRequest, MessageResponse, PasswordChangeRequest,
-    PasswordResetRequest, RegisterRequest, TokenRequest, UserResponse,
+    PasswordResetRequest, RegisterRequest, RegisterResponse, TokenRequest, UserResponse,
 )
 from services.auth_service import alterar_senha_service, login, registrar
 from services.auth_token_service import (
@@ -81,19 +81,25 @@ def get_csrf_token(request: Request, response: Response) -> CsrfResponse:
     return CsrfResponse(csrf_token=csrf_token)
 
 
-@router.post("/register", response_model=UserResponse, status_code=201, dependencies=[Depends(_require_public_csrf)])
-def register_user(payload: RegisterRequest, request: Request, response: Response, csrf_token: Annotated[str, Cookie(alias=CSRF_COOKIE)]) -> UserResponse:
+@router.post("/register", response_model=RegisterResponse, status_code=201, dependencies=[Depends(_require_public_csrf)])
+def register_user(payload: RegisterRequest, request: Request, response: Response, csrf_token: Annotated[str, Cookie(alias=CSRF_COOKIE)]) -> RegisterResponse:
     key = _rate_key(request)
     try:
         consumir_limite("register", key, 5, 3600)
         usuario_id = registrar(payload.usuario, payload.email, payload.senha, payload.tipo_perfil)
-        solicitar_verificacao_email(usuario_id, respeitar_cooldown=False)
+        verification_email_sent = solicitar_verificacao_email(
+            usuario_id, respeitar_cooldown=False
+        )
         resultado = login(payload.email, payload.senha)
         if resultado is None:
             raise HTTPException(status_code=500, detail="Não foi possível carregar o usuário criado.")
         session_token = criar_sessao_service(usuario_id, csrf_token)
         _set_session_cookies(response, session_token, csrf_token)
-        return _user_from_tuple(resultado)
+        user = _user_from_tuple(resultado)
+        return RegisterResponse(
+            **user.model_dump(),
+            verification_email_sent=verification_email_sent,
+        )
     except RateLimitExceeded as exc:
         _raise_rate_limit(exc)
     except ValueError as exc:

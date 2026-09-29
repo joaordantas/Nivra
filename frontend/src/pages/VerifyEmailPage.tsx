@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BadgeCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -9,17 +9,18 @@ import { api } from "../services/api";
 export function VerifyEmailPage() {
   const { isAuthenticated, refreshUser } = useAuth();
   const token = useMemo(() => {
-    const value = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("token") ?? "";
-    window.history.replaceState(null, "", window.location.pathname);
-    return value;
+    return new URLSearchParams(window.location.hash.replace(/^#/, "")).get("token") ?? "";
   }, []);
+  const verificationRequest = useRef<ReturnType<typeof api.verifyEmail> | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState(token ? "" : "Este link de verificação está incompleto.");
 
   useEffect(() => {
+    window.history.replaceState(null, "", window.location.pathname);
     if (!token) return;
     let active = true;
-    api.verifyEmail(token).then(async (result) => {
+    verificationRequest.current ??= api.verifyEmail(token);
+    verificationRequest.current.then(async (result) => {
       try { await refreshUser(); } catch { /* O link também funciona sem sessão ativa. */ }
       if (active) setMessage(result.message);
     }).catch((reason: unknown) => {

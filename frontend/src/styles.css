@@ -881,6 +881,8 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
 .verification-banner button { border: 0; background: transparent; color: var(--primary-strong); font-size: 0.73rem; font-weight: 750; }
 .verification-banner button:disabled { cursor: wait; opacity: 0.65; }
 .verification-banner small { color: var(--text-secondary); }
+.verification-banner .verification-success { color: var(--positive); }
+.verification-banner .verification-error { color: var(--danger); }
 .auth-form-heading h2 { margin-bottom: 7px; font-size: 1.65rem; letter-spacing: -0.035em; }
 .auth-form-heading p { margin-bottom: 26px; color: var(--text-secondary); font-size: 0.86rem; }
 .auth-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 22px; padding: 4px; border-radius: 11px; background: var(--neutral-soft); }

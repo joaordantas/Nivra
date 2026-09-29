@@ -10,7 +10,7 @@ import type { User } from "../types";
 import { useTheme } from "../app/providers";
 
 interface AuthViewProps {
-  onLogin: (user: User) => void;
+  onLogin: (user: User, notice?: string) => void;
 }
 
 export function AuthView({ onLogin }: AuthViewProps) {
@@ -51,8 +51,11 @@ export function AuthView({ onLogin }: AuthViewProps) {
         senha: registerPassword,
         tipo_perfil: "Apenas Financeiro",
       });
-      setMessage("Conta criada. Seu espaço financeiro está pronto.");
-      onLogin(user);
+      const registrationNotice = user.verification_email_sent
+        ? "Conta criada. Enviamos um link de verificação para seu e-mail."
+        : "Sua conta foi criada, mas não conseguimos enviar o e-mail de verificação agora. Use “Reenviar e-mail” para tentar novamente.";
+      setMessage(registrationNotice);
+      onLogin(user, registrationNotice);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível criar sua conta.");
     } finally {

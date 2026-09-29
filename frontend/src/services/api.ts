@@ -22,6 +22,7 @@ import type {
   ReconciliationResult,
   ReconciliationSuggestion,
   ReconciliationBatchResult,
+  RegisterResult,
   ReceivableByClient,
   Sale,
   Transaction,
@@ -116,7 +117,7 @@ export const api = {
     request<User>("/auth/login", { method: "POST", body: JSON.stringify({ email, senha }) }),
 
   register: (payload: { usuario: string; email: string; senha: string; tipo_perfil: string }) =>
-    request<User>("/auth/register", { method: "POST", body: JSON.stringify(payload) }),
+    request<RegisterResult>("/auth/register", { method: "POST", body: JSON.stringify(payload) }),
 
   verifyEmail: (token: string) =>
     request<{ message: string }>("/auth/email/verify", { method: "POST", body: JSON.stringify({ token }) }),

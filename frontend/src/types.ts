@@ -7,6 +7,10 @@ export interface User {
   email_verificado_em: string | null;
 }
 
+export interface RegisterResult extends User {
+  verification_email_sent: boolean;
+}
+
 export interface Category {
   id: number;
   nome: string;

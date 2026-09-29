@@ -69,21 +69,26 @@ def _parse_datetime(value: str | datetime) -> datetime:
 
 
 def action_proposals_enabled() -> bool:
-    raw = os.environ.get("LUMI_ACTION_PROPOSALS_ENABLED", "false").strip().lower()
-    if raw in {"1", "true", "yes"}:
-        return True
-    if raw in {"0", "false", "no", ""}:
-        return False
-    raise RuntimeError("LUMI_ACTION_PROPOSALS_ENABLED deve ser true ou false.")
+    return _feature_flag_enabled("LUMI_ACTION_PROPOSALS_ENABLED")
 
 
 def action_execution_enabled() -> bool:
-    raw = os.environ.get("LUMI_ACTION_EXECUTION_ENABLED", "false").strip().lower()
-    if raw in {"1", "true", "yes"}:
-        return True
-    if raw in {"0", "false", "no", ""}:
+    return _feature_flag_enabled("LUMI_ACTION_EXECUTION_ENABLED")
+
+
+def _feature_flag_enabled(name: str) -> bool:
+    """Only an explicit, valid opt-in can enable a financial action."""
+    raw = os.environ.get(name)
+    if raw is None:
         return False
-    raise RuntimeError("LUMI_ACTION_EXECUTION_ENABLED deve ser true ou false.")
+    normalized = raw.strip().lower()
+    if normalized in {"1", "true", "yes"}:
+        return True
+    if normalized in {"0", "false", "no", ""}:
+        return False
+    # Do not include the supplied value: environment values can be sensitive.
+    logger.warning("lumi_action_feature_flag_invalid name=%s fail_closed=true", name)
+    return False
 
 
 def confirmation_ttl_seconds() -> int:
@@ -324,8 +329,8 @@ def executar_acao_confirmada(
     finally:
         conn.close()
     logger.info(
-        "lumi_action_executed action_type=%s outcome=success duration_ms=%d transaction_id=%d",
-        action_type, round((time.monotonic() - started) * 1000), transaction_id,
+        "lumi_action_executed action_type=%s outcome=success duration_ms=%d",
+        action_type, round((time.monotonic() - started) * 1000),
     )
     try:
         detectar_candidatos_conciliacao_service(usuario_id)
