@@ -39,7 +39,7 @@ def verify_resume_fixture(raw: str) -> tuple[int, int, int, int]:
     with get_engine().connect() as conn:
         conn.execute(text("SET TRANSACTION READ ONLY"))
         require(conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one() ==
-                "b5c7d9e1f203", "resume at expected Alembic head")
+                "d7e8f9a012b3", "resume at expected Alembic head")
         users = conn.execute(text("SELECT id, email FROM usuarios ORDER BY id")).all()
         require(len(users) == 2 and {row[1] for row in users} ==
                 {"p65-gate-a@example.invalid", "p65-gate-b@example.invalid"},
@@ -72,7 +72,7 @@ def verify_final_state(raw: str) -> None:
     with get_engine().connect() as conn:
         conn.execute(text("SET TRANSACTION READ ONLY"))
         require(conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one() ==
-                "b5c7d9e1f203", "final migration head")
+                "d7e8f9a012b3", "final migration head")
         users = conn.execute(text("SELECT id, email FROM usuarios")).all()
         require(len(users) == 2 and {row[1] for row in users} ==
                 {"p65-gate-a@example.invalid", "p65-gate-b@example.invalid"},
@@ -84,7 +84,7 @@ def verify_final_state(raw: str) -> None:
             "SELECT count(*) FROM lumi_action_confirmations "
             "WHERE status='executed' AND executed_transaction_id IS NOT NULL "
             "AND executed_at IS NOT NULL AND usuario_id=:user"
-        ), {"user": user}).scalar_one() == 7, "seven complete authorization audit links")
+        ), {"user": user}).scalar_one() == 8, "eight complete authorization audit events")
         require(conn.execute(text(
             "SELECT count(*) FROM transacoes t LEFT JOIN lumi_action_confirmations c "
             "ON c.executed_transaction_id=t.id WHERE c.id IS NULL OR t.usuario_id<>c.usuario_id"
@@ -133,7 +133,7 @@ def run(raw: str, *, resume: bool = False) -> None:
         command.check(cfg)
         with engine.connect() as conn:
             revision = conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-            require(revision == "b5c7d9e1f203", "upgrade head")
+            require(revision == "d7e8f9a012b3", "upgrade head")
             require(conn.execute(text(
                 "SELECT count(*) FROM lumi_action_confirmations WHERE execution_eligible = false"
             )).scalar_one() == 2, "legacy confirmations ineligible")
@@ -147,9 +147,12 @@ def run(raw: str, *, resume: bool = False) -> None:
             constraints = {row[0] for row in conn.execute(text(
                 "SELECT conname FROM pg_constraint WHERE conrelid = 'lumi_action_confirmations'::regclass"
             ))}
-            require({"ck_lumi_action_confirmations_execution", "ck_lumi_action_confirmations_status",
-                     "uq_lumi_action_confirmations_executed_transaction_id"}.issubset(constraints),
-                    "execution status/check/unique constraints present")
+            require({"ck_lumi_action_confirmations_execution", "ck_lumi_action_confirmations_status"}
+                    .issubset(constraints), "execution status constraints present")
+            require(conn.execute(text(
+                "SELECT to_regclass('public.uq_lumi_action_confirmations_created_transaction_id') "
+                "IS NOT NULL"
+            )).scalar_one(), "creation-only transaction audit uniqueness present")
 
     from fastapi.testclient import TestClient
     from backend.main import app
@@ -158,6 +161,7 @@ def run(raw: str, *, resume: bool = False) -> None:
         criar_confirmacao_pendente, executar_acao_confirmada,
         LumiActionConfirmationStateError,
     )
+    from services.lumi_action_proposal_service import criar_proposta_de_edicao
 
     if not resume:
         with engine.begin() as conn:
@@ -233,6 +237,72 @@ def run(raw: str, *, resume: bool = False) -> None:
                 "ordinary account balance reflects expense and income")
         insights = client.get("/api/insights", params={"data_inicio": "2026-09-01", "data_fim": "2026-09-30"})
         require(insights.status_code == 200, "ordinary financial insights endpoint")
+
+        conversation = client.post(
+            "/api/lumi/conversations", json={"title": "P69 PostgreSQL"}, headers=headers,
+        )
+        require(conversation.status_code == 201, "PostgreSQL conversation creation")
+        conversation_id = conversation.json()["id"]
+        require(intruder.get(f"/api/lumi/conversations/{conversation_id}").status_code == 404,
+                "conversation ownership enforced")
+
+        memory_clients = [client_for(user) for _ in range(5)]
+        try:
+            barrier = threading.Barrier(len(memory_clients))
+
+            def create_same_memory(pair):
+                barrier.wait(timeout=10)
+                return pair[0].post(
+                    "/api/lumi/memories",
+                    json={"category": "preference", "content": "Prefiro resumos semanais fictícios."},
+                    headers=pair[1],
+                )
+
+            with ThreadPoolExecutor(max_workers=len(memory_clients)) as executor:
+                memory_results = list(executor.map(create_same_memory, memory_clients))
+            require(all(result.status_code == 201 for result in memory_results),
+                    "concurrent memory requests succeed")
+            require(len({result.json()["id"] for result in memory_results}) == 1,
+                    "concurrent duplicate memory collapses to one row")
+        finally:
+            for entry, _ in memory_clients:
+                entry.close()
+        memory_id = client.get("/api/lumi/memories").json()[0]["id"]
+        require(intruder.get("/api/lumi/memories").json() == [], "memory isolation enforced")
+        require(intruder.delete(f"/api/lumi/memories/{memory_id}", headers=intruder_headers).status_code == 204,
+                "cross-user memory deletion is harmless")
+        require(len(client.get("/api/lumi/memories").json()) == 1,
+                "owner memory survives cross-user deletion attempt")
+        require(client.delete("/api/lumi/conversations", headers=headers).status_code == 204,
+                "conversation history can be cleared")
+        require(len(client.get("/api/lumi/memories").json()) == 1,
+                "clearing conversations preserves explicit memory")
+
+        update = criar_proposta_de_edicao(
+            user, expense_id, {"description": "P69 Update", "amount": "10.55"},
+        ).confirmation.confirmation_id
+        update_clients = [client_for(user) for _ in range(5)]
+        try:
+            barrier = threading.Barrier(len(update_clients))
+
+            def confirm_update(pair):
+                barrier.wait(timeout=10)
+                return confirm(pair[0], pair[1], update)[0]
+
+            with ThreadPoolExecutor(max_workers=len(update_clients)) as executor:
+                update_results = list(executor.map(confirm_update, update_clients))
+            require(all(result.status_code == 200 for result in update_results),
+                    "concurrent update confirmations succeed idempotently")
+            require({result.json()["transaction_id"] for result in update_results} == {expense_id},
+                    "concurrent update keeps one transaction identity")
+            with engine.connect() as conn:
+                require(conn.execute(text(
+                    "SELECT count(*), valor, comentario FROM transacoes WHERE id=:id GROUP BY valor, comentario"
+                ), {"id": expense_id}).one() == (1, Decimal("10.55"), "P69 Update"),
+                        "PostgreSQL update applied exactly once")
+        finally:
+            for entry, _ in update_clients:
+                entry.close()
 
         private_token = proposal()
         require(confirm(intruder, intruder_headers, private_token)[0].status_code == 404,

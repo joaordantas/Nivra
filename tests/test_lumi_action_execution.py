@@ -26,9 +26,10 @@ from tests.db_support import remove_test_database, reset_test_database
 class LumiActionExecutionTests(unittest.TestCase):
     def setUp(self):
         self.old_flags = {key: os.environ.get(key) for key in (
-            "LUMI_PUBLIC_ENABLED", "LUMI_ACTION_PROPOSALS_ENABLED", "LUMI_ACTION_EXECUTION_ENABLED",
+            "LUMI_PUBLIC_ENABLED", "LUMI_ROLLOUT_MODE", "LUMI_ACTION_PROPOSALS_ENABLED", "LUMI_ACTION_EXECUTION_ENABLED",
         )}
         os.environ["LUMI_PUBLIC_ENABLED"] = "true"
+        os.environ["LUMI_ROLLOUT_MODE"] = "all"
         os.environ["LUMI_ACTION_PROPOSALS_ENABLED"] = "true"
         os.environ["LUMI_ACTION_EXECUTION_ENABLED"] = "true"
         reset_test_database()

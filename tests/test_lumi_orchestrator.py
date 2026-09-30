@@ -449,6 +449,8 @@ class LumiPublicGateTests(unittest.TestCase):
     def setUp(self):
         reset_test_database()
         self.previous_flag = os.environ.pop("LUMI_PUBLIC_ENABLED", None)
+        self.previous_rollout_mode = os.environ.pop("LUMI_ROLLOUT_MODE", None)
+        self.previous_rollout_users = os.environ.pop("LUMI_ROLLOUT_USER_IDS", None)
         conn = get_connection()
         conn.execute("INSERT INTO usuarios (id, usuario, email, senha) VALUES (1, 'Ana', 'gate@example.com', 'hash')")
         conn.commit()
@@ -462,6 +464,14 @@ class LumiPublicGateTests(unittest.TestCase):
             os.environ["LUMI_PUBLIC_ENABLED"] = self.previous_flag
         else:
             os.environ.pop("LUMI_PUBLIC_ENABLED", None)
+        if self.previous_rollout_mode is not None:
+            os.environ["LUMI_ROLLOUT_MODE"] = self.previous_rollout_mode
+        else:
+            os.environ.pop("LUMI_ROLLOUT_MODE", None)
+        if self.previous_rollout_users is not None:
+            os.environ["LUMI_ROLLOUT_USER_IDS"] = self.previous_rollout_users
+        else:
+            os.environ.pop("LUMI_ROLLOUT_USER_IDS", None)
         remove_test_database()
 
     def test_default_false_blocks_messages_and_actions_without_provider_call(self):
@@ -484,9 +494,12 @@ class LumiPublicGateTests(unittest.TestCase):
         respond.assert_not_called()
 
     def test_only_explicit_true_enables_public_capability(self):
+        authenticate_existing_user(self.client, 1)
         os.environ["LUMI_PUBLIC_ENABLED"] = "invalid"
         self.assertEqual(self.client.get("/api/lumi/capabilities").json(), {"public_enabled": False})
         os.environ["LUMI_PUBLIC_ENABLED"] = "true"
+        self.assertEqual(self.client.get("/api/lumi/capabilities").json(), {"public_enabled": False})
+        os.environ["LUMI_ROLLOUT_MODE"] = "all"
         self.assertEqual(self.client.get("/api/lumi/capabilities").json(), {"public_enabled": True})
 
 
@@ -495,6 +508,8 @@ class LumiEndpointTests(unittest.TestCase):
         reset_test_database()
         self._previous_public_flag = os.environ.get("LUMI_PUBLIC_ENABLED")
         os.environ["LUMI_PUBLIC_ENABLED"] = "true"
+        self._previous_rollout_mode = os.environ.get("LUMI_ROLLOUT_MODE")
+        os.environ["LUMI_ROLLOUT_MODE"] = "all"
         self._previous_lumi_provider = os.environ.get("LUMI_PROVIDER")
         os.environ["LUMI_PROVIDER"] = "openai"
         clear_lumi_provider_cache()
@@ -515,6 +530,10 @@ class LumiEndpointTests(unittest.TestCase):
             os.environ.pop("LUMI_PUBLIC_ENABLED", None)
         else:
             os.environ["LUMI_PUBLIC_ENABLED"] = self._previous_public_flag
+        if self._previous_rollout_mode is None:
+            os.environ.pop("LUMI_ROLLOUT_MODE", None)
+        else:
+            os.environ["LUMI_ROLLOUT_MODE"] = self._previous_rollout_mode
         os.environ.pop("LUMI_RATE_LIMIT_REQUESTS", None)
         os.environ.pop("LUMI_RATE_LIMIT_WINDOW_SECONDS", None)
         if self._previous_lumi_provider is None:

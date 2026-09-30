@@ -21,14 +21,27 @@ from repositories.lumi_action_confirmation_repo import (
 )
 from database.connection import get_connection
 from services.session_service import gerar_token, hash_token
-from services.transacao_service import criar_transacao_em_conexao
+from services.transacao_service import criar_transacao_em_conexao, atualizar_transacao_lumi_service
 from services.open_finance_reconciliation_service import detectar_candidatos_conciliacao_service
 
 
 logger = logging.getLogger("nivra.lumi.actions")
-ActionType = Literal["create_expense", "create_income"]
+ActionType = Literal["create_expense", "create_income", "update_transaction"]
 ConfirmationStatus = Literal["pending", "confirmed", "cancelled", "expired", "executed"]
-ALLOWED_ACTION_TYPES = frozenset({"create_expense", "create_income"})
+ALLOWED_ACTION_TYPES = frozenset({"create_expense", "create_income", "update_transaction"})
+
+
+def _safe_database_error_code(exc: Exception) -> str:
+    original = getattr(exc, "orig", None)
+    code = getattr(original, "sqlstate", None)
+    if isinstance(code, str) and code:
+        return code[:10]
+    args = getattr(original, "args", ())
+    if args and isinstance(args[0], dict):
+        candidate = args[0].get("C")
+        if isinstance(candidate, str) and candidate:
+            return candidate[:10]
+    return "none"
 
 
 class LumiActionConfirmationError(RuntimeError):
@@ -288,6 +301,46 @@ def _validated_execution_payload(payload: dict[str, object]) -> tuple[Decimal, s
     return amount, description, date_value, entities[0][0], entities[0][1], entities[1][0], entities[1][1]
 
 
+def _validated_update_payload(payload: dict[str, object]) -> tuple[int, Decimal, str | None, str, int | None, int | None, tuple]:
+    if set(payload) != {"transaction_id", "before", "after", "changes"}:
+        raise LumiActionConfirmationStateError("Os dados da proposta mudaram. Crie uma nova proposta.")
+    transaction_id = payload["transaction_id"]
+    before, after = payload["before"], payload["after"]
+    if type(transaction_id) is not int or transaction_id < 1 or not isinstance(before, dict) or not isinstance(after, dict):
+        raise LumiActionConfirmationStateError("A proposta de edição está inválida.")
+    if before.get("origem") != "manual" or before.get("parcelamento_id") is not None or before.get("conciliada_com_banco"):
+        raise LumiActionConfirmationStateError("Esta transação não pode ser editada pela Lumi.")
+    required_before = {"id", "valor", "tipo", "data"}
+    if not required_before.issubset(before):
+        raise LumiActionConfirmationStateError("A proposta de edição está inválida.")
+    try:
+        amount = Decimal(str(after["amount"]))
+        if not amount.is_finite() or amount <= 0 or amount > Decimal("1000000000.00"):
+            raise ValueError()
+        action_date = date.fromisoformat(str(after["date"])).isoformat()
+        description = after["description"]
+        account, category = after["account"], after["category"]
+        if description is not None and (not isinstance(description, str) or len(description) > 255):
+            raise ValueError()
+        if not isinstance(account, dict) or type(account.get("id")) is not int:
+            raise ValueError()
+        if not isinstance(category, dict) or type(category.get("id")) is not int:
+            raise ValueError()
+    except (TypeError, ValueError, InvalidOperation) as exc:
+        raise LumiActionConfirmationStateError("Os dados da proposta de edição são inválidos.") from exc
+    try:
+        snapshot = (
+            int(before["id"]), Decimal(str(before["valor"])), str(before["tipo"]), before.get("categoria_id"),
+            before.get("categoria"), before.get("comentario"), str(before["data"]), before.get("conta_id"),
+            before.get("conta"), before.get("transacao_bancaria_id"), before.get("instituicao_nome"),
+            before.get("ultima_sincronizacao_em"), before.get("parcelamento_id"), before.get("numero_parcela"),
+            before.get("quantidade_parcelas"),
+        )
+    except (TypeError, ValueError, InvalidOperation, KeyError) as exc:
+        raise LumiActionConfirmationStateError("A proposta de edição está inválida.") from exc
+    return transaction_id, amount.quantize(Decimal("0.01")), description, action_date, int(account["id"]), int(category["id"]), snapshot
+
+
 def executar_acao_confirmada(
     confirmation_id: str, usuario_id: int, *, agora: datetime | None = None
 ) -> ActionConfirmation:
@@ -311,19 +364,28 @@ def executar_acao_confirmada(
         if str(action_type) not in ALLOWED_ACTION_TYPES:
             raise LumiActionConfirmationStateError("Tipo de ação inválido.")
         payload = _deserialize_payload(str(payload_json))
-        amount, description, action_date, account_id, account_name, category_id, category_name = _validated_execution_payload(payload)
-        transaction_id = criar_transacao_em_conexao(
-            conn, amount, "saida" if action_type == "create_expense" else "entrada",
-            category_id, description, action_date, usuario_id, account_id,
-            nome_conta_esperado=account_name, nome_categoria_esperado=category_name,
-        )
+        if action_type == "update_transaction":
+            transaction_id, update_amount, update_description, update_date, update_account, update_category, snapshot = _validated_update_payload(payload)
+            transaction_id = atualizar_transacao_lumi_service(
+                conn, transaction_id, usuario_id, valor=update_amount,
+                categoria_id=update_category, comentario=update_description,
+                data=update_date, conta_id=update_account, snapshot=snapshot,
+            )
+        else:
+            amount, description, action_date, account_id, account_name, category_id, category_name = _validated_execution_payload(payload)
+            transaction_id = criar_transacao_em_conexao(
+                conn, amount, "saida" if action_type == "create_expense" else "entrada",
+                category_id, description, action_date, usuario_id, account_id,
+                nome_conta_esperado=account_name, nome_categoria_esperado=category_name,
+            )
         finalizar_execucao(conn, int(confirmation_db_id), transaction_id, moment)
         conn.commit()
     except Exception as exc:
         conn.rollback()
         logger.warning(
-            "lumi_action_execution_failed outcome=rollback duration_ms=%d reason=%s",
+            "lumi_action_execution_failed outcome=rollback duration_ms=%d reason=%s db_code=%s",
             round((time.monotonic() - started) * 1000), type(exc).__name__,
+            _safe_database_error_code(exc),
         )
         raise
     finally:

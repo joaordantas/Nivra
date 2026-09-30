@@ -1,12 +1,11 @@
 import { Navigate, RouterProvider, createBrowserRouter } from "react-router-dom";
-import type { ReactNode } from "react";
+import { Suspense, lazy, type ReactNode } from "react";
 
 import { AppLayout } from "../components/layout/AppLayout";
 import { ComingSoonPage } from "../pages/ComingSoonPage";
 import { CardsPage } from "../pages/CardsPage";
 import { DashboardPage } from "../pages/DashboardPage";
 import { LoginPage } from "../pages/LoginPage";
-import { LumiGatePage } from "../pages/LumiGatePage";
 import { InstallmentsPage } from "../pages/InstallmentsPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { SettingsPage } from "../pages/SettingsPage";
@@ -18,6 +17,8 @@ import { ResetPasswordPage } from "../pages/ResetPasswordPage";
 import { VerifyEmailPage } from "../pages/VerifyEmailPage";
 import { SecurityPage } from "../pages/settings/SecurityPage";
 import { useAuth } from "./providers";
+
+const LumiGatePage = lazy(() => import("../pages/LumiGatePage").then((module) => ({ default: module.LumiGatePage })));
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -65,7 +66,14 @@ const router = createBrowserRouter([
         path: "goals",
         element: <ComingSoonPage description="As metas financeiras serão adicionadas depois do núcleo financeiro." title="Metas" />,
       },
-      { path: "lumi", element: <LumiGatePage /> },
+      {
+        path: "lumi",
+        element: (
+          <Suspense fallback={<div className="route-loading" role="status">Carregando a Lumi...</div>}>
+            <LumiGatePage />
+          </Suspense>
+        ),
+      },
       { path: "assistant", element: <Navigate replace to="/lumi" /> },
       { path: "settings", element: <SettingsPage /> },
       { path: "settings/categories", element: <CategoriesPage /> },

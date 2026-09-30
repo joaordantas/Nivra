@@ -800,7 +800,18 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
 
 .lumi-page { display: flex; min-height: calc(100dvh - 104px); flex-direction: column; gap: 20px; }
 .lumi-read-only-badge { display: inline-flex; min-height: 34px; align-items: center; gap: 7px; padding: 0 11px; border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--border)); border-radius: 99px; background: var(--primary-soft); color: var(--primary-strong); font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
-.lumi-shell { display: grid; height: clamp(560px, calc(100dvh - 190px), 790px); min-height: 0; grid-template-rows: minmax(0, 1fr) auto auto; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-sm); }
+.lumi-shell { display: grid; height: clamp(560px, calc(100dvh - 190px), 790px); min-height: 0; grid-template-columns: 210px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto auto; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-sm); }
+.lumi-conversations { grid-row: 1 / -1; border-right: 1px solid var(--border); background: var(--surface-subtle); padding: 12px 8px; overflow-y: auto; }
+.lumi-conversations-heading { display: flex; align-items: center; justify-content: space-between; padding: 4px 6px 10px; color: var(--text-secondary); font-size: .78rem; }
+.lumi-conversations-heading button { min-height: 30px; padding: 5px 8px; }
+.lumi-conversation-row { display: flex; align-items: center; gap: 3px; margin-bottom: 3px; }
+.lumi-conversation-row button:first-child { min-width: 0; flex: 1; border: 0; border-radius: 8px; background: transparent; color: var(--text); padding: 8px; text-align: left; font-size: .76rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lumi-conversation-row button:last-child { border: 0; background: transparent; color: var(--text-secondary); padding: 6px; }
+.lumi-conversation-row.is-active button:first-child, .lumi-conversation-row button:first-child:hover { background: var(--primary-soft); color: var(--primary); }
+.lumi-memories-panel { margin-top: 18px; border-top: 1px solid var(--border); padding: 12px 6px 0; color: var(--text-secondary); font-size: .72rem; }
+.lumi-memory-row { display: flex; align-items: center; gap: 4px; margin-top: 7px; }
+.lumi-memory-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lumi-memory-row button { border: 0; background: transparent; color: var(--text-secondary); padding: 2px; }
 .lumi-messages { min-width: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; padding: 28px clamp(18px, 3vw, 34px); scroll-padding-block: 24px; }
 .lumi-empty-state { display: grid; max-width: 740px; min-height: 100%; place-items: center; align-content: center; justify-self: center; gap: 12px; text-align: center; }
 .lumi-empty-icon { display: grid; width: 52px; height: 52px; place-items: center; border-radius: 15px; background: var(--primary-soft); color: var(--primary); }
@@ -818,22 +829,37 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
 .lumi-message-content { min-width: 0; }
 .lumi-message-content strong { display: block; margin: 2px 0 5px; color: var(--text-secondary); font-size: 0.68rem; }
 .lumi-message-user .lumi-message-content strong { text-align: right; }
-.lumi-message-content p { margin: 0; padding: 11px 14px; border: 1px solid var(--border); border-radius: 4px 14px 14px; background: var(--surface-subtle); color: var(--text); font-size: 0.84rem; line-height: 1.65; overflow-wrap: anywhere; white-space: pre-wrap; }
-.lumi-message-user .lumi-message-content p { border-color: color-mix(in srgb, var(--primary) 20%, var(--border)); border-radius: 14px 4px 14px 14px; background: var(--primary-soft); color: var(--text); }
+.lumi-message-body { padding: 11px 14px; border: 1px solid var(--border); border-radius: 4px 14px 14px; background: var(--surface-subtle); color: var(--text); font-size: 0.84rem; line-height: 1.65; overflow-wrap: anywhere; }
+.lumi-message-body p { margin: 0; white-space: pre-wrap; }
+.lumi-message-body p + p, .lumi-message-body ul + p, .lumi-message-body p + ul { margin-top: 8px; }
+.lumi-message-body ul { margin: 0; padding-left: 18px; }
+.lumi-message-user .lumi-message-body { border-color: color-mix(in srgb, var(--primary) 20%, var(--border)); border-radius: 14px 4px 14px 14px; background: var(--primary-soft); color: var(--text); }
+.lumi-quick-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 9px; }
+.lumi-quick-actions button { min-height: 34px; border: 1px solid var(--border); border-radius: 99px; background: var(--surface); color: var(--primary-strong); padding: 6px 11px; font-size: .69rem; font-weight: 700; }
+.lumi-quick-actions button:hover, .lumi-quick-actions button:focus-visible { border-color: var(--primary); background: var(--primary-soft); outline: 0; }
 .lumi-action-proposal { display: grid; gap: 13px; margin-top: 10px; padding: 14px; border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border)); border-radius: 12px; background: var(--surface); }
 .lumi-action-proposal-heading { display: flex; align-items: flex-start; gap: 9px; }
 .lumi-action-proposal-icon { display: grid; width: 30px; height: 30px; flex: 0 0 30px; place-items: center; border-radius: 9px; background: var(--primary-soft); color: var(--primary); }
 .lumi-action-proposal-heading strong { margin: 0; color: var(--text); font-size: 0.76rem; }
 .lumi-action-proposal-heading p { margin: 3px 0 0; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--text-secondary); font-size: 0.72rem; line-height: 1.45; }
+.lumi-action-section-label { display: flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: .66rem; font-weight: 750; text-transform: uppercase; letter-spacing: .04em; }
 .lumi-action-proposal-details { display: grid; grid-template-columns: 1fr 1fr; gap: 9px 14px; margin: 0; }
 .lumi-action-proposal-details div { min-width: 0; }
 .lumi-action-proposal-details dt { color: var(--text-soft); font-size: 0.63rem; font-weight: 700; }
 .lumi-action-proposal-details dd { overflow: hidden; margin: 2px 0 0; color: var(--text); font-size: 0.72rem; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.lumi-action-change-list { display: grid; gap: 8px; }
+.lumi-action-change-list > div { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; padding: 9px; border-radius: 9px; background: var(--surface-subtle); font-size: .7rem; }
+.lumi-action-change-list > div strong { margin: 0; color: var(--text-secondary); font-size: .65rem; }
+.lumi-action-change-list > div span { min-width: 0; overflow-wrap: anywhere; }
+.lumi-action-change-list > div span:last-child { color: var(--primary-strong); font-weight: 750; }
+.lumi-action-change-list > div b { color: var(--text-soft); }
 .lumi-action-note, .lumi-action-disclaimer { display: flex; align-items: flex-start; gap: 6px; margin: 0; color: var(--text-secondary); font-size: 0.68rem; line-height: 1.45; }
 .lumi-action-note { color: var(--warning-strong, #a16207); }
 .lumi-action-disclaimer { padding-top: 10px; border-top: 1px solid var(--border); }
 .lumi-action-proposal-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .lumi-action-proposal-actions .button { min-height: 36px; font-size: 0.7rem; }
+.lumi-action-status { display: flex; align-items: center; gap: 6px; margin: 0; color: var(--text-secondary); font-size: .7rem; }
+.lumi-action-status.success { color: var(--positive); }
 .lumi-processing { display: flex; width: fit-content; align-items: center; gap: 9px; color: var(--text-secondary); font-size: 0.75rem; }
 .lumi-processing-icon { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 10px; background: var(--primary-soft); color: var(--primary); }
 .lumi-processing > span:nth-child(2) { display: inline-flex; gap: 3px; }
@@ -1077,7 +1103,11 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
   .lumi-page .page-header { gap: 10px; }
   .lumi-page .page-description { font-size: 0.78rem; line-height: 1.45; }
   .lumi-read-only-badge { min-height: 30px; padding: 0 9px; font-size: 0.64rem; }
-  .lumi-shell { height: calc(100dvh - 320px - env(safe-area-inset-bottom)); min-height: 330px; border-radius: 14px; }
+  .lumi-shell { height: calc(100dvh - 410px - env(safe-area-inset-bottom)); min-height: 360px; max-height: 620px; border-radius: 14px; }
+  .lumi-shell { display: flex; flex-direction: column; }
+  .lumi-conversations { display: flex; flex: 0 0 auto; gap: 4px; border-right: 0; border-bottom: 1px solid var(--border); max-height: 54px; overflow-x: auto; overflow-y: hidden; padding: 7px; }
+  .lumi-conversations-heading { flex: 0 0 auto; padding: 3px 6px; }
+  .lumi-conversation-row { flex: 0 0 150px; margin: 0; }
   .lumi-messages { padding: 20px 14px; }
   .lumi-empty-state { align-content: start; padding-top: 12px; }
   .lumi-empty-state > p { font-size: 0.78rem; }
@@ -1085,9 +1115,11 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
   .lumi-suggestions button { width: 100%; border-radius: 10px; text-align: left; }
   .lumi-message { width: 96%; gap: 8px; }
   .lumi-message-avatar, .lumi-processing-icon { width: 28px; height: 28px; flex-basis: 28px; border-radius: 8px; }
-  .lumi-message-content p { padding: 10px 12px; font-size: 0.8rem; }
+  .lumi-message-body { padding: 10px 12px; font-size: 0.8rem; }
   .lumi-action-proposal { padding: 12px; }
   .lumi-action-proposal-details { grid-template-columns: 1fr; gap: 8px; }
+  .lumi-action-change-list > div { grid-template-columns: 1fr auto 1fr; }
+  .lumi-action-change-list > div strong { grid-column: 1 / -1; }
   .lumi-action-proposal-actions { display: grid; grid-template-columns: 1fr; }
   .lumi-action-proposal-actions .button { width: 100%; }
   .lumi-processing { font-size: 0.7rem; }

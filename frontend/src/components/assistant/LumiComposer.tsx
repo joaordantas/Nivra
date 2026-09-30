@@ -70,7 +70,7 @@ export function LumiComposer({
         </Button>
       </div>
       <div className="lumi-composer-meta" id="lumi-composer-hint">
-        <span>Contexto temporário nesta página. Shift + Enter cria uma nova linha.</span>
+        <span>Enter envia · Shift + Enter cria uma nova linha.</span>
         <span aria-label={`${value.length} de ${maxLength} caracteres`}>{value.length}/{maxLength}</span>
       </div>
     </form>

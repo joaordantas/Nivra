@@ -14,6 +14,9 @@ import type {
   LumiHistoryMessage,
   LumiActionConfirmationResponse,
   LumiResponse,
+  LumiConversation,
+  LumiConversationSummary,
+  LumiMemory,
   OpenFinanceConnection,
   OpenFinanceAccountLink,
   OpenFinanceExternalAccount,
@@ -259,12 +262,21 @@ export const api = {
   getInsights: (dataInicio: string, dataFim: string) =>
     request<FinancialInsights>(`/insights?data_inicio=${dataInicio}&data_fim=${dataFim}`),
   getLumiCapabilities: () => request<{ public_enabled: boolean }>("/lumi/capabilities"),
-  sendLumiMessage: (message: string, history: LumiHistoryMessage[], signal?: AbortSignal) =>
+  sendLumiMessage: (message: string, history: LumiHistoryMessage[], signal?: AbortSignal, conversationId?: string) =>
     request<LumiResponse>("/lumi/message", {
       method: "POST",
-      body: JSON.stringify({ message, history }),
+      body: JSON.stringify({ message, history, conversation_id: conversationId ?? null }),
       signal,
     }),
+  listLumiConversations: () => request<LumiConversationSummary[]>("/lumi/conversations"),
+  createLumiConversation: (title?: string) => request<LumiConversationSummary>("/lumi/conversations", { method: "POST", body: JSON.stringify({ title: title ?? null }) }),
+  getLumiConversation: (id: string) => request<LumiConversation>(`/lumi/conversations/${encodeURIComponent(id)}`),
+  deleteLumiConversation: (id: string) => request<void>(`/lumi/conversations/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  clearLumiHistory: () => request<void>("/lumi/conversations", { method: "DELETE" }),
+  listLumiMemories: () => request<LumiMemory[]>("/lumi/memories"),
+  createLumiMemory: (category: LumiMemory["category"], content: string) => request<LumiMemory>("/lumi/memories", { method: "POST", body: JSON.stringify({ category, content }) }),
+  deleteLumiMemory: (id: string) => request<void>(`/lumi/memories/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  clearLumiMemories: () => request<void>("/lumi/memories", { method: "DELETE" }),
   confirmLumiAction: (confirmationId: string) =>
     request<LumiActionConfirmationResponse>("/lumi/actions/confirm", {
       method: "POST", body: JSON.stringify({ confirmation_id: confirmationId }),

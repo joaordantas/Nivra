@@ -12,10 +12,13 @@ from repositories.transacao_repo import (
     buscar_categoria_para_criacao,
     buscar_conta_para_criacao,
     buscar_transacao_por_id,
+    buscar_transacao_por_id_em_conexao,
     calcular_total_compras_cartao,
     deletar_transacao,
     listar_transacoes,
     listar_transacoes_bancarias_vinculadas,
+    atualizar_transacao_condicional,
+    listar_candidatas_transacao,
 )
 from services.categoria_service import obter_categoria
 from services.conta_service import obter_conta_ativa
@@ -314,6 +317,53 @@ def atualizar_transacao_service(
         raise ValueError("Transacao nao encontrada.")
     detectar_candidatos_conciliacao_service(usuario_id)
     return _formatar_transacao(transacao)
+
+
+def localizar_transacoes_lumi_service(
+    usuario_id: int,
+    *,
+    descricao: str | None = None,
+    valor: Decimal | None = None,
+    data: str | None = None,
+    tipo: str | None = None,
+) -> list[dict]:
+    """Returns only owned, manually editable transaction candidates."""
+    result = []
+    for row in listar_candidatas_transacao(
+        usuario_id, descricao=descricao, valor=valor, data=data, tipo=tipo,
+    ):
+        item = _formatar_transacao(row)
+        if item["origem"] == "manual" and item["parcelamento_id"] is None and not item["conciliada_com_banco"]:
+            result.append(item)
+    return result
+
+
+def atualizar_transacao_lumi_service(
+    conn: DatabaseConnection,
+    transacao_id: int,
+    usuario_id: int,
+    *,
+    valor: Decimal,
+    categoria_id: int | None,
+    comentario: str | None,
+    data: str,
+    conta_id: int | None,
+    snapshot: tuple,
+) -> int:
+    current = buscar_transacao_por_id_em_conexao(conn, transacao_id, usuario_id)
+    if current is None:
+        raise ValueError("Transacao nao encontrada.")
+    if current[9] is not None or current[12] is not None:
+        raise ValueError("Esta transacao nao pode ser editada pela Lumi.")
+    validar_dados_transacao(
+        valor, str(current[2]), categoria_id, data, usuario_id, conta_id, conn=conn,
+    )
+    if not atualizar_transacao_condicional(
+        conn, transacao_id, usuario_id, valor, categoria_id,
+        limpar_descricao(comentario), data, conta_id, snapshot,
+    ):
+        raise ValueError("A transacao foi alterada depois que a proposta foi criada.")
+    return transacao_id
 
 
 def deletar_transacao_service(transacao_id: int, usuario_id: int) -> bool:

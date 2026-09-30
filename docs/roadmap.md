@@ -572,6 +572,58 @@ proposta estruturada *gerada pela Groq* não foi feito: o parser determinístico
 legítimo captura intenções de escrita antes do provider. Zero chamadas externas
 foram feitas neste gate. Nenhum rollout ocorreu no Neon principal ou Vercel.
 
+### P6.7 — Memória persistente segura
+
+- [x] Histórico de conversas separado de memórias persistentes
+- [x] Conversas e mensagens limitadas, com retomada por identificador opaco e ownership por sessão
+- [x] Exclusão de conversa, limpeza de histórico e cascata transacional sem apagar dados financeiros
+- [x] Memórias apenas por endpoint explícito do usuário, com categorias fechadas e deduplicação por fingerprint
+- [x] Limites de tamanho/quantidade e exclusão individual ou total de memórias
+- [x] Contexto limitado e memórias delimitadas como dados não confiáveis; nenhuma memória altera regras, tools ou confirmações
+- [x] Nenhum reasoning, prompt interno, payload bruto de tool, segredo ou credencial persistido
+- [x] Migração expand-only `d7e8f9a012b3`, round-trip local e `alembic check`
+- [x] Testes de isolamento, deduplicação, prompt injection, limpeza separada e regressão Lumi
+
+Status: **IMPLEMENTADA E VALIDADA LOCALMENTE E EM POSTGRESQL DESCARTÁVEL**
+
+### P6.8 — Refinamento da experiência da Lumi
+
+- [x] Respostas orientadas a linguagem natural, objetividade e formatação financeira pt-BR
+- [x] Mensagens longas apresentadas em blocos e listas escaneáveis
+- [x] Perguntas de desambiguação focadas somente no primeiro dado necessário
+- [x] Cards de criação e edição com revisão clara, comparação antes/depois e estado real da confirmação
+- [x] Feedback distinto para execução, cancelamento, erro, retry e carregamento de conversa
+- [x] Quick actions contextuais limitadas a consultas já suportadas
+- [x] Input protegido contra envio duplicado, Enter/Shift+Enter e foco restaurado
+- [x] Histórico e memória P6.7 preservados, sem novo sistema de persistência
+- [x] Validação visual em 375, 390, 430, 612 e 1440 px, nos temas claro e escuro
+- [x] Gate com 64 testes direcionados, 230 testes completos, typecheck e build
+
+Status: **CONCLUÍDA E VALIDADA LOCALMENTE; SEM ROLLOUT OU ALTERAÇÃO DE PRODUCTION**
+
+### P6.9 — Rollout controlado da Lumi
+
+- [x] Kill switch preservado e rollout server-side fail-closed por modo/allowlist
+- [x] Autorização derivada exclusivamente da sessão autenticada
+- [x] Endpoints de conversa, memória, mensagem e ação protegidos no backend
+- [x] Logs estruturados sem prompt, identidade, segredo ou dado financeiro bruto
+- [x] Lazy loading da rota Lumi para isolar seu bundle
+- [x] Estratégia de rollback por configuração documentada, sem downgrade de schema
+- [x] Gate PostgreSQL descartável P6.6–P6.9
+- [ ] Deployment e smoke test controlado em Preview
+- [ ] Inspeção visual real dos cards em desktop e mobile no Preview
+
+Status: **POSTGRESQL VALIDADO; PREVIEW PENDENTE; PRODUCTION PERMANECE DESLIGADA**
+
+O gate descartável `nivra_lumi_p69_gate` foi executado no endpoint isolado de
+Preview e removido após a auditoria final. Passaram migrations em banco vazio,
+`alembic check`, round-trip da migration de memória, tipos booleanos nativos,
+deduplicação concorrente de memória, criação e edição financeira, replay,
+rollback, concorrência HTTP com 2 e 5 workers, ownership, CSRF, tamper e
+isolamento entre dois usuários fictícios. A execução encontrou e corrigiu duas
+diferenças reais de PostgreSQL: comparação booleana tipada e auditoria
+many-to-one para edições sucessivas da mesma transação.
+
 ## 🔔 PRIORIDADE 7 — NOTIFICAÇÕES INTERNAS
 
 - [ ] `NotificationService` e eventos financeiros
@@ -627,11 +679,8 @@ foram feitas neste gate. Nenhum rollout ocorreu no Neon principal ou Vercel.
 
 ## Próxima tarefa recomendada
 
-**Concluir a Fase A do rollout P6.5 após o checkpoint Git e autorização de
-publicação: aplicar o schema no Neon principal com execução desligada e comparar
-a aplicação publicada com a baseline registrada.**
+**Concluir o smoke test controlado da P6.9 em Preview sem alterar Production.**
 
-A execução de receita e despesa está desligada por padrão. O gate em PostgreSQL
-descartável passou com ressalvas; aplicação de schema e habilitação em produção
-exigem decisões separadas. A próxima ação financeira funcional ainda pendente é a edição
-de transações com confirmação; ela não faz parte da P6.5.
+A execução de receita e despesa permanece desligada por padrão. O PostgreSQL
+descartável já foi validado e removido; o próximo passo é um Preview isolado
+com conta fictícia e allowlist autenticada.

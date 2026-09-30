@@ -28,6 +28,7 @@ class LumiMessageRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     message: str = Field(min_length=1, max_length=2_000)
+    conversation_id: str | None = Field(default=None, min_length=36, max_length=36)
     history: list[LumiHistoryMessage] = Field(
         default_factory=list,
         max_length=MAX_LUMI_HISTORY_MESSAGES,
@@ -55,6 +56,26 @@ class LumiMessageRequest(BaseModel):
         return self
 
 
+class LumiConversationCreateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: str | None = Field(default=None, max_length=160)
+
+
+class LumiMemoryCreateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    category: Literal["preference", "goal", "personal_context"]
+    content: str = Field(min_length=1, max_length=600)
+
+    @field_validator("content")
+    @classmethod
+    def validate_memory_content(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("A memória não pode ficar vazia.")
+        return value.strip()
+
+
 class LumiMessageResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -73,11 +94,15 @@ class LumiActionEntity(BaseModel):
 class LumiActionProposalPayload(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    amount: str | None
-    description: str | None
-    date: str | None
-    account: LumiActionEntity | None
-    category: LumiActionEntity | None
+    amount: str | None = None
+    description: str | None = None
+    date: str | None = None
+    account: LumiActionEntity | None = None
+    category: LumiActionEntity | None = None
+    transaction_id: int | None = None
+    before: dict[str, object] | None = None
+    after: dict[str, object] | None = None
+    changes: list[str] = Field(default_factory=list)
 
 
 class LumiActionConfirmation(BaseModel):
@@ -94,7 +119,7 @@ class LumiActionProposalResponse(BaseModel):
     type: Literal["action_proposal"] = "action_proposal"
     message: str
     tools_used: list[str] = Field(default_factory=list)
-    action_type: Literal["create_expense", "create_income"]
+    action_type: Literal["create_expense", "create_income", "update_transaction"]
     summary: str
     payload: LumiActionProposalPayload
     missing_fields: list[str]
@@ -112,7 +137,7 @@ LumiResponse = Annotated[
 class LumiActionConfirmationResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    action_type: Literal["create_expense", "create_income"]
+    action_type: Literal["create_expense", "create_income", "update_transaction"]
     status: Literal["pending", "confirmed", "cancelled", "expired", "executed"]
     expires_at: datetime
     message: str

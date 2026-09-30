@@ -34,6 +34,8 @@ class LumiActionConfirmationTests(unittest.TestCase):
     def setUp(self):
         self.previous_public_flag = os.environ.get("LUMI_PUBLIC_ENABLED")
         os.environ["LUMI_PUBLIC_ENABLED"] = "true"
+        self.previous_rollout_mode = os.environ.get("LUMI_ROLLOUT_MODE")
+        os.environ["LUMI_ROLLOUT_MODE"] = "all"
         self.previous_flag = os.environ.get("LUMI_ACTION_PROPOSALS_ENABLED")
         self.previous_ttl = os.environ.get("LUMI_ACTION_CONFIRMATION_TTL_SECONDS")
         os.environ["LUMI_ACTION_PROPOSALS_ENABLED"] = "true"
@@ -65,6 +67,10 @@ class LumiActionConfirmationTests(unittest.TestCase):
             os.environ.pop("LUMI_PUBLIC_ENABLED", None)
         else:
             os.environ["LUMI_PUBLIC_ENABLED"] = self.previous_public_flag
+        if self.previous_rollout_mode is None:
+            os.environ.pop("LUMI_ROLLOUT_MODE", None)
+        else:
+            os.environ["LUMI_ROLLOUT_MODE"] = self.previous_rollout_mode
         if self.previous_flag is None:
             os.environ.pop("LUMI_ACTION_PROPOSALS_ENABLED", None)
         else:

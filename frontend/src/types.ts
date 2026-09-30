@@ -436,6 +436,25 @@ export interface LumiMessageResponse {
   tools_used: string[];
 }
 
+export interface LumiConversationSummary {
+  id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LumiConversation extends LumiConversationSummary {
+  messages: Array<{ role: "user" | "assistant"; content: string; status: "completed" | "failed"; created_at: string }>;
+}
+
+export interface LumiMemory {
+  id: string;
+  category: "preference" | "goal" | "personal_context";
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface LumiActionEntity {
   id: number;
   name: string;
@@ -446,7 +465,7 @@ export interface LumiActionProposal {
   execution_enabled: boolean;
   message: string;
   tools_used: string[];
-  action_type: "create_expense" | "create_income";
+  action_type: "create_expense" | "create_income" | "update_transaction";
   summary: string;
   payload: {
     amount: string | null;
@@ -454,6 +473,10 @@ export interface LumiActionProposal {
     date: string | null;
     account: LumiActionEntity | null;
     category: LumiActionEntity | null;
+    transaction_id?: number | null;
+    before?: Record<string, unknown> | null;
+    after?: Record<string, unknown> | null;
+    changes?: string[];
   };
   missing_fields: string[];
   warnings: string[];
@@ -467,7 +490,7 @@ export interface LumiActionProposal {
 export type LumiResponse = LumiMessageResponse | LumiActionProposal;
 
 export interface LumiActionConfirmationResponse {
-  action_type: "create_expense" | "create_income";
+  action_type: "create_expense" | "create_income" | "update_transaction";
   status: "pending" | "confirmed" | "cancelled" | "expired" | "executed";
   expires_at: string;
   message: string;

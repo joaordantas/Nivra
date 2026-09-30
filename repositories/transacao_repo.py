@@ -163,6 +163,85 @@ def buscar_transacao_por_id(transacao_id: int, usuario_id: int) -> tuple | None:
         conn.close()
 
 
+def listar_candidatas_transacao(
+    usuario_id: int,
+    *,
+    descricao: str | None = None,
+    valor: Decimal | None = None,
+    data: str | None = None,
+    tipo: str | None = None,
+) -> list[tuple]:
+    conn = get_connection()
+    try:
+        filtros = ["t.usuario_id = ?"]
+        parametros: list[object] = [usuario_id]
+        if descricao:
+            filtros.append("LOWER(COALESCE(t.comentario, '')) LIKE LOWER(?)")
+            parametros.append(f"%{descricao.strip()}%")
+        if valor is not None:
+            filtros.append("t.valor = ?")
+            parametros.append(valor)
+        if data:
+            filtros.append("t.data = ?")
+            parametros.append(data)
+        if tipo:
+            filtros.append("t.tipo = ?")
+            parametros.append(tipo)
+        return conn.execute(
+            f"""{TRANSACTION_SELECT}
+            WHERE {' AND '.join(filtros)}
+              AND NOT EXISTS (
+                  SELECT 1 FROM transacoes_bancarias tbx
+                  WHERE tbx.transacao_nivra_id = t.id AND tbx.removida_em IS NULL
+              )
+            ORDER BY t.data DESC, t.id DESC""",
+            parametros,
+        ).fetchall()
+    finally:
+        conn.close()
+
+
+def buscar_transacao_por_id_em_conexao(
+    conn: DatabaseConnection, transacao_id: int, usuario_id: int,
+) -> tuple | None:
+    return conn.execute(
+        f"""{TRANSACTION_SELECT}
+        WHERE t.id = ? AND t.usuario_id = ?""",
+        (transacao_id, usuario_id),
+    ).fetchone()
+
+
+def atualizar_transacao_condicional(
+    conn: DatabaseConnection,
+    transacao_id: int,
+    usuario_id: int,
+    valor: Decimal,
+    categoria_id: int | None,
+    comentario: str | None,
+    data: str,
+    conta_id: int | None,
+    snapshot: tuple,
+) -> bool:
+    cursor = conn.execute(
+        """UPDATE transacoes
+        SET valor = ?, categoria_id = ?, comentario = ?, data = ?, conta_id = ?
+        WHERE id = ? AND usuario_id = ?
+          AND valor = ? AND tipo = ?
+          AND categoria_id IS NOT DISTINCT FROM ?
+          AND comentario IS NOT DISTINCT FROM ?
+          AND data = ?
+          AND conta_id IS NOT DISTINCT FROM ?
+          AND parcelamento_id IS NULL
+          AND NOT EXISTS (
+              SELECT 1 FROM transacoes_bancarias tbx
+              WHERE tbx.transacao_nivra_id = transacoes.id AND tbx.removida_em IS NULL
+          )""",
+        (valor, categoria_id, comentario, data, conta_id, transacao_id, usuario_id,
+         snapshot[1], snapshot[2], snapshot[3], snapshot[5], snapshot[6], snapshot[7]),
+    )
+    return cursor.rowcount == 1
+
+
 def buscar_parcelamento_da_transacao(
     transacao_id: int, usuario_id: int
 ) -> tuple[int, int] | None:

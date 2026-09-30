@@ -68,6 +68,11 @@ def _criar_engine(url: str) -> Engine:
             poolclass=NullPool,
             connect_args={"check_same_thread": False},
         )
+    connect_args = (
+        {"timeout": 10, "ssl_context": True}
+        if url.startswith("postgresql+pg8000://")
+        else {"connect_timeout": 10}
+    )
     return create_engine(
         url,
         future=True,
@@ -76,7 +81,7 @@ def _criar_engine(url: str) -> Engine:
         pool_size=1,
         max_overflow=2,
         pool_timeout=10,
-        connect_args={"connect_timeout": 10},
+        connect_args=connect_args,
     )
 
 

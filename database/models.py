@@ -98,9 +98,8 @@ lumi_action_confirmations = Table(
     Column("cancelado_em", DateTime(timezone=True)),
     Column("executed_transaction_id", Integer),
     Column("executed_at", DateTime(timezone=True)),
-    UniqueConstraint("executed_transaction_id", name="uq_lumi_action_confirmations_executed_transaction_id"),
     CheckConstraint(
-        "action_type IN ('create_expense', 'create_income')",
+        "action_type IN ('create_expense', 'create_income', 'update_transaction')",
         name="ck_lumi_action_confirmations_type",
     ),
     CheckConstraint(
@@ -112,6 +111,55 @@ lumi_action_confirmations = Table(
         name="ck_lumi_action_confirmations_execution",
     ),
 )
+Index(
+    "uq_lumi_action_confirmations_created_transaction_id",
+    lumi_action_confirmations.c.executed_transaction_id,
+    unique=True,
+    postgresql_where=lumi_action_confirmations.c.action_type.in_(("create_expense", "create_income")),
+    sqlite_where=lumi_action_confirmations.c.action_type.in_(("create_expense", "create_income")),
+)
+
+lumi_conversations = Table(
+    "lumi_conversations", metadata,
+    Column("id", Integer, primary_key=True),
+    Column("public_id", String(36), nullable=False, unique=True),
+    Column("usuario_id", ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False),
+    Column("titulo", String(160)),
+    Column("criada_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    Column("atualizada_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
+)
+Index("ix_lumi_conversations_user_updated", lumi_conversations.c.usuario_id, lumi_conversations.c.atualizada_em)
+
+lumi_messages = Table(
+    "lumi_messages", metadata,
+    Column("id", Integer, primary_key=True),
+    Column("conversation_id", ForeignKey("lumi_conversations.id", ondelete="CASCADE"), nullable=False),
+    Column("role", String(16), nullable=False),
+    Column("content", Text, nullable=False),
+    Column("status", String(16), nullable=False, server_default="completed"),
+    Column("criada_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    CheckConstraint("role IN ('user', 'assistant')", name="ck_lumi_messages_role"),
+    CheckConstraint("status IN ('completed', 'failed')", name="ck_lumi_messages_status"),
+)
+Index("ix_lumi_messages_conversation_created", lumi_messages.c.conversation_id, lumi_messages.c.criada_em, lumi_messages.c.id)
+
+lumi_memories = Table(
+    "lumi_memories", metadata,
+    Column("id", Integer, primary_key=True),
+    Column("public_id", String(36), nullable=False, unique=True),
+    Column("usuario_id", ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False),
+    Column("categoria", String(32), nullable=False),
+    Column("conteudo", String(600), nullable=False),
+    Column("fingerprint", String(64), nullable=False),
+    Column("origem", String(32), nullable=False, server_default="explicit_user"),
+    Column("ativo", Boolean, nullable=False, server_default=true()),
+    Column("criada_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    Column("atualizada_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    CheckConstraint("categoria IN ('preference', 'goal', 'personal_context')", name="ck_lumi_memories_category"),
+    CheckConstraint("origem = 'explicit_user'", name="ck_lumi_memories_origin"),
+    UniqueConstraint("usuario_id", "fingerprint", name="uq_lumi_memories_user_fingerprint"),
+)
+Index("ix_lumi_memories_user_active", lumi_memories.c.usuario_id, lumi_memories.c.ativo, lumi_memories.c.atualizada_em)
 Index(
     "ix_lumi_action_confirmations_user_status_expiry",
     lumi_action_confirmations.c.usuario_id,

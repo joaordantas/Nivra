@@ -1,4 +1,4 @@
-import { Bot, RefreshCw, ShieldCheck, Sparkles } from "lucide-react";
+import { Bot, Plus, RefreshCw, ShieldCheck, Sparkles, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { LumiComposer } from "../components/assistant/LumiComposer";
@@ -7,7 +7,7 @@ import { Button } from "../components/ui/Button";
 import { Feedback } from "../components/ui/Feedback";
 import { PageHeader } from "../components/ui/PageHeader";
 import { ApiError, api } from "../services/api";
-import type { LumiActionConfirmationResponse, LumiActionProposal, LumiHistoryMessage } from "../types";
+import type { LumiActionConfirmationResponse, LumiActionProposal, LumiConversationSummary, LumiHistoryMessage } from "../types";
 
 const MAX_MESSAGE_LENGTH = 2_000;
 const MAX_HISTORY_MESSAGES = 6;
@@ -29,9 +29,18 @@ interface LumiRequestError {
 
 let messageSequence = 0;
 
-function newMessage(role: LumiConversationMessage["role"], content: string, proposal?: LumiActionProposal): LumiConversationMessage {
+function newMessage(role: LumiConversationMessage["role"], content: string, proposal?: LumiActionProposal, quickActions?: string[]): LumiConversationMessage {
   messageSequence += 1;
-  return { id: `${role}-${messageSequence}`, role, content, proposal };
+  return { id: `${role}-${messageSequence}`, role, content, proposal, quickActions };
+}
+
+function contextualActions(prompt: string, toolsUsed: string[]): string[] {
+  const normalized = prompt.toLocaleLowerCase("pt-BR");
+  if (normalized.includes("cartão") || normalized.includes("fatura")) return ["Como estão meus cartões?", "Quais faturas vencem primeiro?"];
+  if (normalized.includes("categoria") || normalized.includes("alimentação") || normalized.includes("gasto")) return ["Ver maiores gastos", "Comparar com o mês passado", "Ver transações deste mês"];
+  if (normalized.includes("projeção") || normalized.includes("mês")) return ["Comparar com o mês passado", "Mostrar movimentações fora do padrão"];
+  if (toolsUsed.length > 0) return ["Detalhar este resultado", "Ver este mês"];
+  return [];
 }
 
 function buildEphemeralHistory(messages: LumiConversationMessage[]): LumiHistoryMessage[] {
@@ -107,12 +116,21 @@ export function LumiPage() {
   const [requestError, setRequestError] = useState<LumiRequestError | null>(null);
   const [rateLimitSeconds, setRateLimitSeconds] = useState(0);
   const [actionsEnabled, setActionsEnabled] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [conversations, setConversations] = useState<LumiConversationSummary[]>([]);
+  const [memories, setMemories] = useState<Array<{ id: string; category: string; content: string }>>([]);
+  const [isLoadingConversation, setIsLoadingConversation] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef(true);
   const nearBottomRef = useRef(true);
   const sendingRef = useRef(false);
+
+  useEffect(() => {
+    void api.listLumiConversations().then(setConversations).catch(() => undefined);
+    void api.listLumiMemories().then(setMemories).catch(() => undefined);
+  }, []);
 
   useEffect(() => () => {
     mountedRef.current = false;
@@ -157,10 +175,22 @@ export function LumiPage() {
 
     try {
       const history = buildEphemeralHistory(messages);
-      const response = await api.sendLumiMessage(message, history, controller.signal);
+      let activeConversationId = conversationId;
+      if (!activeConversationId) {
+        const created = await api.createLumiConversation(message);
+        activeConversationId = created.id;
+        setConversationId(created.id);
+        setConversations((current) => [created, ...current]);
+      }
+      const response = await api.sendLumiMessage(message, history, controller.signal, activeConversationId);
       if (!mountedRef.current) return;
       if (response.type === "action_proposal" && response.execution_enabled) setActionsEnabled(true);
-      setMessages((current) => [...current, newMessage("assistant", response.message, response.type === "action_proposal" ? response : undefined)]);
+      setMessages((current) => [...current, newMessage(
+        "assistant",
+        response.message,
+        response.type === "action_proposal" ? response : undefined,
+        response.type === "message" ? contextualActions(message, response.tools_used).slice(0, 3) : undefined,
+      )]);
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") return;
       if (!mountedRef.current) return;
@@ -178,6 +208,40 @@ export function LumiPage() {
 
   function submitCurrentMessage() {
     void sendMessage(input);
+  }
+
+  async function startNewConversation() {
+    if (isSending) return;
+    const created = await api.createLumiConversation();
+    setConversationId(created.id);
+    setConversations((current) => [created, ...current]);
+    setMessages([]);
+    setRequestError(null);
+  }
+
+  async function openConversation(item: LumiConversationSummary) {
+    if (isSending) return;
+    setIsLoadingConversation(true);
+    try {
+      const conversation = await api.getLumiConversation(item.id);
+      setConversationId(item.id);
+      setMessages(conversation.messages.map((message) => newMessage(message.role, message.content)));
+      setRequestError(null);
+    } catch (error) {
+      setRequestError(friendlyError(error, ""));
+    } finally {
+      setIsLoadingConversation(false);
+    }
+  }
+
+  async function removeConversation(item: LumiConversationSummary) {
+    if (!window.confirm(`Excluir a conversa “${item.title}”? As memórias da Lumi serão mantidas.`)) return;
+    await api.deleteLumiConversation(item.id);
+    setConversations((current) => current.filter((conversation) => conversation.id !== item.id));
+    if (conversationId === item.id) {
+      setConversationId(null);
+      setMessages([]);
+    }
   }
 
   function retryFailedMessage() {
@@ -220,12 +284,35 @@ export function LumiPage() {
     <div className="lumi-page">
       <PageHeader
         action={<span className="lumi-read-only-badge"><ShieldCheck aria-hidden="true" size={15} />{actionsEnabled ? "Lumi • Alpha · ações com confirmação" : "Lumi • Alpha · consultas"}</span>}
-        description="A Lumi está em desenvolvimento. Consulte seus dados financeiros; ações podem estar desabilitadas e, quando disponíveis, exigem confirmação explícita. O contexto da conversa é temporário."
+        description="Converse sobre suas finanças com dados atuais do Nivra. Ações disponíveis sempre exigem sua confirmação explícita."
         eyebrow="Assistente financeira"
         title="Lumi"
       />
 
       <section className="lumi-shell" aria-label="Conversa com a Lumi">
+        <aside className="lumi-conversations" aria-label="Conversas recentes">
+          <div className="lumi-conversations-heading">
+            <strong>Conversas</strong>
+            <Button aria-label="Nova conversa" onClick={() => void startNewConversation()} type="button" variant="secondary"><Plus size={15} /></Button>
+          </div>
+          {conversations.map((conversation) => (
+            <div className={`lumi-conversation-row${conversation.id === conversationId ? " is-active" : ""}`} key={conversation.id}>
+              <button onClick={() => void openConversation(conversation)} type="button">{conversation.title}</button>
+              <button aria-label={`Excluir ${conversation.title}`} onClick={() => void removeConversation(conversation)} type="button"><Trash2 size={14} /></button>
+            </div>
+          ))}
+          {memories.length > 0 ? (
+            <div className="lumi-memories-panel">
+              <strong>Memórias salvas</strong>
+              {memories.map((memory) => (
+                <div className="lumi-memory-row" key={memory.id}>
+                  <span title={memory.content}>{memory.content}</span>
+                  <button aria-label="Excluir memória" onClick={() => void api.deleteLumiMemory(memory.id).then(() => setMemories((current) => current.filter((item) => item.id !== memory.id)))} type="button"><Trash2 size={13} /></button>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </aside>
         <div
           aria-live="polite"
           aria-relevant="additions text"
@@ -242,7 +329,7 @@ export function LumiPage() {
                 A Lumi consulta gastos, receitas, evolução financeira, maiores despesas, cartões,
                 projeções, recorrências e movimentações fora do padrão.
               </p>
-              <span>O contexto da conversa desaparece ao recarregar a página. A disponibilidade de ações depende da configuração do ambiente.</span>
+                <span>As conversas ficam salvas para você. Memórias só são salvas quando você pedir explicitamente.</span>
               <div className="lumi-suggestions" aria-label="Sugestões de perguntas">
                 {SUGGESTIONS.map((suggestion) => (
                   <button
@@ -263,15 +350,16 @@ export function LumiPage() {
                 message={message}
                 onCancelProposal={(messageId, confirmationId) => void handleProposalOperation(messageId, confirmationId, "cancel")}
                 onConfirmProposal={(messageId, confirmationId) => void handleProposalOperation(messageId, confirmationId, "confirm")}
+                onQuickAction={(prompt) => void sendMessage(prompt)}
               />
             ))
           )}
 
-          {isSending ? (
+          {isSending || isLoadingConversation ? (
             <div className="lumi-processing" role="status">
               <span className="lumi-processing-icon" aria-hidden="true"><Bot size={17} /></span>
               <span><i /><i /><i /></span>
-              <span>Analisando suas finanças...</span>
+              <span>{isLoadingConversation ? "Carregando conversa..." : "Analisando com dados atualizados..."}</span>
             </div>
           ) : null}
         </div>
@@ -294,7 +382,7 @@ export function LumiPage() {
         ) : null}
 
         <LumiComposer
-          disabled={isSending}
+          disabled={isSending || isLoadingConversation}
           inputRef={inputRef}
           maxLength={MAX_MESSAGE_LENGTH}
           onChange={setInput}
