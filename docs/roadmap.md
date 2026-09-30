@@ -420,20 +420,21 @@ Status: **CONCLUÍDA E VALIDADA; ANÁLISE SOMENTE LEITURA E SEM IA GENERATIVA**
 ## ✦ PRIORIDADE 6 — LUMI
 
 Lumi é a assistente financeira inteligente da Nivra. A orquestração, a
-interface e um contexto curto e efêmero estão disponíveis. Consultas permanecem
-somente leitura; receita e despesa podem ser executadas após confirmação explícita
-somente quando duas flags independentes forem habilitadas. A execução permanece
-desligada por padrão e a memória persistente continua pendente.
+interface, o histórico de conversas e as memórias explícitas estão disponíveis.
+Consultas usam apenas tools de leitura; criação de receita ou despesa e edição
+de transação exigem proposta e confirmação explícita, além de flags server-side
+independentes. A implementação está tecnicamente concluída, mas o acesso público,
+as propostas e a execução permanecem desligados em Production.
 
-- [x] Consultas financeiras em linguagem natural com contexto efêmero e somente leitura
-- [-] Fundação de propostas para criação de receitas e despesas com confirmação explícita
-- [x] Execução controlada de receita e despesa após confirmação explícita, validada localmente
-- [ ] Edição de transações com confirmação
+- [x] Consultas financeiras em linguagem natural com contexto limitado e somente leitura
+- [x] Fundação de propostas para criação de receitas e despesas com confirmação explícita
+- [x] Execução controlada de receita e despesa após confirmação explícita
+- [x] Edição de transações com confirmação explícita
 - [ ] Ações sobre categorias, orçamentos e metas
 - [x] Consultas de contas, cartões e faturas pelo contexto financeiro consolidado
 - [x] Tool calling somente leitura para os services existentes
 - [x] Contexto financeiro estruturado
-- [ ] Memória persistente de preferências e histórico de conversa
+- [x] Memória persistente explícita e histórico de conversa isolados por usuário
 - [x] Garantia arquitetural e testes de que a IA não acessa SQL ou repositories diretamente
 
 ### Preparação técnica da Lumi
@@ -451,7 +452,7 @@ desligada por padrão e a memória persistente continua pendente.
 - [x] Perguntas não triviais exigem tool antes de qualquer resposta financeira
 - [x] Loop sequencial com validação de argumentos e limite rígido de quatro tools por mensagem
 - [x] Instruções de sistema versionadas e proteção contra prompt injection nos dados
-- [x] Execução com `store=false` e contexto efêmero limitado, sem persistência de conversa
+- [x] Execução do provider com `store=false`; histórico e memórias persistidos somente no backend da Nivra
 - [x] Timeout, limite de saída, rate limit próprio e métricas sanitizadas
 - [x] Ausência do provider isolada do restante da aplicação
 - [x] Interface de conversa responsiva na rota `/lumi`
@@ -572,6 +573,18 @@ proposta estruturada *gerada pela Groq* não foi feito: o parser determinístico
 legítimo captura intenções de escrita antes do provider. Zero chamadas externas
 foram feitas neste gate. Nenhum rollout ocorreu no Neon principal ou Vercel.
 
+### P6.6 — Edição segura de transações com confirmação explícita
+
+- [x] Busca determinística de transações restrita ao usuário autenticado
+- [x] Proposta fechada de edição com snapshot antes/depois e confirmação explícita
+- [x] Nenhuma tool de escrita exposta ao provider
+- [x] Revalidação de ownership e estado atual no instante da execução
+- [x] Execução transacional, idempotente e protegida contra concorrência
+- [x] Replay retorna a mesma transação sem duplicar a mutação
+- [x] Migration expand-only `c6d7e8f9a012` e cobertura de conflito, tamper e rollback
+
+Status: **CONCLUÍDA E VALIDADA LOCALMENTE E EM POSTGRESQL DESCARTÁVEL**
+
 ### P6.7 — Memória persistente segura
 
 - [x] Histórico de conversas separado de memórias persistentes
@@ -634,6 +647,20 @@ dados financeiros brutos. Os cards passaram em desktop claro/escuro e em 375,
 `LUMI_PUBLIC_ENABLED=false`, `LUMI_ROLLOUT_MODE=off`, propostas desligadas e
 execução desligada. Production não foi alterada.
 
+### P6 — Gate Final Geral
+
+- [x] Arquitetura P6.1–P6.9 auditada sem acesso direto da IA a SQL ou repositories
+- [x] Providers OpenAI e Groq isolados, com seleção explícita e sem fallback automático
+- [x] Auth, CSRF, ownership, multiusuário, prompt injection e schemas fechados validados
+- [x] Proposta, confirmação, execução, edição, cancelamento, expiração, replay e concorrência validados
+- [x] Histórico e memórias explícitas com isolamento, limites, deduplicação e exclusão separada
+- [x] PostgreSQL/Neon no head `d7e8f9a012b3` e `alembic check` sem operações pendentes
+- [x] Preview validado com provider real e dados fictícios; kill switch restaurado ao final
+- [x] Production revalidada em modo somente leitura com acesso público, propostas e execução desligados
+- [x] Suíte completa com 238 testes, 82 testes dirigidos, build, typecheck e compilação Python aprovados
+
+Status: **PRIORIDADE 6 TECNICAMENTE CONCLUÍDA; ROLLOUT PÚBLICO DEPENDE DE DECISÃO HUMANA**
+
 ## 🔔 PRIORIDADE 7 — NOTIFICAÇÕES INTERNAS
 
 - [ ] `NotificationService` e eventos financeiros
@@ -689,8 +716,8 @@ execução desligada. Production não foi alterada.
 
 ## Próxima tarefa recomendada
 
-**Executar o P6 — Gate Final Geral sem reabrir o rollout da Lumi.**
+**Prioridade 7 — Notificações Internas.**
 
-A P6.9 foi encerrada após o smoke real no Preview. A execução de receita e
-despesa voltou a ficar desligada por configuração, e Production permaneceu
-intacta e fail-closed.
+A Prioridade 6 foi tecnicamente concluída. O rollout público da Lumi não foi
+autorizado: Preview e Production permanecem fail-closed, com propostas e
+execução financeira desligadas.

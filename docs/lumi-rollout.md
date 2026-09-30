@@ -90,3 +90,16 @@ Estado deixado após o smoke:
 - Preview: `LUMI_ACTION_PROPOSALS_ENABLED=false`;
 - Preview: `LUMI_ACTION_EXECUTION_ENABLED=false`;
 - Production: permaneceu desligada e não foi alterada.
+
+## Gate Final Geral da P6
+
+Em 30 de setembro de 2026, a implementação P6.1–P6.9 passou pela auditoria
+final de arquitetura, segurança, integridade financeira, persistência, UX,
+PostgreSQL e operação. Foram aprovados 238 testes na suíte completa e 82 testes
+dirigidos, além de build/typecheck, compilação Python e `alembic check` no head
+`d7e8f9a012b3`.
+
+O encerramento é técnico e não autoriza rollout público. Production permanece
+com `LUMI_PUBLIC_ENABLED=false`, `LUMI_ACTION_PROPOSALS_ENABLED=false` e
+`LUMI_ACTION_EXECUTION_ENABLED=false`. Qualquer mudança desse estado exige uma
+decisão humana posterior e deve seguir a sequência e o rollback deste documento.

@@ -84,9 +84,9 @@ A aplicação já possui telas funcionais, mas as capturas públicas ainda não 
 
 A aplicação está disponível no [domínio de produção confirmado na Vercel](https://nivra-finance.vercel.app).
 
-## ✦ Lumi — em desenvolvimento
+## ✦ Lumi — tecnicamente concluída, rollout público pendente
 
-**Lumi** é a assistente financeira em desenvolvimento da Nivra. Consultas em linguagem natural usam services financeiros com ferramentas somente leitura. A conversa mantém apenas um contexto curto enquanto a página está aberta, sem memória persistente. A criação de receita ou despesa após confirmação explícita foi implementada localmente, mas sua execução permanece desligada por padrão e ainda não foi liberada na Vercel.
+**Lumi** é a assistente financeira da Nivra. Consultas em linguagem natural usam services financeiros por uma allowlist de ferramentas somente leitura. Conversas podem ser retomadas e memórias só são gravadas por ação explícita do usuário, sempre isoladas por conta. Criação de receita ou despesa e edição de transação exigem proposta estruturada e confirmação HTTP; as flags públicas, de propostas e de execução permanecem desligadas em Preview e Production após o gate técnico.
 
 Exemplos disponíveis no modo de consulta:
 
@@ -97,7 +97,7 @@ Quanto da minha próxima fatura já está comprometido?
 Quais despesas recorrentes estão próximas?
 ```
 
-A interface fica em `/lumi`, exige sessão segura e envia a pergunta com até três turnos completos de contexto temporário para a API da Nivra. Esse contexto é limitado e descartado ao recarregar a página. O smoke com o provider real ainda depende de `OPENAI_API_KEY` configurada no ambiente; a validação local usa providers falsos e não representa esse gate externo como concluído.
+A interface fica em `/lumi`, exige sessão segura e usa contexto limitado de conversa e memória persistida no backend. O smoke real foi concluído no Preview com Groq, incluindo consulta com tool financeira, proposta, cancelamento, expiração, criação, edição e replay idempotente. A integração OpenAI permanece disponível por seleção explícita, sem fallback automático; a tentativa externa encontrou HTTP 429 por indisponibilidade de créditos. A abertura ao público continua dependendo de decisão humana de rollout.
 
 ## Arquitetura
 
@@ -152,7 +152,7 @@ Detalhes estão em [Arquitetura](docs/architecture.md).
 | Orçamentos e metas | Planejado |
 | Open Finance Sandbox | Demonstração guiada para testers disponível |
 | Insights financeiros | Planejado |
-| Lumi | Consultas e proposta de receita/despesa com confirmação; execução local validada, desligada por padrão |
+| Lumi | Prioridade tecnicamente concluída; rollout público e execução em Production desligados |
 | Notificações e WhatsApp | Planejado |
 
 Consulte o [roadmap público](docs/roadmap.md) para todos os marcos.
