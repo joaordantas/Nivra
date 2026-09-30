@@ -610,10 +610,10 @@ Status: **CONCLUÍDA E VALIDADA LOCALMENTE; SEM ROLLOUT OU ALTERAÇÃO DE PRODUC
 - [x] Lazy loading da rota Lumi para isolar seu bundle
 - [x] Estratégia de rollback por configuração documentada, sem downgrade de schema
 - [x] Gate PostgreSQL descartável P6.6–P6.9
-- [ ] Deployment e smoke test controlado em Preview
-- [ ] Inspeção visual real dos cards em desktop e mobile no Preview
+- [x] Deployment e smoke test controlado em Preview
+- [x] Inspeção visual real dos cards em desktop e mobile no Preview
 
-Status: **POSTGRESQL VALIDADO; PREVIEW PENDENTE; PRODUCTION PERMANECE DESLIGADA**
+Status: **CONCLUÍDA E VALIDADA EM PREVIEW; PRODUCTION PERMANECE DESLIGADA**
 
 O gate descartável `nivra_lumi_p69_gate` foi executado no endpoint isolado de
 Preview e removido após a auditoria final. Passaram migrations em banco vazio,
@@ -623,6 +623,16 @@ rollback, concorrência HTTP com 2 e 5 workers, ownership, CSRF, tamper e
 isolamento entre dois usuários fictícios. A execução encontrou e corrigiu duas
 diferenças reais de PostgreSQL: comparação booleana tipada e auditoria
 many-to-one para edições sucessivas da mesma transação.
+
+O smoke operacional P6.9B foi concluído no branch isolado
+`codex/p6-9b-preview`, com provider Groq, rollout interno para uma única conta
+fictícia e uma segunda conta recusada pelo backend. Foram validados consulta
+com tool financeira, proposta sem execução, cancelamento, expiração segura,
+criação de despesa, edição, replay idempotente, erro 404 sanitizado e logs sem
+dados financeiros brutos. Os cards passaram em desktop claro/escuro e em 375,
+390 e 430 px sem overflow horizontal. Ao final, o Preview voltou para
+`LUMI_PUBLIC_ENABLED=false`, `LUMI_ROLLOUT_MODE=off`, propostas desligadas e
+execução desligada. Production não foi alterada.
 
 ## 🔔 PRIORIDADE 7 — NOTIFICAÇÕES INTERNAS
 
@@ -679,8 +689,8 @@ many-to-one para edições sucessivas da mesma transação.
 
 ## Próxima tarefa recomendada
 
-**Concluir o smoke test controlado da P6.9 em Preview sem alterar Production.**
+**Executar o P6 — Gate Final Geral sem reabrir o rollout da Lumi.**
 
-A execução de receita e despesa permanece desligada por padrão. O PostgreSQL
-descartável já foi validado e removido; o próximo passo é um Preview isolado
-com conta fictícia e allowlist autenticada.
+A P6.9 foi encerrada após o smoke real no Preview. A execução de receita e
+despesa voltou a ficar desligada por configuração, e Production permaneceu
+intacta e fail-closed.

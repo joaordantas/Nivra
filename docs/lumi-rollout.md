@@ -67,3 +67,26 @@ tool, proposta, confirmação, execução, cancelamento e recusa de acesso. Os
 eventos incluem resultado, duração e códigos de erro sanitizados. Eles não
 incluem prompt, resposta, IDs de usuário, tokens, cookies, connection strings
 ou valores financeiros.
+
+## Evidência operacional P6.9B
+
+Em 30 de setembro de 2026, o rollout foi exercitado somente no Preview do
+branch `codex/p6-9b-preview` com duas contas fictícias. A conta autorizada
+passou por consulta com provider e tool financeira, proposta sem execução,
+cancelamento, criação de despesa, edição e replay idempotente. A conta fora da
+allowlist recebeu capability negativa e recusa 503 na mensagem. Um identificador
+de confirmação inexistente retornou 404 sanitizado.
+
+Os logs confirmaram provider Groq com resposta 200, uma tool call por consulta,
+execução de despesa e edição bem-sucedidas, replay apontando para a mesma
+transação, cancelamento bem-sucedido e rollback de proposta expirada. A
+interface foi inspecionada em desktop claro/escuro e nos viewports 375, 390 e
+430 px, sem overflow horizontal.
+
+Estado deixado após o smoke:
+
+- Preview: `LUMI_PUBLIC_ENABLED=false`;
+- Preview: `LUMI_ROLLOUT_MODE=off`;
+- Preview: `LUMI_ACTION_PROPOSALS_ENABLED=false`;
+- Preview: `LUMI_ACTION_EXECUTION_ENABLED=false`;
+- Production: permaneceu desligada e não foi alterada.
