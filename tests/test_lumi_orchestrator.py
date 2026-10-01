@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import unittest
 from datetime import date
@@ -727,6 +728,26 @@ class LumiEndpointTests(unittest.TestCase):
         health = self.client.get("/api/health")
         self.assertEqual(lumi.status_code, 503)
         self.assertEqual(health.status_code, 200)
+
+    @patch("backend.routers.lumi.list_memories", side_effect=RuntimeError("sensitive details"))
+    def test_persistence_runtime_error_is_logged_and_sanitized(self, _list_memories):
+        authenticate_existing_user(self.client, 1)
+        logger = logging.getLogger("nivra.lumi")
+        was_disabled = logger.disabled
+        logger.disabled = False
+        try:
+            with self.assertLogs("nivra.lumi", level="INFO") as captured:
+                response = self.client.get("/api/lumi/memories")
+        finally:
+            logger.disabled = was_disabled
+
+        self.assertEqual(response.status_code, 503)
+        self.assertNotIn("sensitive details", response.text)
+        record = "\n".join(captured.output)
+        self.assertIn('"event":"persistence"', record)
+        self.assertIn('"operation":"list_memories"', record)
+        self.assertIn('"error_code":"RuntimeError"', record)
+        self.assertNotIn("sensitive details", record)
 
     def test_lumi_conversation_is_read_only_and_user_scoped(self):
         own_account = criar_conta_service("Ana", "digital", 100, 1)

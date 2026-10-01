@@ -78,6 +78,19 @@ def _require_lumi_access(current_user: CurrentUser) -> None:
         raise HTTPException(status_code=503, detail="A Lumi está em desenvolvimento.")
 
 
+def _persistence_unavailable(operation: str, exc: Exception) -> HTTPException:
+    log_lumi_event(
+        "persistence",
+        outcome="error",
+        error_code=type(exc).__name__,
+        operation=operation,
+    )
+    return HTTPException(
+        status_code=503,
+        detail="A persistência da Lumi está temporariamente indisponível.",
+    )
+
+
 @router.get("/capabilities")
 def get_lumi_capabilities(current_user: CurrentUser) -> dict[str, bool]:
     return {"public_enabled": lumi_access_allowed(current_user.id)}
@@ -86,13 +99,19 @@ def get_lumi_capabilities(current_user: CurrentUser) -> dict[str, bool]:
 @router.get("/conversations")
 def get_lumi_conversations(current_user: CurrentUser) -> list[dict]:
     _require_lumi_access(current_user)
-    return list_conversations(current_user.id)
+    try:
+        return list_conversations(current_user.id)
+    except Exception as exc:
+        raise _persistence_unavailable("list_conversations", exc) from exc
 
 
 @router.post("/conversations", status_code=status.HTTP_201_CREATED)
 def post_lumi_conversation(payload: LumiConversationCreateRequest, current_user: CurrentUserCsrf) -> dict:
     _require_lumi_access(current_user)
-    return create_conversation(current_user.id, payload.title)
+    try:
+        return create_conversation(current_user.id, payload.title)
+    except Exception as exc:
+        raise _persistence_unavailable("create_conversation", exc) from exc
 
 
 @router.get("/conversations/{conversation_id}")
@@ -102,6 +121,8 @@ def get_lumi_conversation(conversation_id: str, current_user: CurrentUser) -> di
         return get_conversation(current_user.id, conversation_id)
     except LumiPersistenceError as exc:
         raise HTTPException(status_code=404, detail="Conversa não encontrada.") from exc
+    except Exception as exc:
+        raise _persistence_unavailable("get_conversation", exc) from exc
 
 
 @router.delete("/conversations/{conversation_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -111,20 +132,28 @@ def remove_lumi_conversation(conversation_id: str, current_user: CurrentUserCsrf
         delete_conversation(current_user.id, conversation_id)
     except LumiPersistenceError as exc:
         raise HTTPException(status_code=404, detail="Conversa não encontrada.") from exc
+    except Exception as exc:
+        raise _persistence_unavailable("delete_conversation", exc) from exc
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.delete("/conversations", status_code=status.HTTP_204_NO_CONTENT)
 def remove_lumi_history(current_user: CurrentUserCsrf) -> Response:
     _require_lumi_access(current_user)
-    clear_history(current_user.id)
+    try:
+        clear_history(current_user.id)
+    except Exception as exc:
+        raise _persistence_unavailable("clear_history", exc) from exc
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/memories")
 def get_lumi_memories(current_user: CurrentUser) -> list[dict]:
     _require_lumi_access(current_user)
-    return list_memories(current_user.id)
+    try:
+        return list_memories(current_user.id)
+    except Exception as exc:
+        raise _persistence_unavailable("list_memories", exc) from exc
 
 
 @router.post("/memories", status_code=status.HTTP_201_CREATED)
@@ -134,19 +163,27 @@ def post_lumi_memory(payload: LumiMemoryCreateRequest, current_user: CurrentUser
         return create_memory(current_user.id, payload.category, payload.content)
     except LumiPersistenceError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except Exception as exc:
+        raise _persistence_unavailable("create_memory", exc) from exc
 
 
 @router.delete("/memories/{memory_id}", status_code=status.HTTP_204_NO_CONTENT)
 def remove_lumi_memory(memory_id: str, current_user: CurrentUserCsrf) -> Response:
     _require_lumi_access(current_user)
-    delete_memory(current_user.id, memory_id)
+    try:
+        delete_memory(current_user.id, memory_id)
+    except Exception as exc:
+        raise _persistence_unavailable("delete_memory", exc) from exc
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.delete("/memories", status_code=status.HTTP_204_NO_CONTENT)
 def remove_lumi_memories(current_user: CurrentUserCsrf) -> Response:
     _require_lumi_access(current_user)
-    clear_memories(current_user.id)
+    try:
+        clear_memories(current_user.id)
+    except Exception as exc:
+        raise _persistence_unavailable("clear_memories", exc) from exc
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
