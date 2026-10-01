@@ -27,7 +27,7 @@ from services.lumi_tool_service import (
 from services.lumi_observability import log_lumi_event
 
 
-LUMI_INSTRUCTIONS_VERSION = "p6-post-gate-v1"
+LUMI_INSTRUCTIONS_VERSION = "p6-post-gate-v2"
 DEFAULT_MAX_LUMI_TOOL_CALLS = 4
 MAX_LUMI_TOOL_OUTPUT_CHARS = 60_000
 
@@ -187,6 +187,24 @@ def _pode_responder_sem_tool(message: str) -> bool:
         "remover ", "transfira ", "transferir ", "pague ", "pagar ",
     )
     if normalized.startswith(write_prefixes):
+        return True
+
+    # Memórias explícitas já chegam ao modelo no contexto confiável do servidor.
+    # Elas podem ser lembradas sem uma consulta financeira, desde que a pergunta
+    # não misture memória pessoal com saldo, gastos ou outros dados financeiros.
+    memory_tokens = {
+        "apelido", "lembra", "lembrar", "memoria", "memorias", "meta", "metas",
+        "objetivo", "objetivos", "preferencia", "preferencias", "recorda", "recordar",
+    }
+    financial_tokens = {
+        "cartao", "cartoes", "conta", "contas", "despesa", "despesas", "dinheiro",
+        "entrada", "entradas", "fatura", "faturas", "gastei", "gasto", "gastos",
+        "movimentacao", "movimentacoes", "parcelamento", "parcelamentos", "receita",
+        "receitas", "renda", "saldo", "saldos", "saida", "saidas", "transacao",
+        "transacoes", "transferencia", "transferencias", "venda", "vendas",
+    }
+    token_set = set(tokens)
+    if token_set & memory_tokens and not token_set & financial_tokens:
         return True
 
     # Tentativas explícitas de trocar a identidade também devem ser recusadas

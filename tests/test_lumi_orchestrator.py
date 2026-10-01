@@ -119,6 +119,32 @@ class LumiOrchestratorUnitTests(unittest.TestCase):
         )
         self.assertTrue(provider.requests[0]["require_tool"])
 
+    def test_personal_memory_question_does_not_require_financial_tool(self):
+        provider = FakeLLMProvider([LumiModelResponse(text="Seu apelido fictício é Aurora.")])
+        result = LumiOrchestrator(provider).respond(
+            "Qual apelido fictício você lembra para este teste?",
+            usuario_id=1,
+            safety_identifier="opaque",
+            memories=("[personal_context] Meu apelido fictício é Aurora.",),
+        )
+
+        self.assertEqual(result.message, "Seu apelido fictício é Aurora.")
+        self.assertFalse(provider.requests[0]["require_tool"])
+        self.assertIn("Aurora", provider.requests[0]["instructions"])
+
+    def test_memory_word_with_financial_question_still_requires_tool(self):
+        provider = FakeLLMProvider([
+            tool_response(),
+            LumiModelResponse(text="Seu saldo atual é R$ 8,45."),
+        ])
+        LumiOrchestrator(provider, tool_executor=lambda *_: {"financial_position": {}}).respond(
+            "Você lembra qual é meu saldo atual?",
+            usuario_id=1,
+            safety_identifier="opaque",
+        )
+
+        self.assertTrue(provider.requests[0]["require_tool"])
+
     def test_equivalent_balance_questions_receive_structured_current_position(self):
         questions = (
             "Qual é meu saldo atual?",
