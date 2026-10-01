@@ -6,11 +6,13 @@ from decimal import Decimal
 from repositories.categoria_repo import listar_categorias
 from repositories.insight_repo import listar_compras_cartao_periodo
 from services.cartao_service import listar_cartoes_formatados, listar_faturas_service
+from services.conta_service import listar_contas_formatadas
 from services.financial_pattern_service import (
     detect_recurring_expenses,
     detect_unusual_expenses,
 )
 from services.transacao_service import listar_transacoes_formatadas, obter_resumo_financeiro
+from services.transferencia_service import listar_transferencias_formatadas
 
 
 CARD_WARNING_PERCENT = Decimal("75")
@@ -685,6 +687,10 @@ def obter_insights_financeiros_service(
         "savings_change_amount": float(_money(current["saldo"]) - _money(previous["saldo"])),
     }
     expense_count = sum(1 for item in entries if item["type"] == "saida" and not item["neutral"])
+    activity = {
+        "transaction_count": sum(1 for item in entries if item["source"] != "card"),
+        "card_purchase_count": sum(1 for item in entries if item["source"] == "card"),
+    }
 
     return {
         "period": {
@@ -698,6 +704,7 @@ def obter_insights_financeiros_service(
             "expenses": current["saidas"],
             "savings": current["saldo"],
         },
+        "activity": activity,
         "previous_summary": {
             "income": previous["entradas"],
             "expenses": previous["saidas"],
@@ -740,9 +747,53 @@ def obter_contexto_financeiro_lumi_service(
         data_fim,
         hoje=hoje,
     )
+    contas = listar_contas_formatadas(usuario_id)
+    saldo_total_atual = sum(
+        (_money(conta["saldo_atual"]) for conta in contas),
+        Decimal("0.00"),
+    )
+    transferencias_periodo = [
+        transferencia
+        for transferencia in listar_transferencias_formatadas(usuario_id)
+        if insights["period"]["start"]
+        <= str(transferencia["data"])
+        <= insights["period"]["end"]
+    ]
+    atividade = insights["activity"]
     return {
         "period": insights["period"],
-        "financial_position": insights["summary"],
+        "financial_position": {
+            "total_current_balance": float(saldo_total_atual),
+            "accounts_count": len(contas),
+            "has_accounts": bool(contas),
+            "accounts": [
+                {
+                    "name": str(conta["nome"]),
+                    "type": str(conta["tipo"]),
+                    "current_balance": float(_money(conta["saldo_atual"])),
+                    "balance_source": str(conta["origem"]),
+                }
+                for conta in contas
+            ],
+        },
+        "period_summary": {
+            key: float(_money(value))
+            for key, value in insights["summary"].items()
+        },
+        "data_status": {
+            "has_accounts": bool(contas),
+            "has_transactions_in_period": bool(atividade["transaction_count"]),
+            "has_card_purchases_in_period": bool(atividade["card_purchase_count"]),
+            "has_transfers_in_period": bool(transferencias_periodo),
+            "has_movements_in_period": bool(
+                atividade["transaction_count"]
+                or atividade["card_purchase_count"]
+                or transferencias_periodo
+            ),
+            "transaction_count": atividade["transaction_count"],
+            "card_purchase_count": atividade["card_purchase_count"],
+            "transfer_count": len(transferencias_periodo),
+        },
         "comparison": insights["comparison"],
         "monthly_trend": insights["monthly_trend"],
         "largest_expenses": insights["largest_expenses"],

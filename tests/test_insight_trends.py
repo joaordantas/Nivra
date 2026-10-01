@@ -114,7 +114,8 @@ class InsightTrendTests(unittest.TestCase):
             1, "2024-09-01", "2024-09-30", hoje=date(2024, 9, 15)
         )
 
-        self.assertEqual(context["financial_position"]["expenses"], 250.0)
+        self.assertEqual(context["period_summary"]["expenses"], 250.0)
+        self.assertEqual(context["financial_position"]["total_current_balance"], 4550.0)
         self.assertEqual(context["largest_expenses"][0]["description"], "Mercado")
         self.assertEqual(context["capabilities"], {
             "budgets_available": False,
@@ -127,7 +128,7 @@ class InsightTrendTests(unittest.TestCase):
             {"data_inicio": "2024-09-01", "data_fim": "2024-09-30"},
             1,
         )
-        self.assertEqual(tool_context["financial_position"]["expenses"], 250.0)
+        self.assertEqual(tool_context["period_summary"]["expenses"], 250.0)
         self.assertNotIn("Privada", {item["description"] for item in tool_context["largest_expenses"]})
 
 

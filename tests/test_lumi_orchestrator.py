@@ -93,6 +93,66 @@ class LumiOrchestratorUnitTests(unittest.TestCase):
         self.assertFalse(provider.requests[0]["require_tool"])
         self.assertIn("2024-09-15", provider.requests[0]["instructions"])
 
+    def test_greeting_variations_do_not_force_financial_tool(self):
+        greetings = (
+            "Olá, tudo bem?",
+            "Oi, como vai?",
+            "Bom dia, Lumi!",
+            "Boa tarde, tudo bem com você?",
+        )
+        for greeting in greetings:
+            with self.subTest(greeting=greeting):
+                provider = FakeLLMProvider([LumiModelResponse(text="Olá! Como posso ajudar?")])
+                LumiOrchestrator(provider).respond(
+                    greeting, usuario_id=1, safety_identifier="opaque"
+                )
+                self.assertFalse(provider.requests[0]["require_tool"])
+
+    def test_greeting_with_financial_question_still_requires_tool(self):
+        provider = FakeLLMProvider([
+            tool_response(),
+            LumiModelResponse(text="Você gastou R$ 120,00."),
+        ])
+        LumiOrchestrator(provider, tool_executor=lambda *_: {"period_summary": {}}).respond(
+            "Bom dia, quanto gastei?", usuario_id=1, safety_identifier="opaque"
+        )
+        self.assertTrue(provider.requests[0]["require_tool"])
+
+    def test_equivalent_balance_questions_receive_structured_current_position(self):
+        questions = (
+            "Qual é meu saldo atual?",
+            "Quanto eu tenho?",
+            "Quanto tenho nas minhas contas?",
+            "Qual é meu saldo total?",
+            "Quanto dinheiro tenho disponível?",
+        )
+        for question in questions:
+            with self.subTest(question=question):
+                provider = FakeLLMProvider([
+                    tool_response(),
+                    LumiModelResponse(text="Seu saldo atual é R$ 8,45."),
+                ])
+                LumiOrchestrator(
+                    provider,
+                    tool_executor=lambda *_: {
+                        "financial_position": {
+                            "total_current_balance": 8.45,
+                            "accounts_count": 1,
+                            "has_accounts": True,
+                            "accounts": [],
+                        },
+                        "period_summary": {
+                            "income": 2.34,
+                            "expenses": 1.11,
+                            "savings": 1.23,
+                        },
+                    },
+                ).respond(question, usuario_id=1, safety_identifier="opaque")
+
+                self.assertTrue(provider.requests[0]["require_tool"])
+                tool_output = provider.requests[1]["input_items"][-1]["output"]
+                self.assertIn('"total_current_balance":8.45', tool_output)
+
     def test_write_request_can_be_refused_without_tool(self):
         provider = FakeLLMProvider([LumiModelResponse(text="Esta versão é somente leitura.")])
         result = LumiOrchestrator(provider).respond(

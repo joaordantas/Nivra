@@ -68,6 +68,50 @@ eventos incluem resultado, duração e códigos de erro sanitizados. Eles não
 incluem prompt, resposta, IDs de usuário, tokens, cookies, connection strings
 ou valores financeiros.
 
+## Gate corretivo pós-Production
+
+Antes de repetir o Gate Internal, o Preview deve permanecer restrito ao modo
+`internal`, com propostas e execução desligadas até o smoke de leitura passar.
+Production permanece integralmente em `off` durante todo o gate de Preview.
+
+### Saldo e provider
+
+Com uma conta fictícia cujo saldo consolidado possa ser conferido no Dashboard,
+consultar ao menos:
+
+- “Qual é meu saldo atual?”;
+- “Quanto eu tenho?”;
+- “Quanto tenho nas minhas contas?”;
+- “Qual é meu saldo total?”;
+- “Quanto dinheiro tenho disponível?”.
+
+O valor deve coincidir com “Saldo registrado”. Um saldo igual a zero não pode
+ser descrito como ausência de contas ou movimentações. Validar também uma
+saudação social alternativa e uma saudação seguida de pergunta financeira.
+
+### Dois usuários
+
+Usar apenas contas de teste. O usuário A deve estar em
+`LUMI_ROLLOUT_USER_IDS`; o usuário B deve permanecer fora. Para ambos, verificar
+`/api/lumi/capabilities` e, para B, confirmar recusa server-side em mensagem,
+conversas, memórias, propostas e endpoints de ação, inclusive com payloads
+manipulados no cliente. Nenhum recurso ou memória de A pode ser observado por B.
+
+### Memória
+
+Com o usuário A, criar uma memória fictícia e não sensível, listá-la, confirmar
+seu uso em uma conversa apropriada, apagar a conversa e confirmar que a memória
+foi preservada. Em seguida, apagar a memória e confirmar sua remoção. Repetir a
+tentativa de leitura com o usuário B para provar isolamento.
+
+### Logs
+
+Durante o smoke, pesquisar por `lumi_event` nos logs do runtime. Devem estar
+visíveis eventos de início/fim, provider, tool, proposta, confirmação, execução,
+cancelamento, recusa de acesso e erro. Revisar uma amostra e confirmar que não há
+prompt, resposta, valor financeiro, identidade, cookie, token, CSRF, chave,
+connection string, memória textual ou reasoning.
+
 ## Evidência operacional P6.9B
 
 Em 30 de setembro de 2026, o rollout foi exercitado somente no Preview do

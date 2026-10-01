@@ -6,6 +6,16 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 
 ### Added
 
+- contexto estruturado da Lumi com saldo consolidado atual e saldos por conta,
+  reutilizando a mesma fonte de verdade de Contas/Dashboard e distinguindo saldo
+  zero, ausência de contas e ausência de movimentações;
+- testes determinísticos do saldo manual, Open Finance, múltiplas contas,
+  transferência interna, isolamento entre usuários e regressão do Gate Internal;
+- emissão `INFO` explícita de `lumi_event` no runtime, com allowlist de dimensões
+  operacionais para impedir conteúdo financeiro ou identidade nos logs;
+- classificação de saudações sociais por tokens seguros, evitando tool calling
+  financeiro indevido sem liberar perguntas financeiras iniciadas por saudação;
+
 - trava pública server-side `LUMI_PUBLIC_ENABLED=false` por padrão; a página
   Lumi permanece “Em breve” e os endpoints de conversa/ação não acionam o
   provider enquanto a liberação pública não for autorizada;
