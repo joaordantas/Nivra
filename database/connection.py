@@ -1,3 +1,4 @@
+import hashlib
 import os
 import re
 import sqlite3
@@ -7,7 +8,7 @@ from decimal import Decimal
 from typing import Any, Iterable
 
 from sqlalchemy import create_engine, text
-from sqlalchemy.engine import Connection, CursorResult, Engine
+from sqlalchemy.engine import Connection, CursorResult, Engine, make_url
 from sqlalchemy.pool import NullPool
 
 
@@ -55,6 +56,16 @@ def get_database_url(*, migration: bool = False) -> str:
     if not normalized.startswith("postgresql+psycopg://"):
         raise RuntimeError("O banco oficial deve usar uma URL PostgreSQL.")
     return normalized
+
+
+def database_target_fingerprint(*, migration: bool = False) -> str:
+    """Return a credential-free identifier for the configured database target."""
+    url = make_url(get_database_url(migration=migration))
+    if not url.database:
+        raise RuntimeError("A conexao configurada nao identifica o database.")
+    host = url.host or url.get_backend_name()
+    identity = f"{host.casefold()}|{url.database.casefold()}".encode("utf-8")
+    return hashlib.sha256(identity).hexdigest()[:12]
 
 
 def _criar_engine(url: str) -> Engine:

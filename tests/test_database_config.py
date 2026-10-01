@@ -2,7 +2,7 @@ import os
 import unittest
 from unittest.mock import patch
 
-from database.connection import get_database_url
+from database.connection import database_target_fingerprint, get_database_url
 
 
 class DatabaseConfigTests(unittest.TestCase):
@@ -44,6 +44,30 @@ class DatabaseConfigTests(unittest.TestCase):
                 get_database_url(migration=True),
                 "postgresql+psycopg://app:senha@ep.neon.tech/app",
             )
+
+    def test_fingerprint_identifica_somente_host_e_database(self):
+        with patch.dict(
+            os.environ,
+            {
+                "APP_ENV": "production",
+                "DATABASE_URL": "postgresql://user-a:secret-a@ep-preview.neon.tech/nivra?sslmode=require",
+            },
+            clear=True,
+        ):
+            first = database_target_fingerprint()
+        with patch.dict(
+            os.environ,
+            {
+                "APP_ENV": "production",
+                "DATABASE_URL": "postgresql://user-b:secret-b@ep-preview.neon.tech/nivra?channel_binding=require",
+            },
+            clear=True,
+        ):
+            second = database_target_fingerprint()
+
+        self.assertEqual(first, second)
+        self.assertEqual(len(first), 12)
+        self.assertNotIn("secret", first)
 
 
 if __name__ == "__main__":

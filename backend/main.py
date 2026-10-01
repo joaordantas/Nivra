@@ -22,7 +22,7 @@ from backend.routers.lumi import router as lumi_router
 from backend.routers.open_finance import router as open_finance_router
 from backend.routers.sales import router as sales_router
 from backend.routers.transactions import router as transactions_router
-from database.connection import check_database_connection
+from database.connection import check_database_connection, database_target_fingerprint
 
 app = FastAPI(
     title="Nivra API",
@@ -63,6 +63,7 @@ def health_check() -> dict:
     return {
         "message": "API da Nivra online.",
         "database": "online" if check_database_connection() else "indisponivel",
+        "database_target_fingerprint": database_target_fingerprint(),
         "docs": "/docs",
     }
 
