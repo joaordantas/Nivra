@@ -7,6 +7,29 @@ export interface User {
   email_verificado_em: string | null;
 }
 
+export type NotificationType =
+  | "financial_alert"
+  | "card_alert"
+  | "budget_alert"
+  | "goal_alert"
+  | "system"
+  | "summary";
+
+export type NotificationSeverity = "info" | "warning" | "critical";
+
+export interface Notification {
+  id: number;
+  tipo: NotificationType;
+  severidade: NotificationSeverity;
+  titulo: string;
+  mensagem: string;
+  metadados: Record<string, string | number | boolean>;
+  chave_dedupe: string | null;
+  lida: boolean;
+  criada_em: string;
+  lida_em: string | null;
+}
+
 export interface RegisterResult extends User {
   verification_email_sent: boolean;
 }

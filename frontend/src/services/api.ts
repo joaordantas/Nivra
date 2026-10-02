@@ -17,6 +17,7 @@ import type {
   LumiConversation,
   LumiConversationSummary,
   LumiMemory,
+  Notification,
   OpenFinanceConnection,
   OpenFinanceAccountLink,
   OpenFinanceExternalAccount,
@@ -38,6 +39,7 @@ const localApiUrl = `${window.location.protocol}//${window.location.hostname}:80
 const API_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? localApiUrl : "");
 const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 let csrfToken: string | null = null;
+let notificationUnreadRequest: Promise<{ unread_count: number }> | null = null;
 
 export class ApiError extends Error {
   readonly status: number;
@@ -146,6 +148,27 @@ export const api = {
       csrfToken = null;
     }
   },
+
+  getNotifications: ({ limit = 12, offset = 0, unreadOnly = false } = {}) => {
+    const params = new URLSearchParams({
+      limit: String(limit),
+      offset: String(offset),
+    });
+    if (unreadOnly) params.set("unread_only", "true");
+    return request<Notification[]>(`/notifications?${params.toString()}`);
+  },
+  getNotificationUnreadCount: () => {
+    if (notificationUnreadRequest) return notificationUnreadRequest;
+    notificationUnreadRequest = request<{ unread_count: number }>("/notifications/unread-count")
+      .finally(() => { notificationUnreadRequest = null; });
+    return notificationUnreadRequest;
+  },
+  markNotificationRead: (notificationId: number) =>
+    request<Notification>(`/notifications/${notificationId}/read`, { method: "POST" }),
+  markAllNotificationsRead: () =>
+    request<{ updated_count: number }>("/notifications/read-all", { method: "POST" }),
+  deleteNotification: (notificationId: number) =>
+    request<void>(`/notifications/${notificationId}`, { method: "DELETE" }),
 
   getCategories: () => request<Category[]>("/categories"),
   createCategory: (nome: string) => request<Category>("/categories", { method: "POST", body: JSON.stringify({ nome }) }),

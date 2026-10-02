@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:notifications": "node --test tests/notificationState.test.mjs"
   },
   "dependencies": {
     "lucide-react": "^1.44.0",

@@ -678,9 +678,22 @@ Status: **PRIORIDADE 6 TECNICAMENTE CONCLUÍDA; ROLLOUT PÚBLICO DEPENDE DE DECI
 
 Status: **CONCLUÍDA E VALIDADA LOCALMENTE E EM POSTGRESQL DESCARTÁVEL; SEM DEPLOY EM PRODUCTION**
 
+### P7.2 — Centro de Notificações e Sino
+
+- [x] Sino no desktop e no header mobile com badge dedicado de não lidas
+- [x] Centro responsivo com listagem, filtros Todas/Não lidas e paginação por botão
+- [x] Marcar uma ou todas como lidas e exclusão individual intencional
+- [x] Loading compacto, retry, empty states e sincronização com o backend após mutações
+- [x] Tipos e severidades apresentados por mapper visual centralizado
+- [x] Foco inicial, Escape, retorno ao gatilho, trap de teclado e textos acessíveis
+- [x] Temas claro/escuro e viewports 1024, 1440, 375, 390 e 430 px validados visualmente
+- [x] Dataset fictício removível e restrito a `APP_ENV=test`, sem endpoint de criação
+
+Status: **CONCLUÍDA E VALIDADA LOCALMENTE; SEM PRODUTORES FINANCEIROS OU DEPLOY EM PRODUCTION**
+
 - [x] Fundação do `NotificationService`
 - [x] Estado lida/não lida no backend
-- [ ] Centro de notificações e sino no frontend
+- [x] Centro de notificações e sino no frontend
 - [ ] Preferências de notificações
 - [ ] Alertas de orçamento e fatura
 - [ ] Gastos incomuns e progresso de metas
@@ -738,11 +751,11 @@ individual segura já evita acoplamento com a fonte da verdade financeira.
 
 ## Próxima tarefa recomendada
 
-**P7.2 — Centro de Notificações e Sino.**
+**P7.3 — Eventos Financeiros e Alertas.**
 
 A Prioridade 6 foi tecnicamente concluída e não bloqueia o restante do roadmap.
 A Lumi está homologada em Production somente para uma conta interna, com
 propostas e execução protegidas por confirmação explícita. O rollout público
 não foi iniciado e o Gate Testers externo foi adiado por decisão de produto,
 sem representar falha técnica. O projeto está pronto para avançar para a
-P7.2, que não deve ser iniciada automaticamente por este registro.
+P7.3, que não deve ser iniciada automaticamente por este registro.

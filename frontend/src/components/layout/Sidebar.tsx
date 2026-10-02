@@ -4,6 +4,7 @@ import { NavLink } from "react-router-dom";
 import { useAuth, useTheme } from "../../app/providers";
 import { primaryNavigation, productIcon as ProductIcon, secondaryNavigation } from "./navigation";
 import { AlphaBadge } from "./AlphaBadge";
+import { NotificationBell } from "../notifications/NotificationCenter";
 
 function NavigationLink({ item }: { item: (typeof primaryNavigation)[number] }) {
   const Icon = item.icon;
@@ -44,6 +45,7 @@ export function Sidebar() {
       </nav>
 
       <div className="sidebar-footer">
+        <NotificationBell variant="desktop" />
         <button className="theme-button" onClick={toggleTheme} type="button">
           {theme === "dark" ? <Sun aria-hidden="true" size={18} /> : <Moon aria-hidden="true" size={18} />}
           <span>{theme === "dark" ? "Tema claro" : "Tema escuro"}</span>

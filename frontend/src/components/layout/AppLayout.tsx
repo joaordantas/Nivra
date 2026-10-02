@@ -1,6 +1,6 @@
 import { Moon, PiggyBank, Sun } from "lucide-react";
 import { Outlet } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 
 import { MobileNavigation } from "./MobileNavigation";
 import { AlphaBadge } from "./AlphaBadge";
@@ -8,6 +8,14 @@ import { Sidebar } from "./Sidebar";
 import { useTheme } from "../../app/providers";
 import { useAuth } from "../../app/providers";
 import { ApiError, api } from "../../services/api";
+import {
+  NotificationBell,
+  NotificationCenterProvider,
+} from "../notifications/NotificationCenter";
+
+const NotificationPanel = lazy(() => import("../notifications/NotificationPanel").then(
+  (module) => ({ default: module.NotificationPanel }),
+));
 
 export function AppLayout() {
   const { theme, toggleTheme } = useTheme();
@@ -51,33 +59,39 @@ export function AppLayout() {
   }
 
   return (
-    <div className="app-shell">
-      <Sidebar />
-      <div className="app-body">
-        <header className="mobile-header">
-          <div className="mobile-brand">
-            <PiggyBank aria-hidden="true" size={21} />
-            <strong>Nivra</strong>
-            <AlphaBadge />
-          </div>
-          <button aria-label={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"} className="icon-button mobile-theme-button" onClick={toggleTheme} type="button">
-            {theme === "dark" ? <Sun aria-hidden="true" size={18} /> : <Moon aria-hidden="true" size={18} />}
-          </button>
-        </header>
-        {user && !user.email_verificado ? (
-          <aside className="verification-banner" role={verificationError ? "alert" : "status"}>
-            <span><strong>Confirme seu e-mail.</strong> {registrationNotice || "Isso protege a recuperação da sua conta."}</span>
-            <button disabled={sendingVerification || cooldownSeconds > 0} onClick={resendVerification} type="button">
-              {sendingVerification ? "Enviando..." : cooldownSeconds > 0 ? `Tentar novamente em ${cooldownSeconds}s` : "Reenviar e-mail"}
-            </button>
-            {verificationMessage ? <small className={verificationError ? "verification-error" : "verification-success"}>{verificationMessage}</small> : null}
-          </aside>
-        ) : null}
-        <main className="main-content">
-          <Outlet />
-        </main>
+    <NotificationCenterProvider>
+      <div className="app-shell">
+        <Sidebar />
+        <div className="app-body">
+          <header className="mobile-header">
+            <div className="mobile-brand">
+              <PiggyBank aria-hidden="true" size={21} />
+              <strong>Nivra</strong>
+              <AlphaBadge />
+            </div>
+            <div className="mobile-header-actions">
+              <NotificationBell variant="mobile" />
+              <button aria-label={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"} className="icon-button mobile-theme-button" onClick={toggleTheme} type="button">
+                {theme === "dark" ? <Sun aria-hidden="true" size={18} /> : <Moon aria-hidden="true" size={18} />}
+              </button>
+            </div>
+          </header>
+          {user && !user.email_verificado ? (
+            <aside className="verification-banner" role={verificationError ? "alert" : "status"}>
+              <span><strong>Confirme seu e-mail.</strong> {registrationNotice || "Isso protege a recuperação da sua conta."}</span>
+              <button disabled={sendingVerification || cooldownSeconds > 0} onClick={resendVerification} type="button">
+                {sendingVerification ? "Enviando..." : cooldownSeconds > 0 ? `Tentar novamente em ${cooldownSeconds}s` : "Reenviar e-mail"}
+              </button>
+              {verificationMessage ? <small className={verificationError ? "verification-error" : "verification-success"}>{verificationMessage}</small> : null}
+            </aside>
+          ) : null}
+          <main className="main-content">
+            <Outlet />
+          </main>
+        </div>
+        <MobileNavigation />
+        <Suspense fallback={null}><NotificationPanel /></Suspense>
       </div>
-      <MobileNavigation />
-    </div>
+    </NotificationCenterProvider>
   );
 }
