@@ -19,6 +19,7 @@ from backend.routers.dashboard import router as dashboard_router
 from backend.routers.installments import router as installments_router
 from backend.routers.insights import router as insights_router
 from backend.routers.lumi import router as lumi_router
+from backend.routers.notifications import router as notifications_router
 from backend.routers.open_finance import router as open_finance_router
 from backend.routers.sales import router as sales_router
 from backend.routers.transactions import router as transactions_router
@@ -54,6 +55,7 @@ app.include_router(dashboard_router, prefix="/api")
 app.include_router(installments_router, prefix="/api")
 app.include_router(insights_router, prefix="/api")
 app.include_router(lumi_router, prefix="/api")
+app.include_router(notifications_router, prefix="/api")
 app.include_router(open_finance_router, prefix="/api")
 app.include_router(sales_router, prefix="/api")
 

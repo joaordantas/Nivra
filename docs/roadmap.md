@@ -665,12 +665,32 @@ Status: **PRIORIDADE 6 TECNICAMENTE CONCLUÍDA; ROLLOUT PÚBLICO DEPENDE DE DECI
 
 ## 🔔 PRIORIDADE 7 — NOTIFICAÇÕES INTERNAS
 
-- [ ] `NotificationService` e eventos financeiros
+### P7.1 — Fundação de Notificações Internas
+
+- [x] Entidade `notifications` com ownership, estado de leitura e metadados controlados
+- [x] Tipos e severidades fechados e centralizados
+- [x] `NotificationService` para criação, listagem, contagem, leitura e exclusão
+- [x] Deduplicação por usuário protegida por unique constraint e transação
+- [x] APIs autenticadas, mutações com CSRF, paginação e filtros limitados
+- [x] Migration expand-only `e8f9a0b1c2d3`, índices das consultas e `alembic check` limpo
+- [x] Gate em PostgreSQL descartável com banco vazio, concorrência e isolamento entre usuários
+- [x] Testes direcionados e regressão completa sem alterações na Lumi ou rollout em Production
+
+Status: **CONCLUÍDA E VALIDADA LOCALMENTE E EM POSTGRESQL DESCARTÁVEL; SEM DEPLOY EM PRODUCTION**
+
+- [x] Fundação do `NotificationService`
+- [x] Estado lida/não lida no backend
 - [ ] Centro de notificações e sino no frontend
-- [ ] Estado lida/não lida e preferências
+- [ ] Preferências de notificações
 - [ ] Alertas de orçamento e fatura
 - [ ] Gastos incomuns e progresso de metas
 - [ ] Resumos semanal e mensal
+
+Produtores financeiros planejados para a P7.3: faixas de orçamento em
+50/75/90/100%, fatura próxima ou vencida, gasto incomum, progresso de meta e
+resumos semanal e mensal. Nenhum desses eventos foi conectado na P7.1. Uma
+política automatizada de retenção também permanece futura; a exclusão
+individual segura já evita acoplamento com a fonte da verdade financeira.
 
 ## 💬 PRIORIDADE 8 — WHATSAPP
 
@@ -718,11 +738,11 @@ Status: **PRIORIDADE 6 TECNICAMENTE CONCLUÍDA; ROLLOUT PÚBLICO DEPENDE DE DECI
 
 ## Próxima tarefa recomendada
 
-**Prioridade 7 — Notificações Internas.**
+**P7.2 — Centro de Notificações e Sino.**
 
 A Prioridade 6 foi tecnicamente concluída e não bloqueia o restante do roadmap.
 A Lumi está homologada em Production somente para uma conta interna, com
 propostas e execução protegidas por confirmação explícita. O rollout público
 não foi iniciado e o Gate Testers externo foi adiado por decisão de produto,
 sem representar falha técnica. O projeto está pronto para avançar para a
-Prioridade 7, que não deve ser iniciada automaticamente por este registro.
+P7.2, que não deve ser iniciada automaticamente por este registro.

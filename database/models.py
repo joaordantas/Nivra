@@ -167,6 +167,49 @@ Index(
     lumi_action_confirmations.c.expira_em,
 )
 
+notifications = Table(
+    "notifications", metadata,
+    Column("id", Integer, primary_key=True),
+    Column("usuario_id", ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False),
+    Column("tipo", String(40), nullable=False),
+    Column("severidade", String(10), nullable=False, server_default="info"),
+    Column("titulo", String(160), nullable=False),
+    Column("mensagem", Text, nullable=False),
+    Column("metadados_json", Text, nullable=False, server_default="{}"),
+    Column("chave_dedupe", String(160)),
+    Column("lida", Boolean, nullable=False, server_default=false()),
+    Column("criada_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    Column("lida_em", DateTime(timezone=True)),
+    CheckConstraint(
+        "tipo IN ('financial_alert', 'card_alert', 'budget_alert', 'goal_alert', 'system', 'summary')",
+        name="ck_notifications_type",
+    ),
+    CheckConstraint(
+        "severidade IN ('info', 'warning', 'critical')",
+        name="ck_notifications_severity",
+    ),
+    CheckConstraint("length(titulo) BETWEEN 1 AND 160", name="ck_notifications_title_length"),
+    CheckConstraint("length(mensagem) BETWEEN 1 AND 600", name="ck_notifications_message_length"),
+    CheckConstraint("length(metadados_json) <= 1000", name="ck_notifications_metadata_length"),
+    CheckConstraint(
+        "chave_dedupe IS NULL OR length(chave_dedupe) BETWEEN 1 AND 160",
+        name="ck_notifications_dedupe_length",
+    ),
+    CheckConstraint(
+        "(lida = TRUE AND lida_em IS NOT NULL) OR (lida = FALSE AND lida_em IS NULL)",
+        name="ck_notifications_read_state",
+    ),
+    UniqueConstraint("usuario_id", "chave_dedupe", name="uq_notifications_user_dedupe"),
+)
+Index("ix_notifications_user_created", notifications.c.usuario_id, notifications.c.criada_em, notifications.c.id)
+Index(
+    "ix_notifications_user_unread_created",
+    notifications.c.usuario_id,
+    notifications.c.lida,
+    notifications.c.criada_em,
+    notifications.c.id,
+)
+
 categorias = Table(
     "categorias", metadata,
     Column("id", Integer, primary_key=True),
@@ -511,7 +554,7 @@ Index(
 )
 
 TABLES_IN_DEPENDENCY_ORDER = [
-    usuarios, sessoes, auth_tokens, auth_rate_events, lumi_action_confirmations, categorias, contas, parcelamentos, transacoes, transferencias, cartoes,
+    usuarios, sessoes, auth_tokens, auth_rate_events, lumi_action_confirmations, notifications, categorias, contas, parcelamentos, transacoes, transferencias, cartoes,
     faturas, compras_cartao, pagamentos_fatura, vendas, parcelas, limites, conexoes_bancarias,
     contas_bancarias_externas, transacoes_bancarias, correspondencias_conciliacao, eventos_sincronizacao,
     eventos_webhook_open_finance,
