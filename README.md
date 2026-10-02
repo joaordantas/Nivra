@@ -86,7 +86,7 @@ A aplicação está disponível no [domínio de produção confirmado na Vercel]
 
 ## ✦ Lumi — tecnicamente concluída, rollout público pendente
 
-**Lumi** é a assistente financeira da Nivra. Consultas em linguagem natural usam services financeiros por uma allowlist de ferramentas somente leitura. Conversas podem ser retomadas e memórias só são gravadas por ação explícita do usuário, sempre isoladas por conta. Criação de receita ou despesa e edição de transação exigem proposta estruturada e confirmação HTTP; as flags públicas, de propostas e de execução permanecem desligadas em Preview e Production após o gate técnico.
+**Lumi** é a assistente financeira da Nivra. Consultas em linguagem natural usam services financeiros por uma allowlist de ferramentas somente leitura. Conversas podem ser retomadas e memórias só são gravadas por ação explícita do usuário, sempre isoladas por conta. Criação de receita ou despesa e edição de transação exigem proposta estruturada e confirmação HTTP. Após a homologação técnica, Production opera em modo `internal`, restrito a uma única conta definida no backend; propostas e execução estão habilitadas somente nesse escopo, sem abertura pública.
 
 Exemplos disponíveis no modo de consulta:
 
@@ -152,7 +152,7 @@ Detalhes estão em [Arquitetura](docs/architecture.md).
 | Orçamentos e metas | Planejado |
 | Open Finance Sandbox | Demonstração guiada para testers disponível |
 | Insights financeiros | Planejado |
-| Lumi | Prioridade tecnicamente concluída; rollout público e execução em Production desligados |
+| Lumi | Prioridade tecnicamente concluída; homologada em Production para uso interno exclusivo, rollout público não iniciado |
 | Notificações e WhatsApp | Planejado |
 
 Consulte o [roadmap público](docs/roadmap.md) para todos os marcos.

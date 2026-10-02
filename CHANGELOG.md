@@ -161,6 +161,10 @@ Todas as alterações importantes da Nivra serão documentadas neste arquivo. O 
 
 ### Changed
 
+- rollout de Production da Lumi ajustado para `internal`, restrito a uma única
+  conta resolvida server-side, com propostas e execução habilitadas sob
+  confirmação explícita; o Gate Testers externo foi adiado por decisão de
+  produto e o rollout público permanece não iniciado;
 - a árvore local passou por gate de regressão antes do próximo commit, com
   suíte Python completa, build React/TypeScript, compilação Python e validação
   Alembic em banco descartável aprovados;

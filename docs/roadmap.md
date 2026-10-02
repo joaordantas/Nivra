@@ -626,7 +626,7 @@ Status: **CONCLUÍDA E VALIDADA LOCALMENTE; SEM ROLLOUT OU ALTERAÇÃO DE PRODUC
 - [x] Deployment e smoke test controlado em Preview
 - [x] Inspeção visual real dos cards em desktop e mobile no Preview
 
-Status: **CONCLUÍDA E VALIDADA EM PREVIEW; PRODUCTION PERMANECE DESLIGADA**
+Status: **CONCLUÍDA; HOMOLOGADA EM PRODUCTION PARA USO INTERNO EXCLUSIVO**
 
 O gate descartável `nivra_lumi_p69_gate` foi executado no endpoint isolado de
 Preview e removido após a auditoria final. Passaram migrations em banco vazio,
@@ -656,8 +656,10 @@ execução desligada. Production não foi alterada.
 - [x] Histórico e memórias explícitas com isolamento, limites, deduplicação e exclusão separada
 - [x] PostgreSQL/Neon no head `d7e8f9a012b3` e `alembic check` sem operações pendentes
 - [x] Preview validado com provider real e dados fictícios; kill switch restaurado ao final
-- [x] Production revalidada em modo somente leitura com acesso público, propostas e execução desligados
-- [x] Suíte completa com 238 testes, 82 testes dirigidos, build, typecheck e compilação Python aprovados
+- [x] Production validada em Gate Internal e Gate Corretivo, incluindo execução controlada, idempotência, ownership, memória e kill switches
+- [x] Suíte completa com 253 testes, build, typecheck, compilação Python e Alembic aprovados
+- [x] Rollout interno reativado em 2 de outubro de 2026 para uma única conta resolvida no backend, com confirmação explícita obrigatória para qualquer execução
+- [ ] Gate Testers externo — **ADIADO, aguardando definição dos testers por decisão de produto**
 
 Status: **PRIORIDADE 6 TECNICAMENTE CONCLUÍDA; ROLLOUT PÚBLICO DEPENDE DE DECISÃO HUMANA**
 
@@ -718,6 +720,9 @@ Status: **PRIORIDADE 6 TECNICAMENTE CONCLUÍDA; ROLLOUT PÚBLICO DEPENDE DE DECI
 
 **Prioridade 7 — Notificações Internas.**
 
-A Prioridade 6 foi tecnicamente concluída. O rollout público da Lumi não foi
-autorizado: Preview e Production permanecem fail-closed, com propostas e
-execução financeira desligadas.
+A Prioridade 6 foi tecnicamente concluída e não bloqueia o restante do roadmap.
+A Lumi está homologada em Production somente para uma conta interna, com
+propostas e execução protegidas por confirmação explícita. O rollout público
+não foi iniciado e o Gate Testers externo foi adiado por decisão de produto,
+sem representar falha técnica. O projeto está pronto para avançar para a
+Prioridade 7, que não deve ser iniciada automaticamente por este registro.

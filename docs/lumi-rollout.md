@@ -147,3 +147,27 @@ O encerramento é técnico e não autoriza rollout público. Production permanec
 com `LUMI_PUBLIC_ENABLED=false`, `LUMI_ACTION_PROPOSALS_ENABLED=false` e
 `LUMI_ACTION_EXECUTION_ENABLED=false`. Qualquer mudança desse estado exige uma
 decisão humana posterior e deve seguir a sequência e o rollback deste documento.
+
+## Estado de rollout interno — 2 de outubro de 2026
+
+Por decisão de produto, o Gate Testers externo foi **adiado, aguardando a
+definição dos testers**. A decisão não altera a aprovação técnica da Prioridade
+6 nem bloqueia as próximas prioridades do roadmap.
+
+Production foi configurada para uso interno exclusivo, com a identidade obtida
+da sessão e comparada no backend com uma única conta autorizada:
+
+```text
+LUMI_PUBLIC_ENABLED=true
+LUMI_ROLLOUT_MODE=internal
+LUMI_ROLLOUT_USER_IDS=<uma conta interna; valor não documentado>
+LUMI_ACTION_PROPOSALS_ENABLED=true
+LUMI_ACTION_EXECUTION_ENABLED=true
+```
+
+O smoke curto confirmou acesso interno, rota `/lumi`, mensagem com provider,
+saldo vindo do core financeiro, memória, proposta com cancelamento e ausência de
+mutação sem confirmação. Todas as demais contas permaneceram negadas pelo
+backend. `LUMI_PUBLIC_ENABLED=false` continua sendo o kill switch geral e
+`LUMI_ACTION_EXECUTION_ENABLED=false` o kill switch de mutações. A Lumi não está
+pública e nenhum modo `allowlist` ou `all` foi ativado.
