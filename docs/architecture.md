@@ -73,6 +73,19 @@ não invalidam o insight nem revertem uma operação financeira já concluída. 
 unicidade por usuário e chave de evento faz replay e concorrência convergirem
 para uma única notificação lógica.
 
+As preferências financeiras ficam em `notification_preferences`, com chave
+composta por usuário e identificador fechado. A ausência de registro significa
+habilitada, preservando o comportamento dos usuários que nunca configuraram a
+funcionalidade. O producer carrega o estado efetivo uma vez por lote e descarta
+eventos desabilitados antes de chamar o `NotificationService`. Um ledger técnico
+em `notification_preference_suppressions` conserva apenas a chave dos eventos
+observados enquanto desativados, impedindo que reapareçam como backfill após a
+reativação. Notificações já persistidas não são alteradas.
+
+Leitura e atualização usam a identidade da sessão. A alteração parcial exige
+CSRF, aceita apenas os quatro booleanos conhecidos e não permite que o frontend
+informe um usuário ou uma categoria arbitrária.
+
 ## Autenticação e isolamento
 
 O login cria uma sessão persistente no PostgreSQL. O navegador recebe um identificador aleatório em cookie HTTP-only; o banco guarda somente seu hash. Em produção, o cookie usa `Secure` e `SameSite=Lax`. A sessão possui prazo de expiração configurável e o logout a revoga no servidor.

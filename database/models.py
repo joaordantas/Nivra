@@ -11,6 +11,7 @@ from sqlalchemy import (
     JSON,
     MetaData,
     Numeric,
+    PrimaryKeyConstraint,
     SmallInteger,
     String,
     Table,
@@ -208,6 +209,46 @@ Index(
     notifications.c.lida,
     notifications.c.criada_em,
     notifications.c.id,
+)
+
+notification_preferences = Table(
+    "notification_preferences", metadata,
+    Column("usuario_id", ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False),
+    Column("preference_key", String(40), nullable=False),
+    Column("enabled", Boolean, nullable=False, server_default=true()),
+    Column("updated_at", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    CheckConstraint(
+        "preference_key IN ('invoice_due_soon', 'invoice_overdue', "
+        "'card_limit', 'unusual_expense')",
+        name="ck_notification_preferences_key",
+    ),
+    PrimaryKeyConstraint(
+        "usuario_id",
+        "preference_key",
+        name="pk_notification_preferences",
+    ),
+)
+
+notification_preference_suppressions = Table(
+    "notification_preference_suppressions", metadata,
+    Column("usuario_id", ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False),
+    Column("preference_key", String(40), nullable=False),
+    Column("dedupe_key", String(160), nullable=False),
+    Column("created_at", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    CheckConstraint(
+        "preference_key IN ('invoice_due_soon', 'invoice_overdue', "
+        "'card_limit', 'unusual_expense')",
+        name="ck_notification_suppressions_key",
+    ),
+    CheckConstraint(
+        "length(dedupe_key) BETWEEN 1 AND 160",
+        name="ck_notification_suppressions_dedupe",
+    ),
+    PrimaryKeyConstraint(
+        "usuario_id",
+        "dedupe_key",
+        name="pk_notification_preference_suppressions",
+    ),
 )
 
 categorias = Table(
@@ -554,7 +595,7 @@ Index(
 )
 
 TABLES_IN_DEPENDENCY_ORDER = [
-    usuarios, sessoes, auth_tokens, auth_rate_events, lumi_action_confirmations, notifications, categorias, contas, parcelamentos, transacoes, transferencias, cartoes,
+    usuarios, sessoes, auth_tokens, auth_rate_events, lumi_action_confirmations, notifications, notification_preferences, notification_preference_suppressions, categorias, contas, parcelamentos, transacoes, transferencias, cartoes,
     faturas, compras_cartao, pagamentos_fatura, vendas, parcelas, limites, conexoes_bancarias,
     contas_bancarias_externas, transacoes_bancarias, correspondencias_conciliacao, eventos_sincronizacao,
     eventos_webhook_open_finance,

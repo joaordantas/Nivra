@@ -713,16 +713,35 @@ o fato de origem mudar ou for excluído.
 
 Status: **CONCLUÍDA E VALIDADA LOCALMENTE E EM POSTGRESQL DESCARTÁVEL; SEM DEPLOY EM PRODUCTION**
 
+### P7.4 — Preferências de Notificações
+
+- [x] Preferências persistidas por usuário e categoria com chave composta e allowlist no banco
+- [x] Ledger técnico evita backfill de eventos observados enquanto desativados
+- [x] Ausência de configuração mantém faturas, limite e gastos incomuns habilitados
+- [x] API autenticada para leitura e atualização parcial, com CSRF e booleanos estritos
+- [x] Filtro central aplicado antes da persistência pelo producer financeiro
+- [x] Fatura próxima, fatura vencida, limite e gasto incomum validados habilitados/desabilitados
+- [x] Alterações preservam notificações antigas e dados financeiros
+- [x] Tela responsiva nas configurações com switches acessíveis e estados de loading, erro e sucesso
+- [x] Migration `f9a0b1c2d3e4` e gate em PostgreSQL descartável
+
+As preferências controlam somente eventos futuros. Reativar uma categoria não
+gera backfill; o próximo evento elegível pode voltar a ser persistido. O
+frontend nunca envia `usuario_id`, e categorias ausentes na tabela continuam
+ativas por compatibilidade.
+
+Status: **CONCLUÍDA E VALIDADA LOCALMENTE E EM POSTGRESQL DESCARTÁVEL; SEM DEPLOY EM PRODUCTION**
+
 - [x] Fundação do `NotificationService`
 - [x] Estado lida/não lida no backend
 - [x] Centro de notificações e sino no frontend
-- [ ] Preferências de notificações
+- [x] Preferências de notificações
 - [x] Alertas de fatura e comprometimento de cartão
 - [x] Gastos incomuns
 - [ ] Alertas de orçamento e progresso de metas
 - [ ] Resumos semanal e mensal
 
-Preferências, resumos periódico, orçamento e meta permanecem futuros. Uma
+Resumos periódicos, orçamento e meta permanecem futuros. Uma
 política automatizada de retenção também permanece futura; a exclusão
 individual segura não altera a fonte da verdade financeira.
 
@@ -772,11 +791,12 @@ individual segura não altera a fonte da verdade financeira.
 
 ## Próxima tarefa recomendada
 
-**P7.4 — Preferências de Notificações.**
+**P7.5 — Resumos Periódicos.**
 
 A Prioridade 6 foi tecnicamente concluída e não bloqueia o restante do roadmap.
 A Lumi está homologada em Production somente para uma conta interna, com
 propostas e execução protegidas por confirmação explícita. O rollout público
 não foi iniciado e o Gate Testers externo foi adiado por decisão de produto,
-sem representar falha técnica. O projeto está pronto para avançar para a
-P7.4, que não deve ser iniciada automaticamente por este registro.
+sem representar falha técnica. O projeto está pronto para avaliar a P7.5,
+resumos semanais e mensais, que não deve ser iniciada automaticamente por este
+registro.

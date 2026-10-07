@@ -2,6 +2,7 @@ import { ArrowRight, FolderCog, KeyRound, UserRound } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { useAuth } from "../app/providers";
+import { NotificationPreferences } from "../components/notifications/NotificationPreferences";
 import { Card } from "../components/ui/Card";
 import { PageHeader } from "../components/ui/PageHeader";
 
@@ -27,6 +28,7 @@ export function SettingsPage() {
           <Link aria-label="Abrir segurança" className="icon-button" to="/settings/security"><ArrowRight size={19} /></Link>
         </Card>
       </div>
+      <NotificationPreferences />
     </div>
   );
 }

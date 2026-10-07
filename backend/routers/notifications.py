@@ -4,10 +4,13 @@ from fastapi import APIRouter, HTTPException, Query, Response, status
 
 from backend.dependencies.auth import CurrentUser, CurrentUserCsrf
 from backend.schemas.notifications import (
+    NotificationPreferencesResponse,
+    NotificationPreferencesUpdate,
     NotificationReadAllResponse,
     NotificationResponse,
     NotificationUnreadCountResponse,
 )
+from services.notification_preference_service import notification_preference_service
 from services.notification_service import (
     MAX_NOTIFICATION_OFFSET,
     MAX_NOTIFICATION_PAGE_SIZE,
@@ -44,6 +47,26 @@ def get_notifications(
 def get_unread_count(current_user: CurrentUser) -> NotificationUnreadCountResponse:
     return NotificationUnreadCountResponse(
         unread_count=notification_service.unread_count(current_user.id)
+    )
+
+
+@router.get("/preferences", response_model=NotificationPreferencesResponse)
+def get_notification_preferences(
+    current_user: CurrentUser,
+) -> NotificationPreferencesResponse:
+    return NotificationPreferencesResponse(
+        **notification_preference_service.get_effective(current_user.id)
+    )
+
+
+@router.patch("/preferences", response_model=NotificationPreferencesResponse)
+def update_notification_preferences(
+    payload: NotificationPreferencesUpdate,
+    current_user: CurrentUserCsrf,
+) -> NotificationPreferencesResponse:
+    updates = payload.model_dump(exclude_unset=True)
+    return NotificationPreferencesResponse(
+        **notification_preference_service.update(current_user.id, updates)
     )
 
 

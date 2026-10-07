@@ -29,6 +29,14 @@ export interface Notification {
   lida_em: string | null;
 }
 
+export type NotificationPreferenceKey =
+  | "invoice_due_soon"
+  | "invoice_overdue"
+  | "card_limit"
+  | "unusual_expense";
+
+export type NotificationPreferences = Record<NotificationPreferenceKey, boolean>;
+
 export interface RegisterResult extends User {
   verification_email_sent: boolean;
 }

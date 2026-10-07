@@ -7,8 +7,13 @@ from decimal import Decimal
 from typing import Iterable
 
 from services.financial_alert_rules import classify_card_limit, classify_invoice_alert
+from services.notification_preference_service import notification_preference_service
 from services.notification_service import notification_service
-from services.notification_types import NotificationSeverity, NotificationType
+from services.notification_types import (
+    NotificationPreference,
+    NotificationSeverity,
+    NotificationType,
+)
 
 
 logger = logging.getLogger("nivra.financial_notifications")
@@ -17,6 +22,7 @@ logger = logging.getLogger("nivra.financial_notifications")
 @dataclass(frozen=True)
 class FinancialNotificationEvent:
     producer: str
+    preference: NotificationPreference
     notification_type: NotificationType
     severity: NotificationSeverity
     title: str
@@ -31,6 +37,7 @@ class FinancialNotificationEvent:
 class FinancialNotificationResult:
     attempted: int
     delivered_or_deduplicated: int
+    suppressed: int
     failed: int
 
 
@@ -71,6 +78,7 @@ def _card_limit_event(card: dict, reference: date) -> FinancialNotificationEvent
     period = _period(reference)
     return FinancialNotificationEvent(
         producer="card_limit",
+        preference=NotificationPreference.CARD_LIMIT,
         notification_type=NotificationType.CARD_ALERT,
         severity=severity,
         title=title,
@@ -101,6 +109,7 @@ def _invoice_event(card: dict, reference: date) -> FinancialNotificationEvent | 
     if classification.kind == "overdue":
         return FinancialNotificationEvent(
             producer="card_invoice_overdue",
+            preference=NotificationPreference.INVOICE_OVERDUE,
             notification_type=NotificationType.CARD_ALERT,
             severity=NotificationSeverity.CRITICAL,
             title=f"A fatura de {card_name} está vencida",
@@ -114,6 +123,7 @@ def _invoice_event(card: dict, reference: date) -> FinancialNotificationEvent | 
     day_label = "hoje" if days == 0 else f"em {days} {'dia' if days == 1 else 'dias'}"
     return FinancialNotificationEvent(
         producer="card_invoice_due_soon",
+        preference=NotificationPreference.INVOICE_DUE_SOON,
         notification_type=NotificationType.CARD_ALERT,
         severity=NotificationSeverity.WARNING,
         title=f"A fatura de {card_name} vence em breve",
@@ -133,6 +143,7 @@ def _unusual_expense_events(unusual_expenses: Iterable[dict]) -> list[FinancialN
         category = str(expense.get("category") or "Sem categoria")
         events.append(FinancialNotificationEvent(
             producer="unusual_expense",
+            preference=NotificationPreference.UNUSUAL_EXPENSE,
             notification_type=NotificationType.FINANCIAL_ALERT,
             severity=NotificationSeverity.WARNING,
             title="Gasto fora do padrão detectado",
@@ -180,9 +191,35 @@ class FinancialNotificationService:
             unusual_expenses=unusual_expenses,
             reference=reference,
         )
+        preferences = notification_preference_service.get_effective(usuario_id)
         delivered = 0
+        suppressed = 0
         failed = 0
         for event in events:
+            if not preferences[event.preference.value]:
+                notification_preference_service.suppress_event(
+                    usuario_id,
+                    event.preference,
+                    event.dedupe_key,
+                )
+                suppressed += 1
+                logger.info(
+                    "financial_notification_event producer=%s type=%s outcome=disabled",
+                    event.producer,
+                    event.notification_type,
+                )
+                continue
+            if notification_preference_service.event_was_suppressed(
+                usuario_id,
+                event.dedupe_key,
+            ):
+                suppressed += 1
+                logger.info(
+                    "financial_notification_event producer=%s type=%s outcome=previously_disabled",
+                    event.producer,
+                    event.notification_type,
+                )
+                continue
             try:
                 notification_service.notify(
                     usuario_id,
@@ -213,6 +250,7 @@ class FinancialNotificationService:
         return FinancialNotificationResult(
             attempted=len(events),
             delivered_or_deduplicated=delivered,
+            suppressed=suppressed,
             failed=failed,
         )
 

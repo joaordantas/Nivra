@@ -18,6 +18,8 @@ import type {
   LumiConversationSummary,
   LumiMemory,
   Notification,
+  NotificationPreferenceKey,
+  NotificationPreferences,
   OpenFinanceConnection,
   OpenFinanceAccountLink,
   OpenFinanceExternalAccount,
@@ -169,6 +171,13 @@ export const api = {
     request<{ updated_count: number }>("/notifications/read-all", { method: "POST" }),
   deleteNotification: (notificationId: number) =>
     request<void>(`/notifications/${notificationId}`, { method: "DELETE" }),
+  getNotificationPreferences: () =>
+    request<NotificationPreferences>("/notifications/preferences"),
+  updateNotificationPreferences: (updates: Partial<Record<NotificationPreferenceKey, boolean>>) =>
+    request<NotificationPreferences>("/notifications/preferences", {
+      method: "PATCH",
+      body: JSON.stringify(updates),
+    }),
 
   getCategories: () => request<Category[]>("/categories"),
   createCategory: (nome: string) => request<Category>("/categories", { method: "POST", body: JSON.stringify({ nome }) }),

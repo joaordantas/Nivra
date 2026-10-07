@@ -19,7 +19,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import make_url
 
 
-EXPECTED_HEAD = "e8f9a0b1c2d3"
+EXPECTED_HEAD = "f9a0b1c2d3e4"
 
 
 def require(condition: bool, label: str) -> None:

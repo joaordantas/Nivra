@@ -24,7 +24,7 @@ from sqlalchemy.engine import make_url
 from tests.integration.notification_postgres_gate import _driver_url, require
 
 
-EXPECTED_HEAD = "e8f9a0b1c2d3"
+EXPECTED_HEAD = "f9a0b1c2d3e4"
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DATABASE = "nivra_p73_gate"
 

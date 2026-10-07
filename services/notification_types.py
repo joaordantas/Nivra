@@ -16,5 +16,13 @@ class NotificationSeverity(StrEnum):
     CRITICAL = "critical"
 
 
+class NotificationPreference(StrEnum):
+    INVOICE_DUE_SOON = "invoice_due_soon"
+    INVOICE_OVERDUE = "invoice_overdue"
+    CARD_LIMIT = "card_limit"
+    UNUSUAL_EXPENSE = "unusual_expense"
+
+
 NOTIFICATION_TYPES = frozenset(item.value for item in NotificationType)
 NOTIFICATION_SEVERITIES = frozenset(item.value for item in NotificationSeverity)
+NOTIFICATION_PREFERENCES = frozenset(item.value for item in NotificationPreference)
