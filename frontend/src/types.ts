@@ -24,7 +24,6 @@ export interface Notification {
   titulo: string;
   mensagem: string;
   metadados: Record<string, string | number | boolean>;
-  chave_dedupe: string | null;
   lida: boolean;
   criada_em: string;
   lida_em: string | null;

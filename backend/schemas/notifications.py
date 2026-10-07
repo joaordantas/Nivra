@@ -14,7 +14,6 @@ class NotificationResponse(BaseModel):
     titulo: str
     mensagem: str
     metadados: dict[str, str | int | bool]
-    chave_dedupe: str | None
     lida: bool
     criada_em: datetime
     lida_em: datetime | None

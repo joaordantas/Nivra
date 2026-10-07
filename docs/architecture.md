@@ -58,6 +58,21 @@ A API não cria tabelas no startup e não depende de arquivos locais para persis
 
 Operações críticas utilizam transações. A troca de conta principal serializa alterações concorrentes, pagamentos de fatura bloqueiam a linha correspondente e uma transferência é persistida como um único evento entre contas.
 
+## Notificações financeiras
+
+O recálculo autenticado de insights produz os fatos canônicos de fatura,
+comprometimento de cartão e gasto fora do padrão. Depois do cálculo, uma camada
+única de producers converte apenas os fatos elegíveis em templates de
+notificação e os entrega ao `NotificationService`. Chamadas internas ao service
+de insights não emitem notificações por padrão; o router de insights habilita o
+efeito de forma explícita no fluxo operacional do usuário.
+
+Cada notificação é persistida em transação própria, fora das transações
+financeiras. Falhas são registradas somente com producer, tipo e resultado e
+não invalidam o insight nem revertem uma operação financeira já concluída. A
+unicidade por usuário e chave de evento faz replay e concorrência convergirem
+para uma única notificação lógica.
+
 ## Autenticação e isolamento
 
 O login cria uma sessão persistente no PostgreSQL. O navegador recebe um identificador aleatório em cookie HTTP-only; o banco guarda somente seu hash. Em produção, o cookie usa `Secure` e `SameSite=Lax`. A sessão possui prazo de expiração configurável e o logout a revoga no servidor.

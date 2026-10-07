@@ -44,6 +44,7 @@ class NotificationApiTests(unittest.TestCase):
 
         response = self.a.get("/api/notifications")
         self.assertEqual(response.status_code, 200, response.text)
+        self.assertNotIn("chave_dedupe", response.json()[0])
         self.assertEqual([item["id"] for item in response.json()], [own["id"]])
         self.assertEqual(self.a.get("/api/notifications/unread-count").json(), {"unread_count": 1})
 

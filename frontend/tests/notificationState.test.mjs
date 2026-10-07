@@ -15,7 +15,6 @@ function notification(id, read = false) {
     titulo: `Notificação ${id}`,
     mensagem: "Mensagem",
     metadados: {},
-    chave_dedupe: `test:${id}`,
     lida: read,
     criada_em: "2026-10-02T12:00:00Z",
     lida_em: read ? "2026-10-02T12:05:00Z" : null,

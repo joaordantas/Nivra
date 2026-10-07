@@ -691,19 +691,40 @@ Status: **CONCLUÍDA E VALIDADA LOCALMENTE E EM POSTGRESQL DESCARTÁVEL; SEM DEP
 
 Status: **CONCLUÍDA E VALIDADA LOCALMENTE; SEM PRODUTORES FINANCEIROS OU DEPLOY EM PRODUCTION**
 
+### P7.3 — Eventos Financeiros e Alertas
+
+- [x] Produtor único para converter fatos financeiros já classificados em notificações
+- [x] Fatura próxima em até três dias e fatura vencida, somente com valor pendente
+- [x] Comprometimento de cartão nas faixas já existentes de 75% e 90%
+- [x] Gastos fora do padrão vindos exclusivamente do detector determinístico mediana/MAD
+- [x] Templates, severidades, metadata mínima e dedupe keys centralizados
+- [x] Replay, oito chamadas concorrentes, múltiplos cartões e isolamento entre usuários
+- [x] Falhas de notificação isoladas do insight e das operações financeiras
+- [x] Gate em PostgreSQL descartável no mesmo endpoint conhecido de Preview, removido ao final
+- [ ] Alertas de orçamento — domínio persistido ainda não implementado
+- [ ] Alertas de meta — domínio financeiro persistido ainda não implementado
+
+O disparo ocorre no recálculo autenticado de insights. O core calcula status de
+fatura, comprometimento e anomalias; o producer apenas aplica templates aos
+fatos resultantes. Fatura usa `cartão + vencimento`, limite usa
+`cartão + faixa + mês` e gasto incomum usa `origem + id` para deduplicação.
+Notificações registram o evento observado e não são apagadas automaticamente se
+o fato de origem mudar ou for excluído.
+
+Status: **CONCLUÍDA E VALIDADA LOCALMENTE E EM POSTGRESQL DESCARTÁVEL; SEM DEPLOY EM PRODUCTION**
+
 - [x] Fundação do `NotificationService`
 - [x] Estado lida/não lida no backend
 - [x] Centro de notificações e sino no frontend
 - [ ] Preferências de notificações
-- [ ] Alertas de orçamento e fatura
-- [ ] Gastos incomuns e progresso de metas
+- [x] Alertas de fatura e comprometimento de cartão
+- [x] Gastos incomuns
+- [ ] Alertas de orçamento e progresso de metas
 - [ ] Resumos semanal e mensal
 
-Produtores financeiros planejados para a P7.3: faixas de orçamento em
-50/75/90/100%, fatura próxima ou vencida, gasto incomum, progresso de meta e
-resumos semanal e mensal. Nenhum desses eventos foi conectado na P7.1. Uma
+Preferências, resumos periódico, orçamento e meta permanecem futuros. Uma
 política automatizada de retenção também permanece futura; a exclusão
-individual segura já evita acoplamento com a fonte da verdade financeira.
+individual segura não altera a fonte da verdade financeira.
 
 ## 💬 PRIORIDADE 8 — WHATSAPP
 
@@ -751,11 +772,11 @@ individual segura já evita acoplamento com a fonte da verdade financeira.
 
 ## Próxima tarefa recomendada
 
-**P7.3 — Eventos Financeiros e Alertas.**
+**P7.4 — Preferências de Notificações.**
 
 A Prioridade 6 foi tecnicamente concluída e não bloqueia o restante do roadmap.
 A Lumi está homologada em Production somente para uma conta interna, com
 propostas e execução protegidas por confirmação explícita. O rollout público
 não foi iniciado e o Gate Testers externo foi adiado por decisão de produto,
 sem representar falha técnica. O projeto está pronto para avançar para a
-P7.3, que não deve ser iniciada automaticamente por este registro.
+P7.4, que não deve ser iniciada automaticamente por este registro.

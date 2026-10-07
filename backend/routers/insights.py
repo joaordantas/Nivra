@@ -17,7 +17,10 @@ def get_financial_insights(
     try:
         return FinancialInsights(
             **obter_insights_financeiros_service(
-                current_user.id, data_inicio, data_fim
+                current_user.id,
+                data_inicio,
+                data_fim,
+                emitir_notificacoes=True,
             )
         )
     except ValueError as exc:

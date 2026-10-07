@@ -1,4 +1,5 @@
 import calendar
+import logging
 from collections import defaultdict
 from datetime import date, timedelta
 from decimal import Decimal
@@ -7,6 +8,12 @@ from repositories.categoria_repo import listar_categorias
 from repositories.insight_repo import listar_compras_cartao_periodo
 from services.cartao_service import listar_cartoes_formatados, listar_faturas_service
 from services.conta_service import listar_contas_formatadas
+from services.financial_alert_rules import (
+    INVOICE_DUE_SOON_DAYS,
+    classify_card_limit,
+    classify_invoice_alert,
+)
+from services.financial_notification_service import financial_notification_service
 from services.financial_pattern_service import (
     detect_recurring_expenses,
     detect_unusual_expenses,
@@ -15,14 +22,13 @@ from services.transacao_service import listar_transacoes_formatadas, obter_resum
 from services.transferencia_service import listar_transferencias_formatadas
 
 
-CARD_WARNING_PERCENT = Decimal("75")
-CARD_CRITICAL_PERCENT = Decimal("90")
 CARD_CONCENTRATION_PERCENT = Decimal("70")
-INVOICE_DUE_SOON_DAYS = 3
 TREND_MONTHS = 6
 TREND_CHANGE_THRESHOLD_PERCENT = Decimal("5")
 PATTERN_HISTORY_MONTHS = 30
 ANOMALY_HISTORY_MONTHS = 12
+
+logger = logging.getLogger("nivra.financial_notifications")
 
 
 def _money(value: object) -> Decimal:
@@ -527,7 +533,8 @@ def _attention_items(
             cards_with_percentage, key=lambda card: card["committed_percent"]
         )
         percentage = _money(most_committed["committed_percent"])
-        if percentage >= CARD_CRITICAL_PERCENT:
+        limit_level = classify_card_limit(percentage)
+        if limit_level == "critical":
             items.append({
                 "code": "card_limit_critical",
                 "severity": "danger",
@@ -537,7 +544,7 @@ def _attention_items(
                 "action_label": "Ver cartões",
                 "action_path": "/cards",
             })
-        elif percentage >= CARD_WARNING_PERCENT:
+        elif limit_level == "warning":
             items.append({
                 "code": "card_limit_warning",
                 "severity": "warning",
@@ -566,16 +573,25 @@ def _attention_items(
                 "action_path": "/cards",
             })
 
-    unpaid_invoices = [
-        card
+    classified_invoices = [
+        (
+            card,
+            classify_invoice_alert(
+                amount=card["next_due_invoice_amount"],
+                status=card["next_due_status"],
+                due_date=card["next_due_date"],
+                reference=reference,
+            ),
+        )
         for card in cards
-        if _money(card["next_due_invoice_amount"]) > 0
-        and card["next_due_status"] != "paga"
-        and card["next_due_date"] is not None
     ]
-    overdue = [card for card in unpaid_invoices if card["next_due_status"] == "vencida"]
+    overdue = [
+        (card, classification)
+        for card, classification in classified_invoices
+        if classification is not None and classification.kind == "overdue"
+    ]
     if overdue:
-        invoice = min(overdue, key=lambda card: card["next_due_date"])
+        invoice, _classification = min(overdue, key=lambda item: item[0]["next_due_date"])
         items.append({
             "code": "card_invoice_overdue",
             "severity": "danger",
@@ -587,13 +603,13 @@ def _attention_items(
         })
     else:
         due_soon = [
-            card
-            for card in unpaid_invoices
-            if 0 <= (date.fromisoformat(card["next_due_date"]) - reference).days <= INVOICE_DUE_SOON_DAYS
+            (card, classification)
+            for card, classification in classified_invoices
+            if classification is not None and classification.kind == "due_soon"
         ]
         if due_soon:
-            invoice = min(due_soon, key=lambda card: card["next_due_date"])
-            days = (date.fromisoformat(invoice["next_due_date"]) - reference).days
+            invoice, classification = min(due_soon, key=lambda item: item[0]["next_due_date"])
+            days = classification.days_until_due
             items.append({
                 "code": "card_invoice_due_soon",
                 "severity": "warning",
@@ -626,6 +642,7 @@ def obter_insights_financeiros_service(
     data_fim: str,
     *,
     hoje: date | None = None,
+    emitir_notificacoes: bool = False,
 ) -> dict:
     try:
         requested_start = date.fromisoformat(data_inicio)
@@ -692,7 +709,7 @@ def obter_insights_financeiros_service(
         "card_purchase_count": sum(1 for item in entries if item["source"] == "card"),
     }
 
-    return {
+    result = {
         "period": {
             "start": start,
             "end": end,
@@ -732,6 +749,19 @@ def obter_insights_financeiros_service(
             reference,
         ),
     }
+    if emitir_notificacoes:
+        try:
+            financial_notification_service.publish_from_insights(
+                usuario_id,
+                card_commitment=card_commitment,
+                unusual_expenses=unusual,
+                reference=reference,
+            )
+        except Exception:
+            # Notificações são secundárias: uma falha nunca invalida o insight
+            # nem qualquer operação financeira que produziu seus fatos.
+            logger.error("financial_notification_batch outcome=failed")
+    return result
 
 
 def obter_contexto_financeiro_lumi_service(
