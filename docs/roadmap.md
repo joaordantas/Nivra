@@ -745,7 +745,7 @@ Status: **CONCLUÍDA E VALIDADA LOCALMENTE E EM POSTGRESQL DESCARTÁVEL; SEM DEP
 - [x] Templates informativos, metadata mínima e navegação para o dashboard
 - [x] Tela de preferências ampliada sem duplicação de componentes
 - [x] Serviço interno com data de referência injetável e sem endpoint público
-- [ ] Scheduler/cron para execução automática — reservado para fase posterior
+- [x] Runner agendável com tracking, lease distribuída, batch e recovery
 
 A fonte financeira é a mesma dos insights e restringe as consultas ao usuário e
 ao intervalo solicitado. Datas são civis conforme persistidas pelo domínio; a
@@ -763,9 +763,34 @@ Status: **CONCLUÍDA E VALIDADA LOCALMENTE E EM POSTGRESQL DESCARTÁVEL; SEM DEP
 - [ ] Alertas de orçamento e progresso de metas
 - [x] Resumos semanal e mensal
 
-Scheduler dos resumos, orçamento e meta permanecem futuros. Uma
-política automatizada de retenção também permanece futura; a exclusão
-individual segura não altera a fonte da verdade financeira.
+O scheduler dos resumos está preparado e validado, mas permanece desativado e
+sem configuração de cron em Production. Orçamento, meta e uma política
+automatizada de retenção continuam futuros; a exclusão individual segura não
+altera a fonte da verdade financeira.
+
+### P7.6 — Agendamento dos Resumos Periódicos
+
+- [x] Trigger HTTP interno compatível com Vercel Cron e autenticação exclusiva
+- [x] Feature flag segura, ausente ou inválida igual a OFF
+- [x] Runner separado, referência civil injetável e sem efeitos no import
+- [x] Última semana e último mês encerrados, sem backfill histórico irrestrito
+- [x] Paginação keyset de IDs e batch configurável
+- [x] Isolamento por usuário e status `success`, `partial_success` e `failed`
+- [x] Tracking persistente sem PII ou conteúdo financeiro
+- [x] Claim atômico, lease renovável e recuperação após expiração
+- [x] Retry transitório limitado com backoff curto e erro sanitizado
+- [x] CLI operacional e dry-run sem escrita
+- [x] Concorrência e migrations validadas em PostgreSQL descartável
+- [x] Sem alteração de frontend, Lumi, deploy ou Production
+
+O Vercel Cron diário foi escolhido porque o backend FastAPI atual executa em
+funções serverless que podem dormir, reiniciar ou coexistir em múltiplas
+instâncias. Scheduler dentro de worker e loop persistente foram descartados;
+worker dedicado também adicionaria infraestrutura desnecessária. A ativação
+futura exige segredo próprio, flag explícita e configuração do cron no projeto
+Vercel. O código entregue não ativa nenhuma dessas opções.
+
+Status: **CONCLUÍDA E VALIDADA LOCALMENTE E EM POSTGRESQL DESCARTÁVEL; SEM DEPLOY OU ATIVAÇÃO EM PRODUCTION**
 
 ## 💬 PRIORIDADE 8 — WHATSAPP
 
@@ -813,12 +838,13 @@ individual segura não altera a fonte da verdade financeira.
 
 ## Próxima tarefa recomendada
 
-**P7.6 — Agendamento dos Resumos Periódicos.**
+**P7.7 — Alertas de Orçamento e Progresso de Metas.**
 
 A Prioridade 6 foi tecnicamente concluída e não bloqueia o restante do roadmap.
 A Lumi está homologada em Production somente para uma conta interna, com
 propostas e execução protegidas por confirmação explícita. O rollout público
 não foi iniciado e o Gate Testers externo foi adiado por decisão de produto,
-sem representar falha técnica. Os produtores de P7.5 estão prontos para uma
-fase posterior definir execução automática, observabilidade e política de
-retries, que não deve ser iniciada automaticamente por este registro.
+sem representar falha técnica. O agendamento da P7.6 está preparado e validado,
+mas continua desativado. A próxima fase lógica pode reutilizar a fundação de
+notificações para eventos determinísticos de orçamento e metas; ela não deve
+ser iniciada automaticamente por este registro.

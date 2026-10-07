@@ -251,6 +251,54 @@ notification_preference_suppressions = Table(
     ),
 )
 
+periodic_summary_job_runs = Table(
+    "periodic_summary_job_runs", metadata,
+    Column("id", Integer, primary_key=True),
+    Column("job_type", String(16), nullable=False),
+    Column("period_start", Date, nullable=False),
+    Column("period_end", Date, nullable=False),
+    Column("reference_date", Date, nullable=False),
+    Column("status", String(20), nullable=False, server_default="running"),
+    Column("lease_token", String(36)),
+    Column("lease_expires_at", DateTime(timezone=True)),
+    Column("attempt", Integer, nullable=False, server_default="1"),
+    Column("processed_count", Integer, nullable=False, server_default="0"),
+    Column("success_count", Integer, nullable=False, server_default="0"),
+    Column("suppressed_count", Integer, nullable=False, server_default="0"),
+    Column("skipped_count", Integer, nullable=False, server_default="0"),
+    Column("failure_count", Integer, nullable=False, server_default="0"),
+    Column("retry_count", Integer, nullable=False, server_default="0"),
+    Column("error_code", String(48)),
+    Column("started_at", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    Column("finished_at", DateTime(timezone=True)),
+    UniqueConstraint("job_type", "period_start", name="uq_periodic_summary_job_period"),
+    CheckConstraint("job_type IN ('weekly', 'monthly')", name="ck_periodic_summary_job_type"),
+    CheckConstraint(
+        "status IN ('running', 'success', 'partial_success', 'failed')",
+        name="ck_periodic_summary_job_status",
+    ),
+    CheckConstraint("period_end >= period_start", name="ck_periodic_summary_job_period"),
+    CheckConstraint("attempt >= 1", name="ck_periodic_summary_job_attempt"),
+    CheckConstraint(
+        "processed_count >= 0 AND success_count >= 0 AND suppressed_count >= 0 "
+        "AND skipped_count >= 0 AND failure_count >= 0 AND retry_count >= 0",
+        name="ck_periodic_summary_job_counts",
+    ),
+    CheckConstraint(
+        "(status = 'running' AND lease_token IS NOT NULL AND lease_expires_at IS NOT NULL "
+        "AND finished_at IS NULL) OR "
+        "(status <> 'running' AND lease_token IS NULL AND lease_expires_at IS NULL "
+        "AND finished_at IS NOT NULL)",
+        name="ck_periodic_summary_job_lifecycle",
+    ),
+)
+Index(
+    "ix_periodic_summary_job_status_lease",
+    periodic_summary_job_runs.c.status,
+    periodic_summary_job_runs.c.lease_expires_at,
+)
+Index("ix_periodic_summary_job_started", periodic_summary_job_runs.c.started_at)
+
 categorias = Table(
     "categorias", metadata,
     Column("id", Integer, primary_key=True),
@@ -595,7 +643,7 @@ Index(
 )
 
 TABLES_IN_DEPENDENCY_ORDER = [
-    usuarios, sessoes, auth_tokens, auth_rate_events, lumi_action_confirmations, notifications, notification_preferences, notification_preference_suppressions, categorias, contas, parcelamentos, transacoes, transferencias, cartoes,
+    usuarios, sessoes, auth_tokens, auth_rate_events, lumi_action_confirmations, notifications, notification_preferences, notification_preference_suppressions, periodic_summary_job_runs, categorias, contas, parcelamentos, transacoes, transferencias, cartoes,
     faturas, compras_cartao, pagamentos_fatura, vendas, parcelas, limites, conexoes_bancarias,
     contas_bancarias_externas, transacoes_bancarias, correspondencias_conciliacao, eventos_sincronizacao,
     eventos_webhook_open_finance,

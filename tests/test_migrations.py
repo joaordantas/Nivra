@@ -23,7 +23,7 @@ class MigrationConnectionTests(unittest.TestCase):
                 config.attributes["connection"] = connection
                 command.upgrade(config, "head")
                 revision = connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-                self.assertEqual(revision, "a0b1c2d3e4f5")
+                self.assertEqual(revision, "b1c2d3e4f5a6")
         finally:
             engine.dispose()
 

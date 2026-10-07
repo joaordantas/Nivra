@@ -7,6 +7,8 @@ from datetime import date, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 from enum import StrEnum
 
+from sqlalchemy.exc import DBAPIError, OperationalError, TimeoutError as SqlAlchemyTimeoutError
+
 from services.insight_service import obter_agregado_periodo_financeiro_service
 from services.notification_preference_service import notification_preference_service
 from services.notification_service import notification_service
@@ -39,6 +41,8 @@ class PeriodicSummaryResult:
     period: SummaryPeriod
     outcome: str
     notification: dict | None = None
+    error_code: str | None = None
+    retryable: bool = False
 
 
 MONTH_NAMES = (
@@ -212,11 +216,23 @@ class PeriodicFinancialSummaryService:
                 },
                 dedupe_key=dedupe_key,
             )
-        except Exception:
-            logger.error(
-                "periodic_summary_event kind=%s outcome=failed", period.kind.value
+        except Exception as exc:
+            retryable = isinstance(exc, (OperationalError, SqlAlchemyTimeoutError)) or (
+                isinstance(exc, DBAPIError) and exc.connection_invalidated
             )
-            return PeriodicSummaryResult(period=period, outcome="failed")
+            logger.error(
+                "periodic_summary_event kind=%s outcome=failed error_code=%s",
+                period.kind.value,
+                "database_unavailable" if retryable else "summary_generation_failed",
+            )
+            return PeriodicSummaryResult(
+                period=period,
+                outcome="failed",
+                error_code=(
+                    "database_unavailable" if retryable else "summary_generation_failed"
+                ),
+                retryable=retryable,
+            )
         logger.info(
             "periodic_summary_event kind=%s outcome=delivered_or_deduplicated",
             period.kind.value,

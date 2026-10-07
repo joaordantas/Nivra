@@ -2,6 +2,9 @@ import unittest
 from unittest.mock import patch
 
 from tests.integration.periodic_summary_postgres_gate import test_url_from_env
+from tests.integration.periodic_summary_job_postgres_gate import (
+    test_url_from_env as p76_test_url_from_env,
+)
 
 
 class PeriodicSummaryPostgresGateGuardTests(unittest.TestCase):
@@ -22,6 +25,28 @@ class PeriodicSummaryPostgresGateGuardTests(unittest.TestCase):
         with patch("tests.integration.periodic_summary_postgres_gate.dotenv_values", return_value={}), \
              patch.dict("os.environ", {"P75_TEST_DATABASE_URL": raw}, clear=True):
             self.assertEqual(test_url_from_env(), raw)
+
+    def test_p76_rejects_non_disposable_database(self):
+        with patch(
+            "tests.integration.periodic_summary_job_postgres_gate.dotenv_values",
+            return_value={},
+        ), patch.dict(
+            "os.environ",
+            {"P76_TEST_DATABASE_URL": "postgresql://u:p@host/production"},
+            clear=True,
+        ):
+            with self.assertRaisesRegex(RuntimeError, "nivra_p76_gate"):
+                p76_test_url_from_env()
+
+    def test_p76_accepts_only_exact_isolated_database(self):
+        raw = "postgresql://u:p@host/nivra_p76_gate"
+        with patch(
+            "tests.integration.periodic_summary_job_postgres_gate.dotenv_values",
+            return_value={},
+        ), patch.dict(
+            "os.environ", {"P76_TEST_DATABASE_URL": raw}, clear=True
+        ):
+            self.assertEqual(p76_test_url_from_env(), raw)
 
 
 if __name__ == "__main__":

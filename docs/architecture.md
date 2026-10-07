@@ -113,8 +113,45 @@ após reativação. A metadata contém apenas rota, tipo e início do período. 
 ativar uma notificação, o frontend aceita somente uma allowlist fixa de rotas
 internas existentes; os resumos direcionam para `/dashboard`.
 
-Os producers estão prontos para chamada interna, mas P7.5 não inclui scheduler,
-cron ou qualquer execução automática em segundo plano.
+### Agendamento dos resumos periódicos
+
+O agendamento foi preparado para o modelo serverless atual. Um Vercel Cron
+diário deverá fazer `GET /api/internal/jobs/periodic-summaries`; a rota, oculta
+do OpenAPI, autentica `Authorization: Bearer <CRON_SECRET>`, rejeita parâmetros
+e payload e entrega ao runner somente a data civil calculada no timezone fixo
+da aplicação. O segredo é exclusivo do scheduler. CSRF protege sessões de
+navegador e, por isso, não substitui a autenticação máquina-a-máquina desta
+rota.
+
+`PeriodicSummaryJobRunner` é independente do trigger HTTP. Ele seleciona
+somente a última semana e o último mês integralmente encerrados, pagina IDs de
+usuários por chave crescente, renova uma lease curta por lote e processa cada
+usuário em transação própria pelo `PeriodicFinancialSummaryService`. O runner
+não contém agregação financeira, preferência ou lógica do ledger. Ausência de
+atividade e supressão são resultados operacionais normais.
+
+`periodic_summary_job_runs` combina tracking e lock distribuído. A constraint
+única por tipo e início do período impede dois donos lógicos; um token protege
+renovação/finalização e a expiração de quinze minutos permite recuperação após
+crash. Execuções com falha ou sucesso parcial podem ser retomadas até quatro
+tentativas de job. Operações transitórias por usuário têm até três tentativas,
+com backoff limitado de 250 e 500 ms. A idempotência das notificações continua
+sendo a segunda camada de proteção quando uma retomada reavalia usuários já
+concluídos.
+
+O scheduler diário não percorre histórico arbitrário: cada execução considera
+apenas o período semanal e mensal imediatamente anteriores à data injetada.
+Assim, uma chamada perdida pode ser recuperada enquanto aquele período ainda é
+o último encerrado; períodos mais antigos exigem decisão operacional explícita.
+Logs e tracking contêm tipo, período, status, duração e contadores, sem IDs de
+usuário, PII, valores ou conteúdo financeiro.
+
+A execução permanece desativada por padrão. Importar a aplicação não inicia
+threads nem jobs; `PERIODIC_SUMMARY_JOBS_ENABLED=true` é obrigatório para uma
+execução real. A CLI operacional oferece referência fixa, seleção de tipo,
+tamanho de lote e dry-run. A configuração do Vercel Cron não integra esta fase,
+portanto nenhum deploy ou agendamento de Production foi alterado. O runbook
+completo está em `docs/periodic-summary-jobs.md`.
 
 ## Autenticação e isolamento
 

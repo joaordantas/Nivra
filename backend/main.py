@@ -17,6 +17,7 @@ from backend.routers.categories import router as categories_router
 from backend.routers.cards import router as cards_router
 from backend.routers.dashboard import router as dashboard_router
 from backend.routers.installments import router as installments_router
+from backend.routers.internal_jobs import router as internal_jobs_router
 from backend.routers.insights import router as insights_router
 from backend.routers.lumi import router as lumi_router
 from backend.routers.notifications import router as notifications_router
@@ -53,6 +54,7 @@ app.include_router(cards_router, prefix="/api")
 app.include_router(transactions_router, prefix="/api")
 app.include_router(dashboard_router, prefix="/api")
 app.include_router(installments_router, prefix="/api")
+app.include_router(internal_jobs_router, prefix="/api")
 app.include_router(insights_router, prefix="/api")
 app.include_router(lumi_router, prefix="/api")
 app.include_router(notifications_router, prefix="/api")

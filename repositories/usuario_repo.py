@@ -62,6 +62,29 @@ def buscar_usuario_por_id(usuario_id: int) -> tuple | None:
         conn.close()
 
 
+def listar_ids_usuarios_em_lote(*, depois_de: int = 0, limite: int = 250) -> list[int]:
+    if depois_de < 0 or not 1 <= limite <= 1_000:
+        raise ValueError("Pagina de usuarios invalida.")
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            "SELECT id FROM usuarios WHERE id > ? ORDER BY id LIMIT ?",
+            (depois_de, limite),
+        ).fetchall()
+        return [int(row[0]) for row in rows]
+    finally:
+        conn.close()
+
+
+def contar_usuarios() -> int:
+    conn = get_connection()
+    try:
+        row = conn.execute("SELECT COUNT(*) FROM usuarios").fetchone()
+        return int(row[0])
+    finally:
+        conn.close()
+
+
 def atualizar_senha_e_revogar_acessos(
     usuario_id: int,
     senha_hash: str,
