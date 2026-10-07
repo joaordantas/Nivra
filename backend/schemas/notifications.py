@@ -34,6 +34,8 @@ class NotificationPreferencesResponse(BaseModel):
     invoice_overdue: bool
     card_limit: bool
     unusual_expense: bool
+    weekly_summary: bool
+    monthly_summary: bool
 
 
 class NotificationPreferencesUpdate(BaseModel):
@@ -43,6 +45,8 @@ class NotificationPreferencesUpdate(BaseModel):
     invoice_overdue: StrictBool | None = None
     card_limit: StrictBool | None = None
     unusual_expense: StrictBool | None = None
+    weekly_summary: StrictBool | None = None
+    monthly_summary: StrictBool | None = None
 
     @model_validator(mode="after")
     def require_explicit_boolean(self):

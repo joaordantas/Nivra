@@ -5,6 +5,7 @@ import {
   createNotificationState,
   formatUnreadBadge,
   notificationReducer,
+  safeNotificationRoute,
 } from "../src/components/notifications/notificationState.js";
 
 function notification(id, read = false) {
@@ -93,4 +94,30 @@ test("falha do badge preserva o último valor conhecido", () => {
   state = notificationReducer(state, { type: "unread-error" });
   assert.equal(state.unreadCount, 3);
   assert.equal(state.badgeError, true);
+});
+
+test("mantém resumo financeiro longo e metadata segura no centro", () => {
+  const summary = {
+    ...notification(75),
+    tipo: "summary",
+    titulo: "Seu resumo de setembro está pronto",
+    mensagem: "Você recebeu R$ 12.345,67, gastou R$ 9.876,54 e terminou o período com saldo líquido de R$ 2.469,13. Sua maior categoria de gastos foi Alimentação e mercado.",
+    metadados: {
+      route: "/dashboard",
+      source_type: "monthly_summary",
+      source_id: "2026-09-01",
+    },
+  };
+  const state = notificationReducer(createNotificationState(), {
+    type: "list-success",
+    reset: true,
+    items: [summary],
+    pageSize: 12,
+  });
+  assert.equal(state.items[0].tipo, "summary");
+  assert.equal(state.items[0].mensagem, summary.mensagem);
+  assert.deepEqual(Object.keys(state.items[0].metadados).sort(), ["route", "source_id", "source_type"]);
+  assert.equal(safeNotificationRoute(state.items[0].metadados), "/dashboard");
+  assert.equal(safeNotificationRoute({ route: "https://example.com" }), null);
+  assert.equal(safeNotificationRoute({ route: "/admin" }), null);
 });

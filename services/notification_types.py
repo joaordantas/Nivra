@@ -21,6 +21,8 @@ class NotificationPreference(StrEnum):
     INVOICE_OVERDUE = "invoice_overdue"
     CARD_LIMIT = "card_limit"
     UNUSUAL_EXPENSE = "unusual_expense"
+    WEEKLY_SUMMARY = "weekly_summary"
+    MONTHLY_SUMMARY = "monthly_summary"
 
 
 NOTIFICATION_TYPES = frozenset(item.value for item in NotificationType)

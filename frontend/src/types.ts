@@ -33,7 +33,9 @@ export type NotificationPreferenceKey =
   | "invoice_due_soon"
   | "invoice_overdue"
   | "card_limit"
-  | "unusual_expense";
+  | "unusual_expense"
+  | "weekly_summary"
+  | "monthly_summary";
 
 export type NotificationPreferences = Record<NotificationPreferenceKey, boolean>;
 

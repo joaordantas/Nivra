@@ -33,6 +33,7 @@ export type NotificationAction =
   | { type: "read-all-end" };
 
 export function formatUnreadBadge(count: number): string | null;
+export function safeNotificationRoute(metadata: Notification["metadados"]): string | null;
 export function createNotificationState(): NotificationCenterState;
 export function notificationReducer(
   state: NotificationCenterState,

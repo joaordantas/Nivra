@@ -83,8 +83,38 @@ observados enquanto desativados, impedindo que reapareçam como backfill após a
 reativação. Notificações já persistidas não são alteradas.
 
 Leitura e atualização usam a identidade da sessão. A alteração parcial exige
-CSRF, aceita apenas os quatro booleanos conhecidos e não permite que o frontend
+CSRF, aceita apenas os seis booleanos conhecidos e não permite que o frontend
 informe um usuário ou uma categoria arbitrária.
+
+### Resumos financeiros periódicos
+
+`PeriodicFinancialSummaryService` produz resumos semanais e mensais sem expor
+um endpoint HTTP. O chamador fornece a data civil de referência e pode fornecer
+explicitamente o início do período, o que mantém testes e uma futura integração
+com scheduler determinísticos. A semana é de segunda a domingo e o mês é civil;
+somente períodos integralmente encerrados são aceitos. A aplicação continua
+adotando as datas civis persistidas pelo domínio financeiro, sem inferir o fuso
+do servidor nem introduzir configuração de timezone por usuário nesta fase.
+
+A fonte da verdade é a agregação canônica dos insights: transações manuais e de
+Open Finance reconciliadas, transferências internas neutras excluídas e compras
+de cartão contabilizadas na data da compra. Pagamentos de fatura não viram uma
+segunda despesa. As consultas são limitadas por usuário e pelas datas do período
+atual/anterior; não há leitura do histórico completo nem N+1 por lançamento.
+
+Sem atividade não há notificação. Com atividade, o template determinístico usa
+entradas, despesas, saldo líquido, maior categoria válida e comparação de
+despesas quando o período anterior possui base diferente de zero. A chave
+`tipo_do_resumo + início_do_período`, protegida pela unicidade já existente no
+banco, garante idempotência em replay e concorrência. `weekly_summary` e
+`monthly_summary` são habilitadas por padrão e reutilizam o mesmo ledger de
+supressões, portanto um período observado enquanto desabilitado não reaparece
+após reativação. A metadata contém apenas rota, tipo e início do período. Ao
+ativar uma notificação, o frontend aceita somente uma allowlist fixa de rotas
+internas existentes; os resumos direcionam para `/dashboard`.
+
+Os producers estão prontos para chamada interna, mas P7.5 não inclui scheduler,
+cron ou qualquer execução automática em segundo plano.
 
 ## Autenticação e isolamento
 

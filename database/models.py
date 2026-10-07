@@ -219,7 +219,7 @@ notification_preferences = Table(
     Column("updated_at", DateTime(timezone=True), nullable=False, server_default=func.now()),
     CheckConstraint(
         "preference_key IN ('invoice_due_soon', 'invoice_overdue', "
-        "'card_limit', 'unusual_expense')",
+        "'card_limit', 'unusual_expense', 'weekly_summary', 'monthly_summary')",
         name="ck_notification_preferences_key",
     ),
     PrimaryKeyConstraint(
@@ -237,7 +237,7 @@ notification_preference_suppressions = Table(
     Column("created_at", DateTime(timezone=True), nullable=False, server_default=func.now()),
     CheckConstraint(
         "preference_key IN ('invoice_due_soon', 'invoice_overdue', "
-        "'card_limit', 'unusual_expense')",
+        "'card_limit', 'unusual_expense', 'weekly_summary', 'monthly_summary')",
         name="ck_notification_suppressions_key",
     ),
     CheckConstraint(

@@ -152,7 +152,12 @@ def _category_totals(entries: list[dict], transaction_type: str) -> list[dict]:
             "percentage": round(float(value * Decimal("100") / total), 2) if total else 0.0,
         }
         for (category_id, category, category_key), value in sorted(
-            grouped.items(), key=lambda item: item[1], reverse=True
+            grouped.items(),
+            key=lambda item: (
+                -item[1],
+                item[0][1].casefold(),
+                item[0][0] if item[0][0] is not None else 2**63 - 1,
+            ),
         )
     ]
 
@@ -167,6 +172,37 @@ def _entry_totals(entries: list[dict]) -> dict[str, Decimal]:
         Decimal("0.00"),
     )
     return {"income": income, "expenses": expenses, "savings": income - expenses}
+
+
+def obter_agregado_periodo_financeiro_service(
+    usuario_id: int,
+    inicio: date,
+    fim: date,
+) -> dict:
+    """Canonical realized-finance aggregate used by insights and summaries."""
+    if inicio > fim:
+        raise ValueError("O início do período deve ser anterior ou igual ao fim.")
+    entries = _period_entries(usuario_id, inicio.isoformat(), fim.isoformat())
+    realized = [entry for entry in entries if not entry["neutral"]]
+    totals = _entry_totals(realized)
+    valid_expense_categories = [
+        category
+        for category in _category_totals(realized, "saida")
+        if category["category_id"] is not None
+    ]
+    return {
+        "inicio": inicio,
+        "fim": fim,
+        "entradas": totals["income"],
+        "despesas": totals["expenses"],
+        "saldo": totals["savings"],
+        "quantidade": len(realized),
+        "categoria_principal": (
+            valid_expense_categories[0]["category"]
+            if valid_expense_categories
+            else None
+        ),
+    }
 
 
 def _largest_expenses(entries: list[dict], *, limit: int = 5) -> list[dict]:

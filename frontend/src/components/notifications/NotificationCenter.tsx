@@ -9,6 +9,7 @@ import {
   type MouseEvent,
   type ReactNode,
 } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { ApiError, api } from "../../services/api";
 import type { Notification } from "../../types";
@@ -17,12 +18,14 @@ import {
   formatUnreadBadge,
   NOTIFICATION_PAGE_SIZE,
   notificationReducer,
+  safeNotificationRoute,
   type NotificationFilter,
 } from "./notificationState";
 
 export interface NotificationCenterContextValue {
   state: ReturnType<typeof createNotificationState>;
   closePanel: () => void;
+  activateNotification: (notification: Notification) => Promise<void>;
   deleteNotification: (notification: Notification) => Promise<void>;
   loadMore: () => Promise<void>;
   markAllRead: () => Promise<void>;
@@ -41,6 +44,7 @@ function readableError(error: unknown) {
 }
 
 export function NotificationCenterProvider({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
   const [state, dispatch] = useReducer(notificationReducer, undefined, createNotificationState);
   const lastTriggerRef = useRef<HTMLButtonElement | null>(null);
 
@@ -120,6 +124,16 @@ export function NotificationCenterProvider({ children }: { children: ReactNode }
     await mutateNotification(notification, () => api.markNotificationRead(notification.id));
   }
 
+  async function activateNotification(notification: Notification) {
+    if (state.mutatingId !== null || state.markingAll) return;
+    if (!notification.lida) await markRead(notification);
+    const route = safeNotificationRoute(notification.metadados);
+    if (route) {
+      closePanel();
+      navigate(route);
+    }
+  }
+
   async function deleteNotification(notification: Notification) {
     await mutateNotification(notification, () => api.deleteNotification(notification.id));
   }
@@ -138,6 +152,7 @@ export function NotificationCenterProvider({ children }: { children: ReactNode }
   }
 
   const value: NotificationCenterContextValue = {
+    activateNotification,
     state,
     closePanel,
     deleteNotification,

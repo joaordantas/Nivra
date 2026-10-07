@@ -1,5 +1,24 @@
 export const NOTIFICATION_PAGE_SIZE = 12;
 
+const ALLOWED_NOTIFICATION_ROUTES = new Set([
+  "/dashboard",
+  "/transactions",
+  "/installments",
+  "/accounts",
+  "/cards",
+  "/budgets",
+  "/goals",
+  "/lumi",
+  "/settings",
+]);
+
+export function safeNotificationRoute(metadata) {
+  const route = metadata?.route;
+  return typeof route === "string" && ALLOWED_NOTIFICATION_ROUTES.has(route)
+    ? route
+    : null;
+}
+
 export function formatUnreadBadge(count) {
   if (count <= 0) return null;
   return count > 99 ? "99+" : String(count);

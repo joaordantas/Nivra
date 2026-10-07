@@ -732,6 +732,28 @@ ativas por compatibilidade.
 
 Status: **CONCLUÍDA E VALIDADA LOCALMENTE E EM POSTGRESQL DESCARTÁVEL; SEM DEPLOY EM PRODUCTION**
 
+### P7.5 — Resumos Periódicos
+
+- [x] Resumo semanal da última semana civil encerrada, de segunda a domingo
+- [x] Resumo mensal do último mês civil encerrado
+- [x] Agregação canônica de entradas, despesas, saldo e principal categoria
+- [x] Comparação determinística com período anterior, sem divisão por zero
+- [x] Compras de cartão sem dupla contagem do pagamento da fatura
+- [x] Preferências `weekly_summary` e `monthly_summary`, habilitadas por padrão
+- [x] Ledger compartilhado impede backfill de períodos suprimidos
+- [x] Idempotência por usuário, tipo e início do período
+- [x] Templates informativos, metadata mínima e navegação para o dashboard
+- [x] Tela de preferências ampliada sem duplicação de componentes
+- [x] Serviço interno com data de referência injetável e sem endpoint público
+- [ ] Scheduler/cron para execução automática — reservado para fase posterior
+
+A fonte financeira é a mesma dos insights e restringe as consultas ao usuário e
+ao intervalo solicitado. Datas são civis conforme persistidas pelo domínio; a
+fase não adiciona timezone configurável. O produtor não usa Lumi nem IA e não
+gera notificações em períodos sem atividade.
+
+Status: **CONCLUÍDA E VALIDADA LOCALMENTE E EM POSTGRESQL DESCARTÁVEL; SEM DEPLOY EM PRODUCTION**
+
 - [x] Fundação do `NotificationService`
 - [x] Estado lida/não lida no backend
 - [x] Centro de notificações e sino no frontend
@@ -739,9 +761,9 @@ Status: **CONCLUÍDA E VALIDADA LOCALMENTE E EM POSTGRESQL DESCARTÁVEL; SEM DEP
 - [x] Alertas de fatura e comprometimento de cartão
 - [x] Gastos incomuns
 - [ ] Alertas de orçamento e progresso de metas
-- [ ] Resumos semanal e mensal
+- [x] Resumos semanal e mensal
 
-Resumos periódicos, orçamento e meta permanecem futuros. Uma
+Scheduler dos resumos, orçamento e meta permanecem futuros. Uma
 política automatizada de retenção também permanece futura; a exclusão
 individual segura não altera a fonte da verdade financeira.
 
@@ -791,12 +813,12 @@ individual segura não altera a fonte da verdade financeira.
 
 ## Próxima tarefa recomendada
 
-**P7.5 — Resumos Periódicos.**
+**P7.6 — Agendamento dos Resumos Periódicos.**
 
 A Prioridade 6 foi tecnicamente concluída e não bloqueia o restante do roadmap.
 A Lumi está homologada em Production somente para uma conta interna, com
 propostas e execução protegidas por confirmação explícita. O rollout público
 não foi iniciado e o Gate Testers externo foi adiado por decisão de produto,
-sem representar falha técnica. O projeto está pronto para avaliar a P7.5,
-resumos semanais e mensais, que não deve ser iniciada automaticamente por este
-registro.
+sem representar falha técnica. Os produtores de P7.5 estão prontos para uma
+fase posterior definir execução automática, observabilidade e política de
+retries, que não deve ser iniciada automaticamente por este registro.

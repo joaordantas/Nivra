@@ -18,6 +18,7 @@ import {
   notificationTypePresentation,
   severityLabels,
 } from "./notificationPresentation";
+import { safeNotificationRoute } from "./notificationState";
 
 function NotificationItemContent({ notification }: { notification: Notification }) {
   const presentation = notificationTypePresentation[notification.tipo];
@@ -44,21 +45,23 @@ function NotificationItemContent({ notification }: { notification: Notification 
 }
 
 function NotificationItem({ notification }: { notification: Notification }) {
-  const { deleteNotification, markRead, state } = useNotificationCenter();
+  const { activateNotification, deleteNotification, state } = useNotificationCenter();
   const busy = state.mutatingId === notification.id;
+  const route = safeNotificationRoute(notification.metadados);
+  const interactive = !notification.lida || route !== null;
 
   return (
     <article className={`notification-item${notification.lida ? " is-read" : " is-unread"}`} role="listitem">
-      {notification.lida ? (
+      {!interactive ? (
         <div className="notification-item-content">
           <NotificationItemContent notification={notification} />
         </div>
       ) : (
         <button
-          aria-label={`Marcar como lida: ${notification.titulo}`}
+          aria-label={route ? `Abrir: ${notification.titulo}` : `Marcar como lida: ${notification.titulo}`}
           className="notification-item-content notification-read-button"
           disabled={busy}
-          onClick={() => void markRead(notification)}
+          onClick={() => void activateNotification(notification)}
           type="button"
         >
           <NotificationItemContent notification={notification} />

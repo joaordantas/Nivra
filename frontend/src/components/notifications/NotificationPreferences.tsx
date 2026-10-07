@@ -49,6 +49,21 @@ const preferenceGroups: Array<{
       },
     ],
   },
+  {
+    title: "Resumos",
+    items: [
+      {
+        key: "weekly_summary",
+        label: "Resumo semanal",
+        description: "Receba um resumo dos principais números da semana anterior.",
+      },
+      {
+        key: "monthly_summary",
+        label: "Resumo mensal",
+        description: "Receba um resumo dos principais números do mês anterior.",
+      },
+    ],
+  },
 ];
 
 export function NotificationPreferences() {
@@ -110,7 +125,7 @@ export function NotificationPreferences() {
 
       {state.loading ? (
         <div aria-label="Carregando preferências de notificações" className="notification-preferences-loading" role="status">
-          {Array.from({ length: 4 }, (_, index) => <span className="skeleton" key={index} />)}
+          {Array.from({ length: 6 }, (_, index) => <span className="skeleton" key={index} />)}
         </div>
       ) : (
         <div className="notification-preference-groups">

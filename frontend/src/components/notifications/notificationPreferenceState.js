@@ -3,6 +3,8 @@ export const DEFAULT_NOTIFICATION_PREFERENCES = Object.freeze({
   invoice_overdue: true,
   card_limit: true,
   unusual_expense: true,
+  weekly_summary: true,
+  monthly_summary: true,
 });
 
 export function createNotificationPreferenceState() {

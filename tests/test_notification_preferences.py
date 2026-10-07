@@ -17,7 +17,16 @@ DEFAULTS = {
     "invoice_overdue": True,
     "card_limit": True,
     "unusual_expense": True,
+    "weekly_summary": True,
+    "monthly_summary": True,
 }
+
+FINANCIAL_ALERT_DEFAULTS = (
+    "invoice_due_soon",
+    "invoice_overdue",
+    "card_limit",
+    "unusual_expense",
+)
 
 
 def card_fact(
@@ -215,7 +224,7 @@ class NotificationPreferenceProducerTests(unittest.TestCase):
         )
 
     def test_each_producer_respects_disabled_and_enabled_preference(self):
-        for event_id, key in enumerate(DEFAULTS, start=740):
+        for event_id, key in enumerate(FINANCIAL_ALERT_DEFAULTS, start=740):
             with self.subTest(preference=key):
                 notification_preference_service.update(1, {key: False})
                 suppressed = self._publish(1, key, event_id)
