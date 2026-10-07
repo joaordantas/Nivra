@@ -499,6 +499,39 @@ budgets = Table(
 )
 Index("ix_budgets_user_period", budgets.c.usuario_id, budgets.c.periodo)
 
+goals = Table(
+    "goals", metadata,
+    Column("id", Integer, primary_key=True),
+    Column("usuario_id", ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False),
+    Column("nome", String(120), nullable=False),
+    Column("descricao", String(600)),
+    Column("valor_alvo", money, nullable=False),
+    Column("data_limite", Date),
+    Column("status", String(16), nullable=False, server_default="active"),
+    Column("criado_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    Column("atualizado_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    CheckConstraint("valor_alvo > 0", name="ck_goals_target_positive"),
+    CheckConstraint("status IN ('active', 'archived')", name="ck_goals_status"),
+)
+Index("ix_goals_user_status", goals.c.usuario_id, goals.c.status, goals.c.id)
+
+goal_movements = Table(
+    "goal_movements", metadata,
+    Column("id", Integer, primary_key=True),
+    Column("goal_id", ForeignKey("goals.id", ondelete="RESTRICT"), nullable=False),
+    Column("usuario_id", ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False),
+    Column("tipo", String(16), nullable=False),
+    Column("valor", money, nullable=False),
+    Column("data_efetiva", Date, nullable=False),
+    Column("descricao", String(300)),
+    Column("chave_idempotencia", String(64)),
+    Column("criado_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    CheckConstraint("tipo IN ('contribution', 'withdrawal')", name="ck_goal_movements_type"),
+    CheckConstraint("valor > 0", name="ck_goal_movements_amount_positive"),
+    UniqueConstraint("usuario_id", "chave_idempotencia", name="uq_goal_movements_user_idempotency"),
+)
+Index("ix_goal_movements_goal_effective", goal_movements.c.goal_id, goal_movements.c.data_efetiva, goal_movements.c.id)
+
 conexoes_bancarias = Table(
     "conexoes_bancarias", metadata,
     Column("id", Integer, primary_key=True),
@@ -646,7 +679,7 @@ Index(
 
 TABLES_IN_DEPENDENCY_ORDER = [
     usuarios, sessoes, auth_tokens, auth_rate_events, lumi_action_confirmations, notifications, notification_preferences, notification_preference_suppressions, periodic_summary_job_runs, categorias, contas, parcelamentos, transacoes, transferencias, cartoes,
-    faturas, compras_cartao, pagamentos_fatura, vendas, parcelas, budgets, conexoes_bancarias,
+    faturas, compras_cartao, pagamentos_fatura, vendas, parcelas, budgets, goals, goal_movements, conexoes_bancarias,
     contas_bancarias_externas, transacoes_bancarias, correspondencias_conciliacao, eventos_sincronizacao,
     eventos_webhook_open_finance,
 ]

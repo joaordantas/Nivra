@@ -339,9 +339,9 @@ Status: **CONCLUÍDA E VALIDADA; GATE DE UX MOBILE APROVADO**
 
 ### Metas
 
-- [ ] Valor alvo, valor acumulado e prazo
-- [ ] Progresso e valor necessário por mês
-- [ ] Metas concluídas e histórico
+- [x] Valor alvo, valor reservado derivado e prazo opcional
+- [x] Aportes, retiradas, progresso e restante com precisão decimal
+- [x] Metas concluídas, reabertura, arquivamento e histórico imutável
 
 ## 📊 PRIORIDADE 5 — MOTOR DE INTELIGÊNCIA FINANCEIRA
 
@@ -703,7 +703,7 @@ Status: **CONCLUÍDA E VALIDADA LOCALMENTE; SEM PRODUTORES FINANCEIROS OU DEPLOY
 - [x] Falhas de notificação isoladas do insight e das operações financeiras
 - [x] Gate em PostgreSQL descartável no mesmo endpoint conhecido de Preview, removido ao final
 - [ ] Alertas de orçamento — domínio canônico disponível; producer ainda não implementado
-- [ ] Alertas de meta — domínio financeiro persistido ainda não implementado
+- [ ] Alertas de meta — domínio canônico disponível; producer ainda não implementado
 
 O disparo ocorre no recálculo autenticado de insights. O core calcula status de
 fatura, comprometimento e anomalias; o producer apenas aplica templates aos
@@ -807,6 +807,20 @@ Status: **CONCLUÍDA E VALIDADA LOCALMENTE E EM POSTGRESQL DESCARTÁVEL; SEM DEP
 
 Status: **CONCLUÍDA E VALIDADA LOCALMENTE E EM POSTGRESQL DESCARTÁVEL; SEM ALERTAS, PUSH OU DEPLOY**
 
+### P8.2 — Domínio Canônico de Metas Financeiras
+
+- [x] Metas persistidas com alvo, prazo opcional e ciclo ativo/arquivado
+- [x] Aportes e retiradas auditáveis, idempotentes e sem saldo negativo
+- [x] Progresso derivado com `Decimal`, inclusive acima de 100%
+- [x] Movimentos futuros e correções por lançamentos compensatórios
+- [x] CRUD autenticado, CSRF, ownership e proteção contra IDOR
+- [x] Reservas lógicas sem alterar saldos ou agregação econômica
+- [x] Interface responsiva com criação, edição, movimentos e histórico
+- [x] SQLite, PostgreSQL descartável, concorrência e regressão completa
+- [ ] Producers, thresholds e alertas da P7.7
+
+Status: **CONCLUÍDA E VALIDADA; SEGUNDO PRÉ-REQUISITO DE DOMÍNIO DISPONÍVEL PARA P7.7**
+
 ## 💬 PRIORIDADE 8 — WHATSAPP
 
 - [ ] Integração oficial
@@ -853,7 +867,7 @@ Status: **CONCLUÍDA E VALIDADA LOCALMENTE E EM POSTGRESQL DESCARTÁVEL; SEM ALE
 
 ## Próxima tarefa recomendada
 
-**P8.2 — Domínio Canônico de Metas Financeiras.**
+**P7.7 — Alertas de Orçamento e Progresso de Metas.**
 
 A Prioridade 6 foi tecnicamente concluída e não bloqueia o restante do roadmap.
 A Lumi está homologada em Production somente para uma conta interna, com
@@ -861,6 +875,6 @@ propostas e execução protegidas por confirmação explícita. O rollout públi
 não foi iniciado e o Gate Testers externo foi adiado por decisão de produto,
 sem representar falha técnica. O agendamento da P7.6 está preparado e validado,
 mas continua desativado. O domínio canônico de orçamentos está disponível;
-P7.7 permanece bloqueada somente pela ausência do domínio financeiro de metas.
-A P8.2 deve criar essa fonte da verdade antes dos produtores de notificações e
+P8.1 e P8.2 fornecem agora as duas fontes de verdade financeiras necessárias.
+A P7.7 pode consumir esses services sem recalcular orçamento ou progresso, mas
 não deve ser iniciada automaticamente por este registro.

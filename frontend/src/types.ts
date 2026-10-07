@@ -62,6 +62,33 @@ export interface Budget {
   updated_at: string;
 }
 
+export interface FinancialGoal {
+  id: number;
+  name: string;
+  description: string | null;
+  target_amount: string;
+  saved_amount: string;
+  remaining_amount: string;
+  progress_percentage: string;
+  deadline: string | null;
+  lifecycle_status: "active" | "archived";
+  completed: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GoalMovement {
+  id: number;
+  goal_id: number;
+  type: "contribution" | "withdrawal";
+  amount: string;
+  effective_date: string;
+  description: string | null;
+  idempotency_key: string | null;
+  effective: boolean;
+  created_at: string;
+}
+
 export interface Transaction {
   id: number;
   valor: number;

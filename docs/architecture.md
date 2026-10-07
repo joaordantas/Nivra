@@ -190,6 +190,40 @@ a cópia, portanto não existe dual-write. Orçamento global, rollover, forecast
 metas e alertas permanecem fora deste domínio. A futura P7.7 deverá consumir o
 contrato do `BudgetService`, sem recalcular gastos.
 
+## Metas financeiras canônicas
+
+O domínio de metas usa `goals` e `goal_movements` → `GoalRepository` →
+`GoalService` → API autenticada → tela `/goals`. A categoria textual `goal` das
+memórias da Lumi continua sendo apenas memória explícita e não participa deste
+domínio. Cada meta possui ID estável, nome, descrição opcional, alvo
+`NUMERIC(14,2)`, prazo opcional e ciclo `active`/`archived`.
+
+O valor reservado não é armazenado na meta: ele é derivado em lote como aportes
+efetivos menos retiradas efetivas. Movimentos futuros permanecem no histórico,
+mas só afetam o progresso na data civil aplicável. Retiradas são serializadas
+por lock da meta e uma simulação cronológica impede saldo negativo, inclusive
+quando inseridas retroativamente. Uma chave de idempotência opcional por usuário
+torna retries seguros. Movimentos não são editados ou excluídos; correções devem
+usar lançamentos compensatórios.
+
+`saved_amount`, `remaining_amount` e `progress_percentage` usam `Decimal`.
+Progresso pode superar 100%; conclusão é derivada e pode ser revertida por uma
+retirada, sem se confundir com arquivamento. Alterar o alvo recalcula o estado.
+Metas vazias podem ser excluídas; metas com histórico são arquivadas, preservando
+todos os movimentos.
+
+Aportes e retiradas são reservas lógicas. Eles não alteram contas, saldos,
+transações, cartões, faturas, Open Finance ou a agregação econômica. A interface
+e a API deixam explícito que o valor reservado não comprova disponibilidade em
+uma conta bancária.
+
+A API oferece `GET/POST /api/goals`, `GET/PATCH/DELETE /api/goals/{id}` e
+`GET/POST /api/goals/{id}/movements`. O usuário vem somente da sessão, mutações
+exigem CSRF e recursos estrangeiros retornam ausência. A migration
+`d3e4f5a6b7c8` parte do domínio de orçamentos e não transforma memórias da Lumi.
+Este é o segundo pré-requisito financeiro da futura P7.7; nenhum producer ou
+threshold de notificação integra a P8.2.
+
 ## Autenticação e isolamento
 
 O login cria uma sessão persistente no PostgreSQL. O navegador recebe um identificador aleatório em cookie HTTP-only; o banco guarda somente seu hash. Em produção, o cookie usa `Secure` e `SameSite=Lax`. A sessão possui prazo de expiração configurável e o logout a revoga no servidor.

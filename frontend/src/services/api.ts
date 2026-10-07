@@ -9,6 +9,8 @@ import type {
   Invoice,
   InvoiceDetail,
   FinancialInsights,
+  FinancialGoal,
+  GoalMovement,
   InstallmentPlanDetail,
   InstallmentPlanSummary,
   InstallmentPlanUpdate,
@@ -191,6 +193,16 @@ export const api = {
   updateBudget: (budgetId: number, limit: string) =>
     request<Budget>(`/budgets/${budgetId}`, { method: "PATCH", body: JSON.stringify({ limit }) }),
   deleteBudget: (budgetId: number) => request<void>(`/budgets/${budgetId}`, { method: "DELETE" }),
+
+  getGoals: () => request<FinancialGoal[]>("/goals?include_archived=true"),
+  createGoal: (payload: { name: string; description: string | null; target_amount: string; deadline: string | null }) =>
+    request<FinancialGoal>("/goals", { method: "POST", body: JSON.stringify(payload) }),
+  updateGoal: (goalId: number, payload: Partial<{ name: string; description: string | null; target_amount: string; deadline: string | null; lifecycle_status: "active" | "archived" }>) =>
+    request<FinancialGoal>(`/goals/${goalId}`, { method: "PATCH", body: JSON.stringify(payload) }),
+  deleteGoal: (goalId: number) => request<{ outcome: "deleted" | "archived" }>(`/goals/${goalId}`, { method: "DELETE" }),
+  getGoalMovements: (goalId: number) => request<GoalMovement[]>(`/goals/${goalId}/movements`),
+  addGoalMovement: (goalId: number, payload: { type: "contribution" | "withdrawal"; amount: string; effective_date: string; description: string | null; idempotency_key: string }) =>
+    request<GoalMovement>(`/goals/${goalId}/movements`, { method: "POST", body: JSON.stringify(payload) }),
 
   getTransactions: (dataInicio?: string, dataFim?: string) => {
     const params = new URLSearchParams();

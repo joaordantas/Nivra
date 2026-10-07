@@ -24,6 +24,7 @@ _lockable_rows = {
     ("contas_bancarias_externas", "id"),
     ("transacoes_bancarias", "id"),
     ("correspondencias_conciliacao", "id"),
+    ("goals", "id"),
 }
 
 
