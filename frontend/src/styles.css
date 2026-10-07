@@ -417,6 +417,31 @@ body.notification-center-open { overflow: hidden; }
 .main-content { width: min(100%, 1440px); margin: 0 auto; padding: 40px clamp(24px, 4vw, 56px) 64px; }
 .mobile-header, .mobile-navigation, .mobile-more-backdrop, .mobile-more-sheet { display: none; }
 .page-stack { display: grid; gap: 24px; }
+.budget-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 18px 20px; }
+.budget-period, .budget-toolbar-actions, .budget-card-heading, .budget-values { display: flex; align-items: center; gap: 12px; }
+.budget-period > div { display: grid; min-width: 180px; text-align: center; text-transform: capitalize; }
+.budget-period small, .budget-card-heading small { color: var(--text-secondary); font-size: 0.68rem; }
+.budget-period strong { font-size: 0.94rem; }
+.budget-toolbar-actions { justify-content: flex-end; }
+.budget-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.budget-card, .budget-empty-card { padding: 20px; }
+.budget-empty-card { grid-column: 1 / -1; }
+.budget-card-skeleton { min-height: 210px; }
+.budget-card { display: grid; gap: 18px; min-width: 0; }
+.budget-card-heading { min-width: 0; }
+.budget-card-heading > div:not(.row-actions) { min-width: 0; }
+.budget-card-heading h2 { overflow: hidden; margin-top: 2px; font-size: 0.94rem; text-overflow: ellipsis; white-space: nowrap; }
+.budget-card-heading .row-actions { margin-left: auto; }
+.budget-icon { display: grid; width: 38px; height: 38px; flex: 0 0 auto; place-items: center; border-radius: 11px; background: var(--primary-soft); color: var(--primary); }
+.budget-values { justify-content: space-between; gap: 10px; }
+.budget-values strong { min-width: 0; font-size: 1rem; }
+.budget-values strong span { color: var(--text-secondary); font-size: 0.72rem; font-weight: 600; }
+.budget-values b { color: var(--primary); font-size: 0.82rem; }
+.budget-progress { height: 8px; overflow: hidden; border-radius: 99px; background: var(--neutral-soft); }
+.budget-progress i { display: block; height: 100%; border-radius: inherit; background: var(--primary); transition: width 180ms ease; }
+.budget-card p { margin: 0; color: var(--text-secondary); font-size: 0.76rem; font-weight: 650; }
+.budget-card p.exceeded, .budget-card-exceeded .budget-values b { color: var(--danger); }
+.budget-card-exceeded .budget-progress i { background: var(--danger); }
 
 .page-header {
   display: flex;
@@ -1140,6 +1165,7 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
 .auth-form .button { width: 100%; margin-top: 4px; }
 
 @media (max-width: 1100px) {
+  .budget-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .dashboard-grid, .insight-overview-grid, .insight-detail-grid, .transactions-layout, .settings-detail-grid, .accounts-layout { grid-template-columns: 1fr; }
   .transaction-form-card { position: static; }
   .settings-grid { grid-template-columns: 1fr; }
@@ -1234,6 +1260,13 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
 }
 
 @media (max-width: 700px) {
+  .budget-toolbar { align-items: stretch; flex-direction: column; padding: 16px; }
+  .budget-period { justify-content: space-between; }
+  .budget-period > div { min-width: 0; }
+  .budget-toolbar-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .budget-toolbar-actions > :only-child { grid-column: 1 / -1; }
+  .budget-grid { grid-template-columns: minmax(0, 1fr); }
+  .budget-card, .budget-empty-card { padding: 18px; }
   .notification-toolbar { align-items: stretch; flex-direction: column; gap: 8px; }
   .notification-filters { width: fit-content; }
   .notification-read-all { min-height: 34px; align-self: flex-start; }

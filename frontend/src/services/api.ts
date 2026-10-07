@@ -3,6 +3,7 @@ import type {
   AccountType,
   Card,
   CardPurchase,
+  Budget,
   Category,
   ClientInstallmentsResponse,
   Invoice,
@@ -183,6 +184,13 @@ export const api = {
   createCategory: (nome: string) => request<Category>("/categories", { method: "POST", body: JSON.stringify({ nome }) }),
   updateCategory: (categoriaId: number, nome: string) => request<Category>(`/categories/${categoriaId}`, { method: "PUT", body: JSON.stringify({ nome }) }),
   deleteCategory: (categoriaId: number) => request<void>(`/categories/${categoriaId}`, { method: "DELETE" }),
+
+  getBudgets: (period: string) => request<Budget[]>(`/budgets?period=${encodeURIComponent(period)}`),
+  createBudget: (payload: { category_id: number; period: string; limit: string }) =>
+    request<Budget>("/budgets", { method: "POST", body: JSON.stringify(payload) }),
+  updateBudget: (budgetId: number, limit: string) =>
+    request<Budget>(`/budgets/${budgetId}`, { method: "PATCH", body: JSON.stringify({ limit }) }),
+  deleteBudget: (budgetId: number) => request<void>(`/budgets/${budgetId}`, { method: "DELETE" }),
 
   getTransactions: (dataInicio?: string, dataFim?: string) => {
     const params = new URLSearchParams();

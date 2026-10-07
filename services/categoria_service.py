@@ -11,7 +11,12 @@ from repositories.categoria_repo import (
 
 def listar_categorias_formatadas(usuario_id: int) -> list[dict]:
     return [
-        {"id": categoria_id, "nome": nome, "padrao": chave_sistema is not None}
+        {
+            "id": categoria_id,
+            "nome": nome,
+            "padrao": chave_sistema is not None,
+            "system_key": chave_sistema,
+        }
         for categoria_id, nome, chave_sistema in listar_categorias(usuario_id)
     ]
 
@@ -27,7 +32,7 @@ def criar_categoria_service(nome: str, usuario_id: int) -> dict:
     if nome_categoria_existe(nome_limpo, usuario_id):
         raise ValueError("Ja existe uma categoria com esse nome.")
     categoria_id = criar_categoria(nome_limpo, usuario_id)
-    return {"id": categoria_id, "nome": nome_limpo, "padrao": False}
+    return {"id": categoria_id, "nome": nome_limpo, "padrao": False, "system_key": None}
 
 
 def renomear_categoria_service(categoria_id: int, novo_nome: str, usuario_id: int) -> dict:
@@ -40,7 +45,12 @@ def renomear_categoria_service(categoria_id: int, novo_nome: str, usuario_id: in
     if nome_categoria_existe(nome_limpo, usuario_id, categoria_id):
         raise ValueError("Ja existe uma categoria com esse nome.")
     renomear_categoria(categoria_id, nome_limpo, usuario_id)
-    return {"id": categoria_id, "nome": nome_limpo, "padrao": categoria[2] is not None}
+    return {
+        "id": categoria_id,
+        "nome": nome_limpo,
+        "padrao": categoria[2] is not None,
+        "system_key": categoria[2],
+    }
 
 
 def deletar_categoria_service(categoria_id: int, usuario_id: int) -> bool:

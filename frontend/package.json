@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test:notifications": "node --test tests/notificationState.test.mjs tests/notificationPreferences.test.mjs"
+    "test:notifications": "node --test tests/notificationState.test.mjs tests/notificationPreferences.test.mjs",
+    "test:budgets": "node --test tests/budgetPresentation.test.mjs",
+    "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "lucide-react": "^1.44.0",

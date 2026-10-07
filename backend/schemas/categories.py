@@ -15,3 +15,4 @@ class CategoryResponse(BaseModel):
     id: int
     nome: str
     padrao: bool = False
+    system_key: str | None = None

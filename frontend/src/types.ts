@@ -47,6 +47,19 @@ export interface Category {
   id: number;
   nome: string;
   padrao: boolean;
+  system_key: string | null;
+}
+
+export interface Budget {
+  id: number;
+  period: string;
+  category: { id: number; name: string; system_key: string | null };
+  limit: string;
+  spent: string;
+  remaining: string;
+  usage_percentage: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Transaction {

@@ -3,6 +3,7 @@ import { Suspense, lazy, type ReactNode } from "react";
 
 import { AppLayout } from "../components/layout/AppLayout";
 import { ComingSoonPage } from "../pages/ComingSoonPage";
+import { BudgetsPage } from "../pages/BudgetsPage";
 import { CardsPage } from "../pages/CardsPage";
 import { DashboardPage } from "../pages/DashboardPage";
 import { LoginPage } from "../pages/LoginPage";
@@ -60,7 +61,7 @@ const router = createBrowserRouter([
       { path: "cards", element: <CardsPage /> },
       {
         path: "budgets",
-        element: <ComingSoonPage description="Os orçamentos por categoria serão adicionados na etapa de planejamento." title="Orçamentos" />,
+        element: <BudgetsPage />,
       },
       {
         path: "goals",

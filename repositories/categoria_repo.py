@@ -102,6 +102,16 @@ def categoria_em_uso(categoria_id: int, usuario_id: int) -> bool:
         ).fetchone() is not None
         if em_transacao:
             return True
+        em_orcamento = conn.execute(
+            """
+            SELECT 1 FROM budgets
+            WHERE categoria_id = ? AND usuario_id = ?
+            LIMIT 1
+            """,
+            (categoria_id, usuario_id),
+        ).fetchone() is not None
+        if em_orcamento:
+            return True
         return conn.execute(
             """
             SELECT 1 FROM compras_cartao

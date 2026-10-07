@@ -149,7 +149,7 @@ Detalhes estão em [Arquitetura](docs/architecture.md).
 | Conta principal, cartões e faturas | Disponível em Alpha |
 | Autenticação segura e hardening de conta | Concluído |
 | Parcelamentos e recorrências | Planejado |
-| Orçamentos e metas | Planejado |
+| Orçamentos e metas | Orçamentos mensais por categoria disponíveis; metas planejadas |
 | Open Finance Sandbox | Demonstração guiada para testers disponível |
 | Insights financeiros | Planejado |
 | Lumi | Prioridade tecnicamente concluída; homologada em Production para uso interno exclusivo, rollout público não iniciado |

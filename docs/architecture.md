@@ -153,6 +153,43 @@ tamanho de lote e dry-run. A configuração do Vercel Cron não integra esta fas
 portanto nenhum deploy ou agendamento de Production foi alterado. O runbook
 completo está em `docs/periodic-summary-jobs.md`.
 
+## Orçamentos mensais canônicos
+
+O domínio de orçamentos segue `budgets` → `BudgetRepository` →
+`BudgetService` → API autenticada → tela `/budgets`. Cada registro possui ID
+persistido e combina usuário, categoria de despesa e primeiro dia do mês com
+unicidade no banco. Categoria e período formam a identidade financeira e são
+imutáveis; a atualização altera somente o limite. Exclusão remove apenas o
+planejamento e nunca movimentações financeiras. Categorias em uso por um
+orçamento não podem ser excluídas.
+
+O limite usa `NUMERIC(14,2)`/`Decimal`, deve ser positivo e é exposto pela API
+como decimal exato. O período público usa `AAAA-MM`, convertido pelo service
+para uma data no primeiro dia do mês. A leitura e correção do limite histórico,
+assim como a preparação de meses futuros, são permitidas. No mês atual, lançamentos posteriores à data
+civil de referência ainda não entram no consumo.
+
+`BudgetService` reutiliza a agregação econômica dos insights em uma única
+passagem por usuário e período: transações manuais, movimentos Open Finance não
+duplicados, compras de cartão na data da compra e parcelas nas datas aplicáveis.
+Transferências internas e pagamentos de fatura não são novas despesas. O
+repository de orçamento não consulta transações. `spent`, `remaining` e
+`usage_percentage` são calculados com `Decimal`; o percentual não é limitado a
+100%, embora a barra visual seja limitada para não causar overflow.
+
+A API oferece `GET/POST /api/budgets`, `GET/PATCH/DELETE
+/api/budgets/{id}`. A listagem exige ou assume um mês e não carrega o histórico
+inteiro. O usuário vem exclusivamente da sessão; mutações exigem CSRF, toda
+consulta filtra ownership e uma categoria privada de outro usuário é rejeitada.
+
+A migration `c2d3e4f5a6b7` substitui `limites` por `budgets`, preservando ID,
+usuário, categoria, mês e precisão dos registros válidos. Período inválido,
+valor não monetário ou categoria de outro usuário interrompem a migration com
+erro explícito; nada é descartado ou inventado. A tabela antiga é removida após
+a cópia, portanto não existe dual-write. Orçamento global, rollover, forecast,
+metas e alertas permanecem fora deste domínio. A futura P7.7 deverá consumir o
+contrato do `BudgetService`, sem recalcular gastos.
+
 ## Autenticação e isolamento
 
 O login cria uma sessão persistente no PostgreSQL. O navegador recebe um identificador aleatório em cookie HTTP-only; o banco guarda somente seu hash. Em produção, o cookie usa `Secure` e `SameSite=Lax`. A sessão possui prazo de expiração configurável e o logout a revoga no servidor.

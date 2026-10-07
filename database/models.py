@@ -485,17 +485,19 @@ parcelas = Table(
 Index("ix_parcelas_usuario_status", parcelas.c.usuario_id, parcelas.c.status)
 Index("ix_parcelas_venda", parcelas.c.venda_id)
 
-limites = Table(
-    "limites", metadata,
+budgets = Table(
+    "budgets", metadata,
     Column("id", Integer, primary_key=True),
-    Column("categoria_id", ForeignKey("categorias.id"), nullable=False),
-    Column("valor", money, nullable=False),
-    Column("mes", String(7), nullable=False),
-    Column("usuario_id", ForeignKey("usuarios.id"), nullable=False),
-    UniqueConstraint("categoria_id", "mes", "usuario_id", name="uq_limites_categoria_mes_usuario"),
-    CheckConstraint("valor > 0", name="ck_limites_valor_positivo"),
+    Column("usuario_id", ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False),
+    Column("categoria_id", ForeignKey("categorias.id", ondelete="RESTRICT"), nullable=False),
+    Column("periodo", Date, nullable=False),
+    Column("limite", money, nullable=False),
+    Column("criado_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    Column("atualizado_em", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    UniqueConstraint("usuario_id", "categoria_id", "periodo", name="uq_budgets_user_category_period"),
+    CheckConstraint("limite > 0", name="ck_budgets_limit_positive"),
 )
-Index("ix_limites_usuario_mes", limites.c.usuario_id, limites.c.mes)
+Index("ix_budgets_user_period", budgets.c.usuario_id, budgets.c.periodo)
 
 conexoes_bancarias = Table(
     "conexoes_bancarias", metadata,
@@ -644,7 +646,7 @@ Index(
 
 TABLES_IN_DEPENDENCY_ORDER = [
     usuarios, sessoes, auth_tokens, auth_rate_events, lumi_action_confirmations, notifications, notification_preferences, notification_preference_suppressions, periodic_summary_job_runs, categorias, contas, parcelamentos, transacoes, transferencias, cartoes,
-    faturas, compras_cartao, pagamentos_fatura, vendas, parcelas, limites, conexoes_bancarias,
+    faturas, compras_cartao, pagamentos_fatura, vendas, parcelas, budgets, conexoes_bancarias,
     contas_bancarias_externas, transacoes_bancarias, correspondencias_conciliacao, eventos_sincronizacao,
     eventos_webhook_open_finance,
 ]

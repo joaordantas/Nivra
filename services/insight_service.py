@@ -205,6 +205,23 @@ def obter_agregado_periodo_financeiro_service(
     }
 
 
+def obter_despesas_por_categoria_service(
+    usuario_id: int,
+    inicio: date,
+    fim: date,
+) -> dict[int, Decimal]:
+    """Fonte canônica, em lote, do gasto realizado por categoria."""
+    if inicio > fim:
+        return {}
+    entries = _period_entries(usuario_id, inicio.isoformat(), fim.isoformat())
+    totals: dict[int, Decimal] = defaultdict(lambda: Decimal("0.00"))
+    for entry in entries:
+        category_id = entry["category_id"]
+        if entry["type"] == "saida" and not entry["neutral"] and category_id is not None:
+            totals[int(category_id)] += _money(entry["amount"])
+    return {category_id: value.quantize(Decimal("0.01")) for category_id, value in totals.items()}
+
+
 def _largest_expenses(entries: list[dict], *, limit: int = 5) -> list[dict]:
     expenses = [
         entry for entry in entries

@@ -331,9 +331,10 @@ Status: **CONCLUÍDA E VALIDADA; GATE DE UX MOBILE APROVADO**
 
 ### Orçamentos
 
-- [ ] Limite por categoria e limite mensal total
-- [ ] Acompanhamento, valor restante e percentual utilizado
-- [ ] Histórico por mês
+- [x] Limite mensal por categoria com identidade persistida e unicidade
+- [ ] Limite mensal total/global
+- [x] Acompanhamento, valor restante e percentual utilizado
+- [x] Histórico por mês, planejamento futuro e CRUD autenticado
 - [ ] Alertas em 50%, 75%, 90% e 100%
 
 ### Metas
@@ -701,7 +702,7 @@ Status: **CONCLUÍDA E VALIDADA LOCALMENTE; SEM PRODUTORES FINANCEIROS OU DEPLOY
 - [x] Replay, oito chamadas concorrentes, múltiplos cartões e isolamento entre usuários
 - [x] Falhas de notificação isoladas do insight e das operações financeiras
 - [x] Gate em PostgreSQL descartável no mesmo endpoint conhecido de Preview, removido ao final
-- [ ] Alertas de orçamento — domínio persistido ainda não implementado
+- [ ] Alertas de orçamento — domínio canônico disponível; producer ainda não implementado
 - [ ] Alertas de meta — domínio financeiro persistido ainda não implementado
 
 O disparo ocorre no recálculo autenticado de insights. O core calcula status de
@@ -764,8 +765,8 @@ Status: **CONCLUÍDA E VALIDADA LOCALMENTE E EM POSTGRESQL DESCARTÁVEL; SEM DEP
 - [x] Resumos semanal e mensal
 
 O scheduler dos resumos está preparado e validado, mas permanece desativado e
-sem configuração de cron em Production. Orçamento, meta e uma política
-automatizada de retenção continuam futuros; a exclusão individual segura não
+sem configuração de cron em Production. Alertas de orçamento, metas e uma
+política automatizada de retenção continuam futuros; a exclusão individual segura não
 altera a fonte da verdade financeira.
 
 ### P7.6 — Agendamento dos Resumos Periódicos
@@ -791,6 +792,20 @@ futura exige segredo próprio, flag explícita e configuração do cron no proje
 Vercel. O código entregue não ativa nenhuma dessas opções.
 
 Status: **CONCLUÍDA E VALIDADA LOCALMENTE E EM POSTGRESQL DESCARTÁVEL; SEM DEPLOY OU ATIVAÇÃO EM PRODUCTION**
+
+### P8.1 — Domínio Canônico de Orçamentos
+
+- [x] Modelo mensal por usuário e categoria com ID estável
+- [x] Migração segura de `limites` para `budgets`, sem dual-write
+- [x] Valores `Decimal`/`NUMERIC(14,2)` e período civil determinístico
+- [x] CRUD autenticado, ownership, CSRF e proteção contra IDOR
+- [x] Unicidade concorrente no banco por usuário, categoria e período
+- [x] Consumo calculado pela agregação econômica oficial, em lote
+- [x] Histórico, planejamento futuro e página responsiva de orçamentos
+- [x] SQLite, PostgreSQL descartável, migration legado e regressão completa
+- [ ] Orçamento total/global, alertas, rollover, forecast e metas
+
+Status: **CONCLUÍDA E VALIDADA LOCALMENTE E EM POSTGRESQL DESCARTÁVEL; SEM ALERTAS, PUSH OU DEPLOY**
 
 ## 💬 PRIORIDADE 8 — WHATSAPP
 
@@ -838,13 +853,14 @@ Status: **CONCLUÍDA E VALIDADA LOCALMENTE E EM POSTGRESQL DESCARTÁVEL; SEM DEP
 
 ## Próxima tarefa recomendada
 
-**P7.7 — Alertas de Orçamento e Progresso de Metas.**
+**P8.2 — Domínio Canônico de Metas Financeiras.**
 
 A Prioridade 6 foi tecnicamente concluída e não bloqueia o restante do roadmap.
 A Lumi está homologada em Production somente para uma conta interna, com
 propostas e execução protegidas por confirmação explícita. O rollout público
 não foi iniciado e o Gate Testers externo foi adiado por decisão de produto,
 sem representar falha técnica. O agendamento da P7.6 está preparado e validado,
-mas continua desativado. A próxima fase lógica pode reutilizar a fundação de
-notificações para eventos determinísticos de orçamento e metas; ela não deve
-ser iniciada automaticamente por este registro.
+mas continua desativado. O domínio canônico de orçamentos está disponível;
+P7.7 permanece bloqueada somente pela ausência do domínio financeiro de metas.
+A P8.2 deve criar essa fonte da verdade antes dos produtores de notificações e
+não deve ser iniciada automaticamente por este registro.
