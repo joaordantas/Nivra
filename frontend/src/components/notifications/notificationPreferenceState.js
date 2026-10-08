@@ -5,6 +5,8 @@ export const DEFAULT_NOTIFICATION_PREFERENCES = Object.freeze({
   unusual_expense: true,
   weekly_summary: true,
   monthly_summary: true,
+  budget_threshold: true,
+  goal_progress: true,
 });
 
 export function createNotificationPreferenceState() {

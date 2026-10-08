@@ -13,6 +13,8 @@ test("inicia em loading com todas as preferências retrocompatíveis", () => {
   assert.deepEqual(state.preferences, DEFAULT_NOTIFICATION_PREFERENCES);
   assert.equal(state.preferences.weekly_summary, true);
   assert.equal(state.preferences.monthly_summary, true);
+  assert.equal(state.preferences.budget_threshold, true);
+  assert.equal(state.preferences.goal_progress, true);
 });
 
 test("carrega e preserva o estado retornado após reload", () => {

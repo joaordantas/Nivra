@@ -110,7 +110,11 @@ def create_budget_service(
         budget_id = create_budget(user_id, category_id, period, limit)
     except IntegrityError as exc:
         raise BudgetConflictError("Já existe um orçamento para esta categoria no período.") from exc
-    return get_budget_service(budget_id, user_id, today=today)
+    result = get_budget_service(budget_id, user_id, today=today)
+    from services.financial_threshold_alert_service import best_effort_evaluate_budget
+
+    best_effort_evaluate_budget(user_id, budget_id, today or date.today())
+    return result
 
 
 def list_budgets_service(
@@ -139,7 +143,11 @@ def update_budget_service(
     if get_budget(budget_id, user_id) is None:
         raise LookupError("Orçamento não encontrado.")
     update_budget_limit(budget_id, user_id, normalize_money(limit_value))
-    return get_budget_service(budget_id, user_id, today=today)
+    result = get_budget_service(budget_id, user_id, today=today)
+    from services.financial_threshold_alert_service import best_effort_evaluate_budget
+
+    best_effort_evaluate_budget(user_id, budget_id, today or date.today())
+    return result
 
 
 def delete_budget_service(budget_id: int, user_id: int) -> bool:

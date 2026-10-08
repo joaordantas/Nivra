@@ -761,13 +761,31 @@ Status: **CONCLUÍDA E VALIDADA LOCALMENTE E EM POSTGRESQL DESCARTÁVEL; SEM DEP
 - [x] Preferências de notificações
 - [x] Alertas de fatura e comprometimento de cartão
 - [x] Gastos incomuns
-- [ ] Alertas de orçamento e progresso de metas
+- [x] Alertas de orçamento e progresso de metas
 - [x] Resumos semanal e mensal
 
-O scheduler dos resumos está preparado e validado, mas permanece desativado e
-sem configuração de cron em Production. Alertas de orçamento, metas e uma
-política automatizada de retenção continuam futuros; a exclusão individual segura não
+Os schedulers de resumos e de alertas estão preparados e validados, mas permanecem
+desativados e sem configuração de cron em Production. Uma política automatizada
+de retenção continua futura; a exclusão individual segura não
 altera a fonte da verdade financeira.
+
+### P7.7 — Alertas de Orçamentos e Metas Financeiras
+
+- [x] Consumo de orçamento exclusivamente pelo `BudgetService`
+- [x] Progresso de metas exclusivamente pelo `GoalService`
+- [x] Limiares 80%/100% para orçamento e 50%/75%/100% para metas
+- [x] Apenas o maior marco aplicável por avaliação
+- [x] Estado persistente monotônico e dedupe por usuário/fonte/período/marco
+- [x] Baseline inicial, preferências desligadas e reativação sem backfill em massa
+- [x] Preferências `budget_threshold` e `goal_progress` na UX existente
+- [x] Hooks best-effort após commits seguros e reconciliação diária em lotes
+- [x] Claim, lease, retry e recuperação reutilizando a infraestrutura P7.6
+- [x] Feature flag fechada por padrão e CLI operacional sem endpoint público
+- [x] Centro, badge, leitura, exclusão, rotas e severidades existentes preservados
+- [x] SQLite, PostgreSQL descartável, concorrência e regressão completa
+- [x] Sem e-mail, WhatsApp, push, Lumi, deploy ou ativação de cron
+
+Status: **CONCLUÍDA E VALIDADA LOCALMENTE E EM POSTGRESQL DESCARTÁVEL; ATIVAÇÃO OPERACIONAL PENDENTE**
 
 ### P7.6 — Agendamento dos Resumos Periódicos
 
@@ -803,9 +821,10 @@ Status: **CONCLUÍDA E VALIDADA LOCALMENTE E EM POSTGRESQL DESCARTÁVEL; SEM DEP
 - [x] Consumo calculado pela agregação econômica oficial, em lote
 - [x] Histórico, planejamento futuro e página responsiva de orçamentos
 - [x] SQLite, PostgreSQL descartável, migration legado e regressão completa
-- [ ] Orçamento total/global, alertas, rollover, forecast e metas
+- [ ] Orçamento total/global, rollover e forecast
+- [x] Alertas de 80% e 100% integrados pela P7.7
 
-Status: **CONCLUÍDA E VALIDADA LOCALMENTE E EM POSTGRESQL DESCARTÁVEL; SEM ALERTAS, PUSH OU DEPLOY**
+Status: **CONCLUÍDA E VALIDADA LOCALMENTE E EM POSTGRESQL DESCARTÁVEL; COM ALERTAS VIA P7.7, SEM PUSH OU DEPLOY**
 
 ### P8.2 — Domínio Canônico de Metas Financeiras
 
@@ -817,9 +836,9 @@ Status: **CONCLUÍDA E VALIDADA LOCALMENTE E EM POSTGRESQL DESCARTÁVEL; SEM ALE
 - [x] Reservas lógicas sem alterar saldos ou agregação econômica
 - [x] Interface responsiva com criação, edição, movimentos e histórico
 - [x] SQLite, PostgreSQL descartável, concorrência e regressão completa
-- [ ] Producers, thresholds e alertas da P7.7
+- [x] Producers, thresholds e alertas da P7.7
 
-Status: **CONCLUÍDA E VALIDADA; SEGUNDO PRÉ-REQUISITO DE DOMÍNIO DISPONÍVEL PARA P7.7**
+Status: **CONCLUÍDA E VALIDADA; DOMÍNIO CONSUMIDO PELOS ALERTAS DA P7.7**
 
 ## 💬 PRIORIDADE 8 — WHATSAPP
 
@@ -867,14 +886,14 @@ Status: **CONCLUÍDA E VALIDADA; SEGUNDO PRÉ-REQUISITO DE DOMÍNIO DISPONÍVEL 
 
 ## Próxima tarefa recomendada
 
-**P7.7 — Alertas de Orçamento e Progresso de Metas.**
+**Planejar a ativação operacional segura dos jobs de notificações.**
 
 A Prioridade 6 foi tecnicamente concluída e não bloqueia o restante do roadmap.
 A Lumi está homologada em Production somente para uma conta interna, com
 propostas e execução protegidas por confirmação explícita. O rollout público
 não foi iniciado e o Gate Testers externo foi adiado por decisão de produto,
 sem representar falha técnica. O agendamento da P7.6 está preparado e validado,
-mas continua desativado. O domínio canônico de orçamentos está disponível;
-P8.1 e P8.2 fornecem agora as duas fontes de verdade financeiras necessárias.
-A P7.7 pode consumir esses services sem recalcular orçamento ou progresso, mas
-não deve ser iniciada automaticamente por este registro.
+mas continua desativado. A P7.7 foi implementada sobre P8.1 e P8.2, com
+reconciliação idempotente e feature flag fechada. A próxima decisão é
+operacional: definir segredo/agenda, observabilidade e rollout gradual antes de
+qualquer ativação em Production. Este registro não ativa cron ou deploy.

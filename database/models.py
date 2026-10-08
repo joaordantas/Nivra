@@ -219,7 +219,8 @@ notification_preferences = Table(
     Column("updated_at", DateTime(timezone=True), nullable=False, server_default=func.now()),
     CheckConstraint(
         "preference_key IN ('invoice_due_soon', 'invoice_overdue', "
-        "'card_limit', 'unusual_expense', 'weekly_summary', 'monthly_summary')",
+        "'card_limit', 'unusual_expense', 'weekly_summary', 'monthly_summary', "
+        "'budget_threshold', 'goal_progress')",
         name="ck_notification_preferences_key",
     ),
     PrimaryKeyConstraint(
@@ -237,7 +238,8 @@ notification_preference_suppressions = Table(
     Column("created_at", DateTime(timezone=True), nullable=False, server_default=func.now()),
     CheckConstraint(
         "preference_key IN ('invoice_due_soon', 'invoice_overdue', "
-        "'card_limit', 'unusual_expense', 'weekly_summary', 'monthly_summary')",
+        "'card_limit', 'unusual_expense', 'weekly_summary', 'monthly_summary', "
+        "'budget_threshold', 'goal_progress')",
         name="ck_notification_suppressions_key",
     ),
     CheckConstraint(
@@ -272,7 +274,10 @@ periodic_summary_job_runs = Table(
     Column("started_at", DateTime(timezone=True), nullable=False, server_default=func.now()),
     Column("finished_at", DateTime(timezone=True)),
     UniqueConstraint("job_type", "period_start", name="uq_periodic_summary_job_period"),
-    CheckConstraint("job_type IN ('weekly', 'monthly')", name="ck_periodic_summary_job_type"),
+    CheckConstraint(
+        "job_type IN ('weekly', 'monthly', 'financial_alerts')",
+        name="ck_periodic_summary_job_type",
+    ),
     CheckConstraint(
         "status IN ('running', 'success', 'partial_success', 'failed')",
         name="ck_periodic_summary_job_status",
@@ -298,6 +303,38 @@ Index(
     periodic_summary_job_runs.c.lease_expires_at,
 )
 Index("ix_periodic_summary_job_started", periodic_summary_job_runs.c.started_at)
+
+financial_alert_states = Table(
+    "financial_alert_states", metadata,
+    Column("usuario_id", ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False),
+    Column("source_kind", String(16), nullable=False),
+    Column("source_id", Integer, nullable=False),
+    Column("period_key", String(10), nullable=False),
+    Column("highest_milestone", SmallInteger, nullable=False, server_default="0"),
+    Column("updated_at", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    PrimaryKeyConstraint(
+        "usuario_id", "source_kind", "source_id", "period_key",
+        name="pk_financial_alert_states",
+    ),
+    CheckConstraint(
+        "source_kind IN ('budget', 'goal')",
+        name="ck_financial_alert_states_kind",
+    ),
+    CheckConstraint(
+        "highest_milestone BETWEEN 0 AND 100",
+        name="ck_financial_alert_states_milestone",
+    ),
+    CheckConstraint(
+        "length(period_key) BETWEEN 1 AND 10",
+        name="ck_financial_alert_states_period",
+    ),
+)
+Index(
+    "ix_financial_alert_states_user_kind_period",
+    financial_alert_states.c.usuario_id,
+    financial_alert_states.c.source_kind,
+    financial_alert_states.c.period_key,
+)
 
 categorias = Table(
     "categorias", metadata,
@@ -678,7 +715,7 @@ Index(
 )
 
 TABLES_IN_DEPENDENCY_ORDER = [
-    usuarios, sessoes, auth_tokens, auth_rate_events, lumi_action_confirmations, notifications, notification_preferences, notification_preference_suppressions, periodic_summary_job_runs, categorias, contas, parcelamentos, transacoes, transferencias, cartoes,
+    usuarios, sessoes, auth_tokens, auth_rate_events, lumi_action_confirmations, notifications, notification_preferences, notification_preference_suppressions, periodic_summary_job_runs, financial_alert_states, categorias, contas, parcelamentos, transacoes, transferencias, cartoes,
     faturas, compras_cartao, pagamentos_fatura, vendas, parcelas, budgets, goals, goal_movements, conexoes_bancarias,
     contas_bancarias_externas, transacoes_bancarias, correspondencias_conciliacao, eventos_sincronizacao,
     eventos_webhook_open_finance,

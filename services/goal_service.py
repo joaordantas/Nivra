@@ -45,7 +45,11 @@ def _goal(row: tuple) -> dict:
 
 def create_goal_service(user_id: int, name: str, description: str | None, target: object, deadline: str | None, *, today: date | None = None) -> dict:
     goal_id = create_goal(user_id, _clean(name, 120, required=True), _clean(description, 600), normalize_money(target), _deadline(deadline))
-    return get_goal_service(goal_id, user_id, today=today)
+    result = get_goal_service(goal_id, user_id, today=today)
+    from services.financial_threshold_alert_service import best_effort_evaluate_goal
+
+    best_effort_evaluate_goal(user_id, goal_id, today or date.today())
+    return result
 
 
 def list_goals_service(user_id: int, *, include_archived: bool = True, today: date | None = None) -> list[dict]:
@@ -71,7 +75,18 @@ def update_goal_service(goal_id: int, user_id: int, changes: dict, *, today: dat
     if status not in {"active", "archived"}:
         raise ValueError("Estado da meta inválido.")
     update_goal(goal_id, user_id, name, description, target, deadline, status)
-    return get_goal_service(goal_id, user_id, today=today)
+    result = get_goal_service(goal_id, user_id, today=today)
+    from services.financial_threshold_alert_service import best_effort_evaluate_goal
+
+    reactivated = current[6] == "archived" and status == "active"
+    best_effort_evaluate_goal(
+        user_id,
+        goal_id,
+        today or date.today(),
+        baseline_missing=reactivated,
+        baseline_only=reactivated,
+    )
+    return result
 
 
 def delete_goal_service(goal_id: int, user_id: int) -> str:
@@ -105,6 +120,7 @@ def add_goal_movement_service(user_id: int, goal_id: int, kind: str, amount_valu
     description = _clean(description, 300)
     key = idempotency_key.strip() if idempotency_key else None
     reference = today or date.today()
+    created_movement = None
     with goal_transaction(goal_id, user_id) as conn:
         goal = get_goal_in_connection(conn, goal_id, user_id)
         if goal is None:
@@ -117,15 +133,21 @@ def add_goal_movement_service(user_id: int, goal_id: int, kind: str, amount_valu
                 same = int(existing[1]) == goal_id and existing[2] == kind and normalize_money(existing[3]) == amount and str(existing[4])[:10] == effective.isoformat() and (existing[5] or None) == description
                 if not same:
                     raise GoalConflictError("A chave de idempotência já foi utilizada.")
-                return _movement(existing, reference)
-        movements = list_movements_in_connection(conn, goal_id, user_id)
-        timeline = [(date.fromisoformat(str(row[4])[:10]), int(row[0]), Decimal(str(row[3])) if row[2] == "contribution" else -Decimal(str(row[3]))) for row in movements]
-        timeline.append((effective, 2**63 - 1, amount if kind == "contribution" else -amount))
-        balance = Decimal("0.00")
-        for _day, _order, delta in sorted(timeline):
-            balance += delta
-            if balance < 0:
-                raise GoalConflictError("A retirada deixaria o valor reservado negativo.")
-        movement_id = insert_movement(conn, goal_id, user_id, kind, amount, effective, description, key)
-        created = next(row for row in list_movements_in_connection(conn, goal_id, user_id) if int(row[0]) == movement_id)
-        return _movement(created, reference)
+                created_movement = _movement(existing, reference)
+        if created_movement is None:
+            movements = list_movements_in_connection(conn, goal_id, user_id)
+            timeline = [(date.fromisoformat(str(row[4])[:10]), int(row[0]), Decimal(str(row[3])) if row[2] == "contribution" else -Decimal(str(row[3]))) for row in movements]
+            timeline.append((effective, 2**63 - 1, amount if kind == "contribution" else -amount))
+            balance = Decimal("0.00")
+            for _day, _order, delta in sorted(timeline):
+                balance += delta
+                if balance < 0:
+                    raise GoalConflictError("A retirada deixaria o valor reservado negativo.")
+            movement_id = insert_movement(conn, goal_id, user_id, kind, amount, effective, description, key)
+            created = next(row for row in list_movements_in_connection(conn, goal_id, user_id) if int(row[0]) == movement_id)
+            created_movement = _movement(created, reference)
+    from services.financial_threshold_alert_service import best_effort_evaluate_goal
+
+    best_effort_evaluate_goal(user_id, goal_id, reference)
+    assert created_movement is not None
+    return created_movement

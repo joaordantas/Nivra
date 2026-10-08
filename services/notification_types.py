@@ -23,6 +23,8 @@ class NotificationPreference(StrEnum):
     UNUSUAL_EXPENSE = "unusual_expense"
     WEEKLY_SUMMARY = "weekly_summary"
     MONTHLY_SUMMARY = "monthly_summary"
+    BUDGET_THRESHOLD = "budget_threshold"
+    GOAL_PROGRESS = "goal_progress"
 
 
 NOTIFICATION_TYPES = frozenset(item.value for item in NotificationType)

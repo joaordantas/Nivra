@@ -36,6 +36,8 @@ class NotificationPreferencesResponse(BaseModel):
     unusual_expense: bool
     weekly_summary: bool
     monthly_summary: bool
+    budget_threshold: bool
+    goal_progress: bool
 
 
 class NotificationPreferencesUpdate(BaseModel):
@@ -47,6 +49,8 @@ class NotificationPreferencesUpdate(BaseModel):
     unusual_expense: StrictBool | None = None
     weekly_summary: StrictBool | None = None
     monthly_summary: StrictBool | None = None
+    budget_threshold: StrictBool | None = None
+    goal_progress: StrictBool | None = None
 
     @model_validator(mode="after")
     def require_explicit_boolean(self):

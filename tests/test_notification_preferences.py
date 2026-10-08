@@ -19,6 +19,8 @@ DEFAULTS = {
     "unusual_expense": True,
     "weekly_summary": True,
     "monthly_summary": True,
+    "budget_threshold": True,
+    "goal_progress": True,
 }
 
 FINANCIAL_ALERT_DEFAULTS = (

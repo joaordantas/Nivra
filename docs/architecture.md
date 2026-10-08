@@ -187,8 +187,8 @@ usuário, categoria, mês e precisão dos registros válidos. Período inválido
 valor não monetário ou categoria de outro usuário interrompem a migration com
 erro explícito; nada é descartado ou inventado. A tabela antiga é removida após
 a cópia, portanto não existe dual-write. Orçamento global, rollover, forecast,
-metas e alertas permanecem fora deste domínio. A futura P7.7 deverá consumir o
-contrato do `BudgetService`, sem recalcular gastos.
+metas e alertas permanecem fora deste domínio. A P7.7 consome o contrato do
+`BudgetService`, sem recalcular gastos.
 
 ## Metas financeiras canônicas
 
@@ -221,8 +221,55 @@ A API oferece `GET/POST /api/goals`, `GET/PATCH/DELETE /api/goals/{id}` e
 `GET/POST /api/goals/{id}/movements`. O usuário vem somente da sessão, mutações
 exigem CSRF e recursos estrangeiros retornam ausência. A migration
 `d3e4f5a6b7c8` parte do domínio de orçamentos e não transforma memórias da Lumi.
-Este é o segundo pré-requisito financeiro da futura P7.7; nenhum producer ou
-threshold de notificação integra a P8.2.
+Este é o segundo pré-requisito financeiro da P7.7. Producers e limiares de
+notificação não pertencem à P8.2; são integrados pela seção P7.7 abaixo.
+
+## Alertas canônicos de orçamentos e metas
+
+A P7.7 conecta os domínios financeiros já existentes ao mesmo centro interno
+de notificações: `BudgetService`/`GoalService` →
+`FinancialThresholdAlertService` → `NotificationService` → tabela
+`notifications`. Não há um segundo feed, cálculo financeiro paralelo, envio a
+IA ou canal externo.
+
+Orçamentos usam o consumo mensal oficial do `BudgetService`. O maior limiar
+alcançado em cada avaliação é 80% (`warning`) ou 100% (`critical`); o percentual
+real continua visível quando existe overspend. Metas ativas usam o progresso
+oficial do `GoalService`, considerando somente movimentos efetivos, nos marcos
+50%, 75% e 100%. Os três marcos de meta usam severidade informativa, com 100%
+apresentado como conclusão. Reservas continuam lógicas e não afetam contas ou
+transações.
+
+`financial_alert_states` guarda apenas usuário, tipo/ID da fonte, identidade do
+período e maior marco processado. A chave de notificação é determinística e a
+unicidade existente em `(usuario_id, chave_dedupe)` torna retries e concorrência
+seguros. Regressão de consumo, retirada ou aumento do alvo não reduz o marco;
+por isso uma nova subida não repete alertas antigos. Cada mês de orçamento tem
+identidade própria. Alterações que saltam vários níveis publicam somente o mais
+alto. Metas arquivadas são ignoradas, e a reativação apenas estabelece a linha
+de base corrente.
+
+As preferências `budget_threshold` e `goal_progress` são habilitadas por padrão.
+Quando desabilitadas, o evento é registrado como suprimido e o marco é
+consumido; reativar a preferência não produz histórico atrasado. Na primeira
+reconciliação, fontes preexistentes também são apenas baselined, evitando uma
+tempestade retroativa.
+
+Operações canônicas de orçamento e meta executam avaliação best-effort depois
+do commit quando existe ponto seguro. Falha de notificação nunca reverte a
+operação financeira. Uma reconciliação diária cobre transações, cartões,
+parcelas e Open Finance: o runner usa paginação keyset, lotes, retry limitado e
+o mesmo claim/lease persistente da P7.6 sob o tipo `financial_alerts`. A CLI é
+`python -m scripts.run_financial_alert_jobs`; `FINANCIAL_ALERTS_ENABLED=true` é
+obrigatório para escrita. A flag fica desligada por padrão, nenhum endpoint
+público dispara o job e nenhum cron de Production foi configurado.
+
+A migration `e4f5a6b7c8d9` amplia as constraints de preferências e jobs e cria o
+estado mínimo de marcos. O custo operacional é uma leitura agregada de
+orçamentos do mês e uma de metas por usuário, mais escritas somente ao avançar
+marcos ou estabelecer baseline. A limitação atual é operacional: a frequência
+real da reconciliação depende de ativação externa futura; não existem e-mail,
+WhatsApp ou push nesta fase.
 
 ## Autenticação e isolamento
 

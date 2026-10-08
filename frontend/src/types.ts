@@ -35,7 +35,9 @@ export type NotificationPreferenceKey =
   | "card_limit"
   | "unusual_expense"
   | "weekly_summary"
-  | "monthly_summary";
+  | "monthly_summary"
+  | "budget_threshold"
+  | "goal_progress";
 
 export type NotificationPreferences = Record<NotificationPreferenceKey, boolean>;
 

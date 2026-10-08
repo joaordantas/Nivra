@@ -50,6 +50,21 @@ const preferenceGroups: Array<{
     ],
   },
   {
+    title: "Planejamento",
+    items: [
+      {
+        key: "budget_threshold",
+        label: "Alertas de orçamento",
+        description: "Receber alertas ao atingir 80% ou ultrapassar o limite mensal.",
+      },
+      {
+        key: "goal_progress",
+        label: "Progresso de metas",
+        description: "Receber avisos ao alcançar 50%, 75% ou concluir uma meta financeira.",
+      },
+    ],
+  },
+  {
     title: "Resumos",
     items: [
       {
@@ -125,7 +140,7 @@ export function NotificationPreferences() {
 
       {state.loading ? (
         <div aria-label="Carregando preferências de notificações" className="notification-preferences-loading" role="status">
-          {Array.from({ length: 6 }, (_, index) => <span className="skeleton" key={index} />)}
+          {Array.from({ length: 8 }, (_, index) => <span className="skeleton" key={index} />)}
         </div>
       ) : (
         <div className="notification-preference-groups">
