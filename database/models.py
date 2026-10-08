@@ -211,6 +211,22 @@ Index(
     notifications.c.id,
 )
 
+notification_dedupe_ledger = Table(
+    "notification_dedupe_ledger", metadata,
+    Column("usuario_id", ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False),
+    Column("dedupe_key", String(160), nullable=False),
+    Column("created_at", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    CheckConstraint(
+        "length(dedupe_key) BETWEEN 1 AND 160",
+        name="ck_notification_dedupe_ledger_key",
+    ),
+    PrimaryKeyConstraint(
+        "usuario_id",
+        "dedupe_key",
+        name="pk_notification_dedupe_ledger",
+    ),
+)
+
 notification_preferences = Table(
     "notification_preferences", metadata,
     Column("usuario_id", ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False),
@@ -270,12 +286,15 @@ periodic_summary_job_runs = Table(
     Column("skipped_count", Integer, nullable=False, server_default="0"),
     Column("failure_count", Integer, nullable=False, server_default="0"),
     Column("retry_count", Integer, nullable=False, server_default="0"),
+    Column("generated_count", Integer, nullable=False, server_default="0"),
+    Column("deduplicated_count", Integer, nullable=False, server_default="0"),
+    Column("duration_ms", Integer, nullable=False, server_default="0"),
     Column("error_code", String(48)),
     Column("started_at", DateTime(timezone=True), nullable=False, server_default=func.now()),
     Column("finished_at", DateTime(timezone=True)),
     UniqueConstraint("job_type", "period_start", name="uq_periodic_summary_job_period"),
     CheckConstraint(
-        "job_type IN ('weekly', 'monthly', 'financial_alerts')",
+        "job_type IN ('weekly', 'monthly', 'financial_alerts', 'cleanup')",
         name="ck_periodic_summary_job_type",
     ),
     CheckConstraint(
@@ -288,6 +307,10 @@ periodic_summary_job_runs = Table(
         "processed_count >= 0 AND success_count >= 0 AND suppressed_count >= 0 "
         "AND skipped_count >= 0 AND failure_count >= 0 AND retry_count >= 0",
         name="ck_periodic_summary_job_counts",
+    ),
+    CheckConstraint(
+        "generated_count >= 0 AND deduplicated_count >= 0 AND duration_ms >= 0",
+        name="ck_periodic_summary_job_observability",
     ),
     CheckConstraint(
         "(status = 'running' AND lease_token IS NOT NULL AND lease_expires_at IS NOT NULL "
@@ -715,7 +738,7 @@ Index(
 )
 
 TABLES_IN_DEPENDENCY_ORDER = [
-    usuarios, sessoes, auth_tokens, auth_rate_events, lumi_action_confirmations, notifications, notification_preferences, notification_preference_suppressions, periodic_summary_job_runs, financial_alert_states, categorias, contas, parcelamentos, transacoes, transferencias, cartoes,
+    usuarios, sessoes, auth_tokens, auth_rate_events, lumi_action_confirmations, notifications, notification_dedupe_ledger, notification_preferences, notification_preference_suppressions, periodic_summary_job_runs, financial_alert_states, categorias, contas, parcelamentos, transacoes, transferencias, cartoes,
     faturas, compras_cartao, pagamentos_fatura, vendas, parcelas, budgets, goals, goal_movements, conexoes_bancarias,
     contas_bancarias_externas, transacoes_bancarias, correspondencias_conciliacao, eventos_sincronizacao,
     eventos_webhook_open_finance,

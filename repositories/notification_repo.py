@@ -15,9 +15,31 @@ def create_notification(
     message: str,
     metadata_json: str,
     dedupe_key: str | None,
-) -> tuple[tuple, bool]:
+) -> tuple[tuple | None, bool]:
     conn = get_connection()
     try:
+        if dedupe_key is not None:
+            ledger_row = conn.execute(
+                """
+                INSERT INTO notification_dedupe_ledger (usuario_id, dedupe_key)
+                VALUES (?, ?)
+                ON CONFLICT (usuario_id, dedupe_key) DO NOTHING
+                RETURNING dedupe_key
+                """,
+                (usuario_id, dedupe_key),
+            ).fetchone()
+            if ledger_row is None:
+                row = conn.execute(
+                    f"""
+                    SELECT {_COLUMNS}
+                    FROM notifications
+                    WHERE usuario_id = ? AND chave_dedupe = ?
+                    """,
+                    (usuario_id, dedupe_key),
+                ).fetchone()
+                conn.commit()
+                return row, False
+
         row = conn.execute(
             f"""
             INSERT INTO notifications
@@ -37,15 +59,6 @@ def create_notification(
             ),
         ).fetchone()
         created = row is not None
-        if not created:
-            row = conn.execute(
-                f"""
-                SELECT {_COLUMNS}
-                FROM notifications
-                WHERE usuario_id = ? AND chave_dedupe = ?
-                """,
-                (usuario_id, dedupe_key),
-            ).fetchone()
         conn.commit()
         if row is None:
             raise RuntimeError("Nao foi possivel criar ou recuperar a notificacao.")

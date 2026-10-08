@@ -50,6 +50,8 @@ class JobCounters:
     skipped: int = 0
     failed: int = 0
     retries: int = 0
+    generated: int = 0
+    deduplicated: int = 0
 
 
 @dataclass(frozen=True)
@@ -107,7 +109,7 @@ def _log(event: str, **dimensions: str | int) -> None:
     allowed = {
         "job_type", "period", "status", "reason", "attempt", "processed",
         "success", "suppressed", "skipped", "failed", "retries", "duration_ms",
-        "batch_size", "error_code",
+        "batch_size", "error_code", "generated", "deduplicated",
     }
     payload = {"event": event}
     payload.update({key: value for key, value in dimensions.items() if key in allowed})
@@ -212,11 +214,13 @@ class PeriodicSummaryJobRunner:
                 if not user_ids:
                     break
                 for user_id in user_ids:
-                    outcome, retries, user_error = self._process_user(
+                    outcome, retries, user_error, generated, deduplicated = self._process_user(
                         normalized_kind, user_id, reference, period
                     )
                     counters.processed += 1
                     counters.retries += retries
+                    counters.generated += generated
+                    counters.deduplicated += deduplicated
                     if outcome == "success":
                         counters.success += 1
                     elif outcome == "suppressed":
@@ -241,6 +245,7 @@ class PeriodicSummaryJobRunner:
 
         status = self._final_status(counters)
         finished_at = self.utc_now()
+        duration_ms = max(0, round((time.monotonic() - started) * 1_000))
         if not finish_job_run(
             claim.run_id,
             claim.lease_token,
@@ -253,6 +258,9 @@ class PeriodicSummaryJobRunner:
             retry_count=counters.retries,
             error_code=error_code if counters.failed else None,
             finished_at=finished_at,
+            generated_count=counters.generated,
+            deduplicated_count=counters.deduplicated,
+            duration_ms=duration_ms,
         ):
             return self._result(
                 normalized_kind, period, "failed", "lock_conflict", claim.attempt, counters, started
@@ -285,7 +293,7 @@ class PeriodicSummaryJobRunner:
         user_id: int,
         reference: date,
         period: SummaryPeriod,
-    ) -> tuple[str, int, str | None]:
+    ) -> tuple[str, int, str | None, int, int]:
         retries = 0
         for attempt in range(MAX_USER_ATTEMPTS):
             try:
@@ -298,18 +306,24 @@ class PeriodicSummaryJobRunner:
                         user_id, reference=reference, period_start=period.start
                     )
                 if result.outcome == "delivered_or_deduplicated":
-                    return "success", retries, None
+                    return (
+                        "success",
+                        retries,
+                        None,
+                        int(getattr(result, "generated", 0)),
+                        int(getattr(result, "deduplicated", 0)),
+                    )
                 if result.outcome == "suppressed":
-                    return "suppressed", retries, None
+                    return "suppressed", retries, None, 0, 0
                 if result.outcome == "no_activity":
-                    return "skipped", retries, None
+                    return "skipped", retries, None, 0, 0
                 retryable = result.retryable
                 error_code = result.error_code or "summary_generation_failed"
             except Exception as exc:
                 retryable = _transient_error(exc)
                 error_code = "database_unavailable" if retryable else "unexpected_error"
             if not retryable or attempt + 1 >= MAX_USER_ATTEMPTS:
-                return "failed", retries, error_code
+                return "failed", retries, error_code, 0, 0
             self.sleeper(RETRY_BACKOFF_SECONDS[attempt])
             retries += 1
         raise AssertionError("unreachable")
@@ -360,6 +374,8 @@ class PeriodicSummaryJobRunner:
             skipped=counters.skipped,
             failed=counters.failed,
             retries=counters.retries,
+            generated=counters.generated,
+            deduplicated=counters.deduplicated,
             duration_ms=duration_ms,
         )
         return result

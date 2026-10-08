@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from uuid import uuid4
 
-from sqlalchemy import and_, insert, or_, select, update
+from sqlalchemy import and_, func, insert, or_, select, update
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
@@ -79,6 +79,9 @@ def claim_job_run(
                 "skipped_count": 0,
                 "failure_count": 0,
                 "retry_count": 0,
+                "generated_count": 0,
+                "deduplicated_count": 0,
+                "duration_ms": 0,
                 "error_code": None,
                 "started_at": now,
                 "finished_at": None,
@@ -150,6 +153,9 @@ def finish_job_run(
     retry_count: int,
     error_code: str | None,
     finished_at: datetime,
+    generated_count: int = 0,
+    deduplicated_count: int = 0,
+    duration_ms: int = 0,
 ) -> bool:
     engine = get_engine()
     with engine.begin() as connection:
@@ -170,6 +176,9 @@ def finish_job_run(
                 skipped_count=skipped_count,
                 failure_count=failure_count,
                 retry_count=retry_count,
+                generated_count=generated_count,
+                deduplicated_count=deduplicated_count,
+                duration_ms=duration_ms,
                 error_code=error_code,
                 finished_at=finished_at,
             )
@@ -187,3 +196,32 @@ def get_job_run(job_type: str, period_start: date) -> dict | None:
             )
         ).mappings().first()
         return dict(row) if row is not None else None
+
+
+def list_latest_job_runs() -> list[dict]:
+    engine = get_engine()
+    ranked = select(
+        periodic_summary_job_runs,
+        func.row_number().over(
+            partition_by=periodic_summary_job_runs.c.job_type,
+            order_by=(
+                periodic_summary_job_runs.c.started_at.desc(),
+                periodic_summary_job_runs.c.id.desc(),
+            ),
+        ).label("position"),
+    ).subquery()
+    with engine.connect() as connection:
+        rows = connection.execute(
+            select(ranked).where(ranked.c.position == 1).order_by(ranked.c.job_type)
+        ).mappings()
+        safe_fields = {
+            "id", "job_type", "period_start", "period_end", "reference_date",
+            "status", "lease_expires_at", "attempt", "processed_count",
+            "success_count", "suppressed_count", "skipped_count", "failure_count",
+            "retry_count", "generated_count", "deduplicated_count", "duration_ms",
+            "error_code", "started_at", "finished_at",
+        }
+        return [
+            {key: value for key, value in row.items() if key in safe_fields}
+            for row in rows
+        ]

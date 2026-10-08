@@ -244,7 +244,7 @@ class PeriodicFinancialSummaryTests(unittest.TestCase):
         before = obter_agregado_periodo_financeiro_service(
             1, date(2026, 9, 28), date(2026, 10, 4)
         )
-        with patch.object(notification_service, "notify", side_effect=RuntimeError("R$ 999 segredo")), \
+        with patch.object(notification_service, "deliver", side_effect=RuntimeError("R$ 999 segredo")), \
              patch("services.periodic_financial_summary_service.logger.error") as log_error:
             result = periodic_financial_summary_service.generate_weekly_summary(
                 1, reference=date(2026, 10, 6)

@@ -263,7 +263,7 @@ class FinancialNotificationPersistenceTests(unittest.TestCase):
         service = FinancialNotificationService()
         with patch.object(
             notification_service,
-            "notify",
+            "deliver",
             side_effect=RuntimeError("do not expose R$ 999 or identity"),
         ), patch("services.financial_notification_service.logger.error") as log_error:
             result = service.publish_from_insights(

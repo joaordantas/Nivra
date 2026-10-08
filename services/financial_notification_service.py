@@ -39,6 +39,8 @@ class FinancialNotificationResult:
     delivered_or_deduplicated: int
     suppressed: int
     failed: int
+    generated: int = 0
+    deduplicated: int = 0
 
 
 def _money(value: object) -> Decimal:
@@ -195,6 +197,8 @@ class FinancialNotificationService:
         delivered = 0
         suppressed = 0
         failed = 0
+        generated = 0
+        deduplicated = 0
         for event in events:
             if not preferences[event.preference.value]:
                 notification_preference_service.suppress_event(
@@ -221,7 +225,7 @@ class FinancialNotificationService:
                 )
                 continue
             try:
-                notification_service.notify(
+                delivery = notification_service.deliver(
                     usuario_id,
                     event.notification_type,
                     event.title,
@@ -235,6 +239,8 @@ class FinancialNotificationService:
                     dedupe_key=event.dedupe_key,
                 )
                 delivered += 1
+                generated += int(delivery.created)
+                deduplicated += int(delivery.deduplicated)
                 logger.info(
                     "financial_notification_event producer=%s type=%s outcome=delivered_or_deduplicated",
                     event.producer,
@@ -252,6 +258,8 @@ class FinancialNotificationService:
             delivered_or_deduplicated=delivered,
             suppressed=suppressed,
             failed=failed,
+            generated=generated,
+            deduplicated=deduplicated,
         )
 
 

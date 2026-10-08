@@ -6,6 +6,12 @@ import secrets
 from fastapi import APIRouter, Header, HTTPException, Request, status
 
 from backend.schemas.jobs import PeriodicSummaryTriggerResponse
+from services.financial_alert_job_service import financial_alert_job_runner
+from services.financial_threshold_alert_service import financial_threshold_alerts_enabled
+from services.notification_maintenance_service import (
+    notification_maintenance_enabled,
+    notification_maintenance_runner,
+)
 from services.periodic_summary_job_service import (
     current_civil_date,
     periodic_summary_job_runner,
@@ -32,16 +38,7 @@ def _authenticate_scheduler(authorization: str | None) -> None:
         )
 
 
-@router.get(
-    "/internal/jobs/periodic-summaries",
-    response_model=PeriodicSummaryTriggerResponse,
-    include_in_schema=False,
-)
-def trigger_periodic_summaries(
-    request: Request,
-    authorization: str | None = Header(default=None),
-) -> PeriodicSummaryTriggerResponse:
-    _authenticate_scheduler(authorization)
+def _reject_scheduler_input(request: Request) -> None:
     raw_content_length = request.headers.get("content-length", "0") or "0"
     try:
         has_payload = int(raw_content_length) > 0
@@ -52,6 +49,19 @@ def trigger_periodic_summaries(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="O trigger não aceita parâmetros ou payload.",
         )
+
+
+@router.get(
+    "/internal/jobs/periodic-summaries",
+    response_model=PeriodicSummaryTriggerResponse,
+    include_in_schema=False,
+)
+def trigger_periodic_summaries(
+    request: Request,
+    authorization: str | None = Header(default=None),
+) -> PeriodicSummaryTriggerResponse:
+    _authenticate_scheduler(authorization)
+    _reject_scheduler_input(request)
     if not periodic_summary_jobs_enabled():
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -73,3 +83,59 @@ def trigger_periodic_summaries(
             detail="Execução periódica falhou; consulte o tracking operacional.",
         )
     return PeriodicSummaryTriggerResponse(status=aggregate, results=public_results)
+
+
+@router.get(
+    "/internal/jobs/financial-alerts",
+    response_model=PeriodicSummaryTriggerResponse,
+    include_in_schema=False,
+)
+def trigger_financial_alerts(
+    request: Request,
+    authorization: str | None = Header(default=None),
+) -> PeriodicSummaryTriggerResponse:
+    _authenticate_scheduler(authorization)
+    _reject_scheduler_input(request)
+    if not financial_threshold_alerts_enabled():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Alertas financeiros desativados.",
+        )
+    result = financial_alert_job_runner.run(reference=current_civil_date())
+    if result.status == "failed":
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Execução de alertas falhou; consulte o tracking operacional.",
+        )
+    return PeriodicSummaryTriggerResponse(status=result.status, results=[result.public_dict()])
+
+
+@router.get(
+    "/internal/jobs/notification-maintenance",
+    response_model=PeriodicSummaryTriggerResponse,
+    include_in_schema=False,
+)
+def trigger_notification_maintenance(
+    request: Request,
+    authorization: str | None = Header(default=None),
+) -> PeriodicSummaryTriggerResponse:
+    _authenticate_scheduler(authorization)
+    _reject_scheduler_input(request)
+    if not notification_maintenance_enabled():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Manutenção de notificações desativada.",
+        )
+    try:
+        result = notification_maintenance_runner.run(reference=current_civil_date())
+    except RuntimeError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Política de retenção não configurada.",
+        ) from None
+    if result.status == "failed":
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Manutenção falhou; consulte o tracking operacional.",
+        )
+    return PeriodicSummaryTriggerResponse(status=result.status, results=[result.public_dict()])

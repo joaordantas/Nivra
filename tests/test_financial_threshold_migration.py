@@ -61,7 +61,7 @@ class FinancialThresholdMigrationTests(unittest.TestCase):
             command.upgrade(config, "head")
             self.assertEqual(
                 connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one(),
-                "e4f5a6b7c8d9",
+                "f5a6b7c8d9e0",
             )
 
 

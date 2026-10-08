@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+from dataclasses import dataclass
 
 from repositories.notification_repo import (
     count_unread_notifications,
@@ -32,6 +33,13 @@ logger = logging.getLogger("nivra.notifications")
 
 class NotificationNotFoundError(ValueError):
     pass
+
+
+@dataclass(frozen=True)
+class NotificationDelivery:
+    notification: dict | None
+    created: bool
+    deduplicated: bool
 
 
 def _log_event(event: str, outcome: str, **dimensions: str | int | bool) -> None:
@@ -106,7 +114,7 @@ def _notification_from_row(row: tuple) -> dict:
 
 
 class NotificationService:
-    def notify(
+    def deliver(
         self,
         usuario_id: int,
         notification_type: NotificationType | str,
@@ -116,7 +124,7 @@ class NotificationService:
         severity: NotificationSeverity | str = NotificationSeverity.INFO,
         metadata: dict[str, str | int | bool] | None = None,
         dedupe_key: str | None = None,
-    ) -> dict:
+    ) -> NotificationDelivery:
         if usuario_id < 1:
             raise ValueError("Usuario invalido para notificacao.")
         normalized_type = str(notification_type)
@@ -151,7 +159,7 @@ class NotificationService:
             _normalize_metadata(metadata),
             normalized_dedupe,
         )
-        notification = _notification_from_row(row)
+        notification = _notification_from_row(row) if row is not None else None
         _log_event(
             "created",
             "success",
@@ -159,7 +167,32 @@ class NotificationService:
             severity=normalized_severity,
             deduplicated=not created,
         )
-        return notification
+        return NotificationDelivery(
+            notification=notification,
+            created=created,
+            deduplicated=not created,
+        )
+
+    def notify(
+        self,
+        usuario_id: int,
+        notification_type: NotificationType | str,
+        title: str,
+        message: str,
+        *,
+        severity: NotificationSeverity | str = NotificationSeverity.INFO,
+        metadata: dict[str, str | int | bool] | None = None,
+        dedupe_key: str | None = None,
+    ) -> dict | None:
+        return self.deliver(
+            usuario_id,
+            notification_type,
+            title,
+            message,
+            severity=severity,
+            metadata=metadata,
+            dedupe_key=dedupe_key,
+        ).notification
 
     def list(
         self,

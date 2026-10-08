@@ -271,6 +271,30 @@ marcos ou estabelecer baseline. A limitação atual é operacional: a frequênci
 real da reconciliação depende de ativação externa futura; não existem e-mail,
 WhatsApp ou push nesta fase.
 
+## Consolidação operacional das notificações
+
+A migration `f5a6b7c8d9e0` separa a idempotência da vida útil da notificação
+visível. `notification_dedupe_ledger` registra somente usuário, chave técnica e
+instante de criação. A criação reserva a chave e insere a notificação na mesma
+transação; exclusão manual ou retenção remove apenas a apresentação. Por isso,
+um replay antigo permanece deduplicado mesmo quando a linha visível já não
+existe. O ledger só é removido pela cascata de exclusão do próprio usuário.
+
+A manutenção usa o mesmo claim, token, lease, limite de tentativas e recovery de
+`periodic_summary_job_runs`, sob o tipo `cleanup`. Apenas notificações lidas e
+anteriores ao cutoff explicitamente configurado são removidas em lotes. Linhas
+não lidas, preferências, supressões, estados de orçamento/meta e todas as tabelas
+financeiras ficam fora do alcance. No tracking, somente execuções terminais
+antigas que possuam uma execução posterior do mesmo tipo são elegíveis; a mais
+recente de cada tipo e qualquer execução em andamento são preservadas.
+
+O tracking também registra `generated_count`, `deduplicated_count` e
+`duration_ms`. Logs de jobs usam dimensões fechadas, sem identidade, conteúdo de
+notificação ou valores financeiros. A CLI de manutenção oferece status somente
+leitura e dry-run. Os triggers internos de alertas e manutenção reutilizam
+`CRON_SECRET`, recusam parâmetros/payload, não aparecem no OpenAPI e permanecem
+fechados por flags independentes. Nenhuma agenda é iniciada no processo HTTP.
+
 ## Autenticação e isolamento
 
 O login cria uma sessão persistente no PostgreSQL. O navegador recebe um identificador aleatório em cookie HTTP-only; o banco guarda somente seu hash. Em produção, o cookie usa `Secure` e `SameSite=Lax`. A sessão possui prazo de expiração configurável e o logout a revoga no servidor.

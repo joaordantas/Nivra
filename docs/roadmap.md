@@ -702,8 +702,8 @@ Status: **CONCLUÍDA E VALIDADA LOCALMENTE; SEM PRODUTORES FINANCEIROS OU DEPLOY
 - [x] Replay, oito chamadas concorrentes, múltiplos cartões e isolamento entre usuários
 - [x] Falhas de notificação isoladas do insight e das operações financeiras
 - [x] Gate em PostgreSQL descartável no mesmo endpoint conhecido de Preview, removido ao final
-- [ ] Alertas de orçamento — domínio canônico disponível; producer ainda não implementado
-- [ ] Alertas de meta — domínio canônico disponível; producer ainda não implementado
+- [x] Alertas de orçamento — integrados pela P7.7 sobre o domínio canônico P8.1
+- [x] Alertas de meta — integrados pela P7.7 sobre o domínio canônico P8.2
 
 O disparo ocorre no recálculo autenticado de insights. O core calcula status de
 fatura, comprometimento e anomalias; o producer apenas aplica templates aos
@@ -764,10 +764,10 @@ Status: **CONCLUÍDA E VALIDADA LOCALMENTE E EM POSTGRESQL DESCARTÁVEL; SEM DEP
 - [x] Alertas de orçamento e progresso de metas
 - [x] Resumos semanal e mensal
 
-Os schedulers de resumos e de alertas estão preparados e validados, mas permanecem
-desativados e sem configuração de cron em Production. Uma política automatizada
-de retenção continua futura; a exclusão individual segura não
-altera a fonte da verdade financeira.
+Os schedulers de resumos, alertas e manutenção estão preparados e validados,
+mas permanecem desativados e sem configuração de cron em Production. A política
+de retenção está implementada de forma fail-closed: os prazos precisam de decisão
+explícita antes de qualquer execução, e somente notificações lidas são elegíveis.
 
 ### P7.7 — Alertas de Orçamentos e Metas Financeiras
 
@@ -853,13 +853,32 @@ Status: **CONCLUÍDA E VALIDADA; DOMÍNIO CONSUMIDO PELOS ALERTAS DA P7.7**
 - [ ] Paginação e filtros server-side
 - [ ] Cache quando necessário
 - [ ] Error boundaries
-- [ ] Monitoramento e logs estruturados
+- [-] Monitoramento e logs estruturados — notificações, jobs, Lumi e Open Finance
+  possuem cobertura; a padronização geral da API permanece pendente
 - [x] Rate limiting básico de autenticação
 - [ ] Rate limiting geral da API
-- [ ] Acessibilidade e performance mobile
-- [ ] Auditoria de segurança, backup e recuperação
+- [-] Acessibilidade e performance mobile — fluxos centrais validados; auditoria
+  transversal e budgets de performance permanecem pendentes
+- [-] Auditoria de segurança, backup e recuperação — recovery de jobs e runbook
+  de notificações cobertos; backup/restauração global permanecem pendentes
 - [ ] Política de privacidade, termos de uso e LGPD
 - [ ] Screenshots oficiais, onboarding e testes públicos
+
+### Gate de consolidação operacional de notificações
+
+- [x] Fases P7.1–P7.7 e dependências P8.1/P8.2 auditadas sem criar nova subfase
+- [x] Ledger durável de idempotência separado das notificações visíveis
+- [x] Retenção diferenciada: somente notificações lidas; não lidas são preservadas
+- [x] Preferências, supressões, estados de alertas e dados financeiros preservados
+- [x] Tracking mantém a última execução por tipo e remove apenas históricos terminais
+- [x] Métricas persistidas de geradas, deduplicadas, duração, falhas e retries
+- [x] Consulta operacional somente leitura para o último estado de cada job
+- [x] Gatilhos internos protegidos para alertas e manutenção, ocultos do OpenAPI
+- [x] Flags e prazos fail-closed; nenhum cron, deploy ou ambiente externo alterado
+- [x] Rota de contas carregada sob demanda, retirando o SDK bancário do chunk inicial
+- [x] Runbook de operação, rollback, retenção e diagnóstico Lumi documentado
+
+Status: **CONCLUÍDO E VALIDADO LOCALMENTE E EM POSTGRESQL DESCARTÁVEL; SEM DEPLOY OU ATIVAÇÃO**
 
 ## 🚀 PRIORIDADE 10 — NIVRA PRO
 
@@ -886,7 +905,7 @@ Status: **CONCLUÍDA E VALIDADA; DOMÍNIO CONSUMIDO PELOS ALERTAS DA P7.7**
 
 ## Próxima tarefa recomendada
 
-**Planejar a ativação operacional segura dos jobs de notificações.**
+**Aprovar os prazos de retenção e executar um rollout observacional em Preview.**
 
 A Prioridade 6 foi tecnicamente concluída e não bloqueia o restante do roadmap.
 A Lumi está homologada em Production somente para uma conta interna, com
@@ -894,6 +913,8 @@ propostas e execução protegidas por confirmação explícita. O rollout públi
 não foi iniciado e o Gate Testers externo foi adiado por decisão de produto,
 sem representar falha técnica. O agendamento da P7.6 está preparado e validado,
 mas continua desativado. A P7.7 foi implementada sobre P8.1 e P8.2, com
-reconciliação idempotente e feature flag fechada. A próxima decisão é
-operacional: definir segredo/agenda, observabilidade e rollout gradual antes de
-qualquer ativação em Production. Este registro não ativa cron ou deploy.
+reconciliação idempotente e feature flag fechada. O gate de consolidação da
+Prioridade 9 adicionou retenção fail-closed, ledger durável, métricas, status
+operacional e gatilhos protegidos. A próxima decisão é humana: aprovar os prazos,
+segredo e agenda e observar primeiro em Preview. Este registro não ativa cron,
+deploy, Lumi pública ou qualquer job em Production.

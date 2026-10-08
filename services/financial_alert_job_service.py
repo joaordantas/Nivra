@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import time
 from datetime import date, datetime, timezone
@@ -105,11 +106,13 @@ class FinancialAlertJobRunner:
                 if not user_ids:
                     break
                 for usuario_id in user_ids:
-                    outcome, retries, user_error = self._process_user(
+                    outcome, retries, user_error, generated, deduplicated = self._process_user(
                         usuario_id, reference
                     )
                     counters.processed += 1
                     counters.retries += retries
+                    counters.generated += generated
+                    counters.deduplicated += deduplicated
                     if outcome == "success":
                         counters.success += 1
                     elif outcome == "suppressed":
@@ -129,6 +132,7 @@ class FinancialAlertJobRunner:
         status = "success" if counters.failed == 0 else (
             "partial_success" if counters.processed > counters.failed else "failed"
         )
+        duration_ms = max(0, round((time.monotonic() - started) * 1_000))
         if not finish_job_run(
             claim.run_id,
             claim.lease_token,
@@ -141,6 +145,9 @@ class FinancialAlertJobRunner:
             retry_count=counters.retries,
             error_code=error_code if counters.failed else None,
             finished_at=self.utc_now(),
+            generated_count=counters.generated,
+            deduplicated_count=counters.deduplicated,
+            duration_ms=duration_ms,
         ):
             return self._result(
                 reference, "failed", "lock_conflict", claim.attempt, counters, started
@@ -170,7 +177,7 @@ class FinancialAlertJobRunner:
 
     def _process_user(
         self, usuario_id: int, reference: date
-    ) -> tuple[str, int, str | None]:
+    ) -> tuple[str, int, str | None, int, int]:
         retries = 0
         for attempt in range(MAX_USER_ATTEMPTS):
             try:
@@ -178,16 +185,22 @@ class FinancialAlertJobRunner:
                     usuario_id, reference=reference, baseline_missing=True
                 )
                 if result.failed:
-                    return "failed", retries, "notification_delivery_failed"
+                    return "failed", retries, "notification_delivery_failed", 0, 0
                 if result.delivered_or_deduplicated:
-                    return "success", retries, None
+                    return (
+                        "success",
+                        retries,
+                        None,
+                        int(getattr(result, "generated", 0)),
+                        int(getattr(result, "deduplicated", 0)),
+                    )
                 if result.suppressed:
-                    return "suppressed", retries, None
-                return "skipped", retries, None
+                    return "suppressed", retries, None, 0, 0
+                return "skipped", retries, None, 0, 0
             except Exception as exc:
                 if not _transient_error(exc) or attempt + 1 >= MAX_USER_ATTEMPTS:
                     code = "database_unavailable" if _transient_error(exc) else "unexpected_error"
-                    return "failed", retries, code
+                    return "failed", retries, code, 0, 0
                 self.sleeper(RETRY_BACKOFF_SECONDS[attempt])
                 retries += 1
         raise AssertionError("unreachable")
@@ -203,11 +216,26 @@ class FinancialAlertJobRunner:
     ) -> JobRunResult:
         duration_ms = max(0, round((time.monotonic() - started) * 1_000))
         logger.info(
-            "financial_alert_job status=%s reason=%s processed=%s failed=%s",
-            status,
-            reason,
-            counters.processed,
-            counters.failed,
+            "financial_alert_job %s",
+            json.dumps(
+                {
+                    "event": "finished",
+                    "status": status,
+                    "reason": reason,
+                    "attempt": attempt or 0,
+                    "processed": counters.processed,
+                    "success": counters.success,
+                    "suppressed": counters.suppressed,
+                    "skipped": counters.skipped,
+                    "failed": counters.failed,
+                    "retries": counters.retries,
+                    "generated": counters.generated,
+                    "deduplicated": counters.deduplicated,
+                    "duration_ms": duration_ms,
+                },
+                separators=(",", ":"),
+                sort_keys=True,
+            ),
         )
         return JobRunResult(
             job_type=JOB_TYPE,

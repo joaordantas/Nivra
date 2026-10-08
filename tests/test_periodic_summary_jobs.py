@@ -42,7 +42,13 @@ class FakeSummaryService:
             outcome, retryable, error_code = value
         else:
             outcome, retryable, error_code = value, False, None
-        return SimpleNamespace(outcome=outcome, retryable=retryable, error_code=error_code)
+        return SimpleNamespace(
+            outcome=outcome,
+            retryable=retryable,
+            error_code=error_code,
+            generated=1 if outcome == "delivered_or_deduplicated" else 0,
+            deduplicated=0,
+        )
 
     def generate_weekly_summary(self, user_id, *, reference, period_start=None):
         return self._call("weekly", user_id, reference, period_start)
@@ -104,6 +110,8 @@ class PeriodicSummaryJobRunnerTests(unittest.TestCase):
             (result.counters.processed, result.counters.success, result.counters.suppressed, result.counters.skipped),
             (3, 1, 1, 1),
         )
+        tracked = get_job_run("weekly", date(2026, 9, 28))
+        self.assertEqual((tracked["generated_count"], tracked["deduplicated_count"]), (1, 0))
 
     def test_partial_failure_does_not_stop_other_users(self):
         self.add_users(3)

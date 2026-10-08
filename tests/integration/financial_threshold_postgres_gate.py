@@ -16,7 +16,7 @@ from tests.integration.notification_postgres_gate import _driver_url, require
 
 ROOT = Path(__file__).resolve().parents[2]
 EXPECTED_DATABASE = "nivra_p77_gate"
-EXPECTED_HEAD = "e4f5a6b7c8d9"
+EXPECTED_HEAD = "f5a6b7c8d9e0"
 
 
 def test_url_from_env() -> str:

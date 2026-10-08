@@ -33,6 +33,8 @@ class FakeAlertService:
             failed=1 if outcome == "failed" else 0,
             delivered_or_deduplicated=1 if outcome == "success" else 0,
             suppressed=1 if outcome == "suppressed" else 0,
+            generated=1 if outcome == "success" else 0,
+            deduplicated=0,
         )
 
 
@@ -78,6 +80,9 @@ class FinancialAlertJobTests(unittest.TestCase):
             (result.counters.success, result.counters.suppressed, result.counters.skipped, result.counters.failed),
             (2, 1, 1, 1),
         )
+        tracked = get_job_run("financial_alerts", date(2026, 10, 7))
+        self.assertEqual((tracked["generated_count"], tracked["deduplicated_count"]), (2, 0))
+        self.assertGreaterEqual(tracked["duration_ms"], 0)
 
     def test_transient_exception_retries_and_daily_replay_is_idempotent(self):
         service = FakeAlertService({1: [TimeoutError(), "success"]})

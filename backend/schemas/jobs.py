@@ -14,6 +14,8 @@ class PeriodicSummaryJobResultResponse(BaseModel):
     skipped: int
     failed: int
     retries: int
+    generated: int
+    deduplicated: int
     duration_ms: int
 
 

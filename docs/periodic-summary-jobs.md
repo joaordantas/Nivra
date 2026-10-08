@@ -67,7 +67,8 @@ retomada pode reavaliar usuários já concluídos, mas a chave idempotente de P7
 impede duplicação.
 
 O tracking termina em `success`, `partial_success` ou `failed` e conserva
-contadores de processados, sucessos, suprimidos, sem atividade, falhas e retries.
+contadores de processados, sucessos, suprimidos, sem atividade, falhas, retries,
+notificações geradas e deduplicadas, além da duração total.
 Somente códigos estáveis de erro são persistidos. Nomes, e-mails, IDs de usuário,
 valores, títulos, mensagens e descrições financeiras não são gravados nos logs
 do job nem na tabela de execução.
@@ -106,5 +107,6 @@ ativação futura e revisada:
 5. validar autenticação, tracking, logs e idempotência antes de promover;
 6. somente então repetir a configuração explicitamente em Production.
 
-O histórico de execuções precisará de política de retenção futura. Nenhuma
-limpeza automática foi adicionada nesta fase.
+O histórico de execuções e as notificações lidas agora possuem um mecanismo de
+retenção preparado, mas desativado e sem prazo presumido. Consulte
+`docs/notification-operations.md`; esta documentação não autoriza sua ativação.

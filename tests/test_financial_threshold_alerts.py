@@ -186,7 +186,7 @@ class FinancialThresholdAlertTests(unittest.TestCase):
         self.assertEqual(notification_service.list(1), [])
 
     def test_retry_concurrency_and_multiuser_are_persistent_and_isolated(self):
-        with patch.object(notification_service, "notify", side_effect=RuntimeError("private")):
+        with patch.object(notification_service, "deliver", side_effect=RuntimeError("private")):
             failed = self.evaluate([budget_fact(700, "100")])
         self.assertEqual(failed.failed, 1)
         self.assertEqual(list_financial_alert_states(1, "budget"), {})

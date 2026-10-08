@@ -43,6 +43,8 @@ class PeriodicSummaryResult:
     notification: dict | None = None
     error_code: str | None = None
     retryable: bool = False
+    generated: int = 0
+    deduplicated: int = 0
 
 
 MONTH_NAMES = (
@@ -203,7 +205,7 @@ class PeriodicFinancialSummaryService:
             return PeriodicSummaryResult(period=period, outcome="suppressed")
         title, message = _template(period, current, previous)
         try:
-            notification = notification_service.notify(
+            delivery = notification_service.deliver(
                 usuario_id,
                 NotificationType.SUMMARY,
                 title,
@@ -240,7 +242,9 @@ class PeriodicFinancialSummaryService:
         return PeriodicSummaryResult(
             period=period,
             outcome="delivered_or_deduplicated",
-            notification=notification,
+            notification=delivery.notification,
+            generated=int(delivery.created),
+            deduplicated=int(delivery.deduplicated),
         )
 
 

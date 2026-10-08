@@ -52,6 +52,8 @@ class ThresholdAlertResult:
     baselined: int = 0
     skipped: int = 0
     failed: int = 0
+    generated: int = 0
+    deduplicated: int = 0
 
     def merge(self, other: "ThresholdAlertResult") -> None:
         self.evaluated += other.evaluated
@@ -60,6 +62,8 @@ class ThresholdAlertResult:
         self.baselined += other.baselined
         self.skipped += other.skipped
         self.failed += other.failed
+        self.generated += other.generated
+        self.deduplicated += other.deduplicated
 
 
 def financial_threshold_alerts_enabled() -> bool:
@@ -166,7 +170,7 @@ class FinancialThresholdAlertService:
             ):
                 result.suppressed = 1
             else:
-                notification_service.notify(
+                delivery = notification_service.deliver(
                     usuario_id,
                     event.notification_type,
                     event.title,
@@ -180,6 +184,8 @@ class FinancialThresholdAlertService:
                     dedupe_key=event.dedupe_key,
                 )
                 result.delivered_or_deduplicated = 1
+                result.generated = int(delivery.created)
+                result.deduplicated = int(delivery.deduplicated)
             advance_financial_alert_state(
                 usuario_id,
                 event.source_kind,
