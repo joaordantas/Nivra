@@ -18,8 +18,10 @@ execução real exige, simultaneamente:
 - `NOTIFICATION_JOB_RETENTION_DAYS` entre 1 e 3.650;
 - batch entre 1 e 1.000; o padrão técnico é 250.
 
-Somente notificações **lidas** anteriores ao cutoff são removidas. Notificações
-não lidas não expiram. A manutenção não lê nem altera contas, transações,
+Somente notificações **lidas**, cujo `lida_em` seja anterior ao cutoff, são
+removidas. Assim, uma notificação antiga lida recentemente recebe a janela
+completa aprovada. Notificações não lidas não expiram. A manutenção não lê nem
+altera contas, transações,
 cartões, faturas, budgets, goals ou movimentos; também preserva preferências,
 eventos suprimidos, estados de marcos e o ledger durável de deduplicação.
 
@@ -107,3 +109,81 @@ testers e rollout público. A sequência recomendada é: medir o uso interno já
 autorizado, fechar o gate externo adiado, revisar novas ações em fase própria e,
 somente depois, decidir expansão de rollout. `LUMI_PUBLIC_ENABLED`, propostas,
 execução e allowlist não foram alteradas por esta consolidação.
+
+## Proposta formal de retenção — aguardando aprovação
+
+Esta tabela é uma proposta operacional, não uma política ativa. Os prazos não
+foram configurados em nenhum ambiente.
+
+| Categoria | Finalidade | Recomendação proposta | Alternativas | Impacto e risco de exclusão | Risco de retenção excessiva |
+| --- | --- | --- | --- | --- | --- |
+| Notificações lidas | histórico recente e suporte ao usuário | 180 dias após `lida_em` | 90 dias para maior minimização; 365 dias para histórico longo | perda do histórico visual após o prazo; dedupe permanece | crescimento do feed e conservação desnecessária de texto financeiro |
+| Notificações não lidas | garantir ciência do evento | sem expiração automática no mecanismo atual | futura política de arquivamento com aviso, em fase própria | exclusão prematura pode ocultar alerta ainda não visto | crescimento indefinido; exige acompanhamento de volume |
+| Histórico de jobs | diagnóstico, tendência e auditoria operacional | 180 dias após conclusão, preservando sempre o último por tipo | 90 ou 365 dias | janela menor reduz investigação histórica | metadados são pequenos, mas crescimento indefinido não tem finalidade |
+| Logs sanitizados da plataforma | resposta a incidentes | 30 dias | 14 ou 90 dias conforme capacidade e requisito jurídico | janela curta pode impedir correlação tardia | custo e exposição operacional desnecessários, mesmo sem payload financeiro |
+| Ledger de deduplicação | impedir reaparecimento de eventos antigos | vida da conta, apagado em cascata com o usuário | TTL somente após redesenho dos produtores | remover permite recriação de alertas antigos | crescimento por evento; contém apenas usuário, chave técnica e instante |
+| Estados de alertas financeiros | progressão monotônica de marcos | vida da conta/fonte; revisão separada para fontes excluídas | limpeza após prova de inexistência da fonte e janela aprovada | remover pode repetir marcos de orçamento/meta | estados órfãos podem se acumular |
+| Preferências | respeitar escolha vigente do usuário | vida da conta | nenhuma alternativa automática recomendada | exclusão reativa defaults e pode mudar consentimento prático | baixo volume; risco principal é governança, não armazenamento |
+
+A decisão deve envolver responsável pelo produto e avaliação jurídica/LGPD,
+considerando finalidade, transparência, direito de exclusão e minimização. Se a
+decisão diferir da proposta, atualizar este runbook e os parâmetros; não alterar
+o ledger nem as proteções de não lidas sem uma fase própria.
+
+## Evidência ambiental de 8 de outubro de 2026
+
+| Superfície | Evidência | Conclusão |
+| --- | --- | --- |
+| Local | commit `bf8b10c`, árvore inicialmente limpa, head Alembic `f5a6b7c8d9e0` | implementação atual disponível |
+| GitHub | `main` em `2aab7b4`; `bf8b10c` não publicado; branch local sem equivalente remoto | não há origem remota para um Preview atual |
+| Último Preview registrado | deployment bem-sucedido no commit `e2d968a`, ancestral e dez commits atrás do gate local | código P7/P8/P9 ausente |
+| Banco Preview base | revision `b5c7d9e1f203`, sem ledger/colunas novas | não compatível com este gate |
+| Banco Preview branch | revision `d7e8f9a012b3`, sem ledger/colunas novas | não compatível com este gate |
+| Acesso HTTP do Preview | URL responde com login da Vercel antes da API | health, OpenAPI e flags não puderam ser observados externamente |
+| Production | health público online no deployment `2aab7b4`; fingerprint de banco distinto dos candidatos Preview | permaneceu somente leitura e inalterada |
+
+Nenhum status ou dry-run foi executado contra Preview porque código e schema não
+estão alinhados. As duas operações foram aprovadas apenas localmente e no banco
+PostgreSQL descartável.
+
+## Checklist de prontidão para Preview
+
+- [x] Código local e migration aprovados em regressão.
+- [x] Banco descartável separado de Preview e Production validado e removido.
+- [x] Endpoints internos, flags e segredo possuem testes fail-closed.
+- [x] Proposta de retenção documentada sem ativação.
+- [x] Candidatos de banco Preview distinguíveis do fingerprint de Production.
+- [ ] Aprovação humana dos prazos de retenção.
+- [ ] Autorização explícita para push e criação de deployment Preview.
+- [ ] Branch remota contendo `bf8b10c` ou sucessor revisado.
+- [ ] Confirmação, na Vercel, do vínculo exato entre deployment e banco Preview.
+- [ ] Snapshot/restore point do banco Preview e migration até `f5a6b7c8d9e0`.
+- [ ] `CRON_SECRET` exclusivo no escopo Preview, sem reutilização de Production.
+- [ ] Todas as flags de jobs e manutenção confirmadas como `false` após deploy.
+- [ ] `status` e `cleanup --dry-run` executados no Preview atualizado.
+- [ ] Logs e métricas observados no runtime real sem PII.
+- [ ] Aprovação separada antes de qualquer execução real ou Cron.
+
+## Implantação futura autorizada
+
+1. Publicar o commit aprovado em branch de revisão; não usar `main`.
+2. Criar deployment Preview e comprovar o SHA pelo registro da plataforma.
+3. Vincular somente o projeto/branch Neon de Preview e comparar seu fingerprint
+   com Production antes de qualquer migration.
+4. Criar snapshot/restore point e aplicar `upgrade` seguido de `alembic check`
+   somente no banco Preview autorizado.
+5. Manter `PERIODIC_SUMMARY_JOBS_ENABLED`, `FINANCIAL_ALERTS_ENABLED` e
+   `NOTIFICATION_MAINTENANCE_ENABLED` em `false`.
+6. Configurar um `CRON_SECRET` exclusivo de Preview, mas não configurar agenda.
+7. Executar health, OpenAPI, CLI `status` e dry-run; confirmar logs sanitizados.
+8. Registrar os resultados antes de pedir autorização para qualquer job real.
+
+Rollback de código usa o deployment Preview anterior. Rollback operacional
+mantém ou restaura as três flags para `false` e remove qualquer agenda. Migration
+não deve ser revertida como mecanismo de desligamento; se uma migration falhar,
+interromper o gate e restaurar o banco Preview pelo procedimento aprovado.
+
+Uma futura ativação de Cron exige: deployment/schema alinhados, segredo exclusivo,
+flags aprovadas individualmente, responsável por alertas, frequência e timezone
+documentados, dry-run aprovado, plano de rollback testado e nova autorização
+explícita. Nada disso foi ativado neste gate.

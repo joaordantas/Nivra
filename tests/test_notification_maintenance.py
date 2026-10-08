@@ -65,8 +65,12 @@ class NotificationMaintenanceTests(unittest.TestCase):
         connection = get_connection()
         try:
             connection.execute(
-                "UPDATE notifications SET criada_em='2026-08-01 00:00:00' WHERE id IN (?,?)",
-                (expired["id"], unread["id"]),
+                "UPDATE notifications SET criada_em='2026-08-01 00:00:00' WHERE id IN (?,?,?)",
+                (expired["id"], unread["id"], recent["id"]),
+            )
+            connection.execute(
+                "UPDATE notifications SET lida_em='2026-08-02 00:00:00' WHERE id=?",
+                (expired["id"],),
             )
             connection.execute(
                 "INSERT INTO notification_preferences (usuario_id,preference_key,enabled) "
@@ -151,7 +155,8 @@ class NotificationMaintenanceTests(unittest.TestCase):
         connection = get_connection()
         try:
             connection.execute(
-                "UPDATE notifications SET criada_em='2026-08-01 00:00:00' WHERE id=?",
+                "UPDATE notifications SET criada_em='2026-08-01 00:00:00', "
+                "lida_em='2026-08-02 00:00:00' WHERE id=?",
                 (expired["id"],),
             )
             connection.commit()

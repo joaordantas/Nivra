@@ -105,6 +105,10 @@ def run(raw: str) -> None:
             text("UPDATE notifications SET criada_em='2026-08-01' WHERE id IN (:expired,:unread)"),
             {"expired": expired["id"], "unread": unread["id"]},
         )
+        connection.execute(
+            text("UPDATE notifications SET lida_em='2026-08-02' WHERE id=:expired"),
+            {"expired": expired["id"]},
+        )
 
     barrier = threading.Barrier(8)
 

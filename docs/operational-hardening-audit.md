@@ -56,3 +56,33 @@ rollout público da Lumi continuam fora do escopo ou dependem de decisão humana
 
 Resultado técnico: **APROVADO**. A ativação permanece bloqueada por decisões de
 política e ambiente, não por falha de implementação.
+
+## Gate de prontidão operacional e Preview — 8 de outubro de 2026
+
+A reauditoria começou com árvore limpa no commit `bf8b10c`. O remoto `main`
+estava em `2aab7b4`; o último Preview registrado, em `e2d968a`. Esse Preview é
+ancestral do commit local e não contém os dez commits P7/P8/P9 seguintes. A
+consulta somente leitura aos bancos candidatos confirmou revisions antigas,
+sem `notification_dedupe_ledger` e sem as três colunas novas do tracking.
+
+O Preview respondeu com a página de login da Vercel, não com JSON da aplicação.
+Sem CLI autenticada ou vínculo local do projeto, não foi possível confirmar as
+variáveis de ambiente do deployment. Por segurança, nenhum trigger, migration,
+status ou dry-run foi enviado ao Preview. Production recebeu apenas um GET de
+health público e permaneceu inalterada.
+
+Em ambiente isolado, 44 testes direcionados e 26 subtests passaram antes da
+correção; os testes diretamente afetados passaram novamente depois dela. A
+regressão final aprovou 401 testes e 83 subtests de backend, 32 testes frontend,
+typecheck/build Vite, compilação Python e `alembic check`. O gate PostgreSQL
+descartável repetiu migration, concorrência de oito runners, dedupe, preservação
+de não lidas, ausência de efeito financeiro, downgrade e reupgrade. A CLI
+`status` e o dry-run retornaram código zero no banco descartável. Durante a
+revisão, o cutoff de notificações lidas foi corrigido para usar `lida_em`,
+evitando expiração imediata de uma notificação antiga lida recentemente.
+
+Classificação: **APROVADO COM RESSALVAS**. A prontidão local e em PostgreSQL
+descartável está comprovada. A observação em Preview continua pendente por
+defasagem de código/schema, proteção de acesso e ausência de autorização para
+push, deploy ou migration. A política de retenção proposta ainda requer decisão
+humana e avaliação jurídica/LGPD.

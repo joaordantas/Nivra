@@ -17,7 +17,7 @@ def count_expired_read_notifications(cutoff: datetime) -> int:
         return int(connection.scalar(
             select(func.count()).select_from(notifications).where(
                 notifications.c.lida.is_(True),
-                notifications.c.criada_em < cutoff,
+                notifications.c.lida_em < cutoff,
             )
         ) or 0)
 
@@ -27,9 +27,9 @@ def delete_expired_read_notifications(cutoff: datetime, *, limit: int) -> int:
         select(notifications.c.id)
         .where(
             notifications.c.lida.is_(True),
-            notifications.c.criada_em < cutoff,
+            notifications.c.lida_em < cutoff,
         )
-        .order_by(notifications.c.criada_em, notifications.c.id)
+        .order_by(notifications.c.lida_em, notifications.c.id)
         .limit(limit)
     )
     engine = get_engine()

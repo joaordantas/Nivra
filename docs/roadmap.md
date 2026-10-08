@@ -880,6 +880,20 @@ Status: **CONCLUÍDA E VALIDADA; DOMÍNIO CONSUMIDO PELOS ALERTAS DA P7.7**
 
 Status: **CONCLUÍDO E VALIDADO LOCALMENTE E EM POSTGRESQL DESCARTÁVEL; SEM DEPLOY OU ATIVAÇÃO**
 
+### Gate de prontidão operacional e Preview
+
+- [x] Estado local, remoto, deployments e bancos candidatos auditados sem expor segredos
+- [x] Proposta formal de retenção documentada, sem prazos ativados
+- [x] Triggers, flags, CLI, dry-run, dedupe, recovery e oito runners revalidados
+- [x] Cutoff de notificações lidas alinhado ao instante real de leitura
+- [x] PostgreSQL descartável validado novamente e removido
+- [-] Preview identificado, porém dez commits atrás e com schema anterior à P7
+- [ ] Deployment e migration autorizados no Preview
+- [ ] Observação de status, dry-run, flags, logs e métricas no runtime Preview atual
+- [ ] Aprovação humana dos prazos de retenção e da futura agenda
+
+Status: **APROVADO COM RESSALVAS; PRONTIDÃO LOCAL COMPROVADA, OBSERVAÇÃO EM PREVIEW PENDENTE**
+
 ## 🚀 PRIORIDADE 10 — NIVRA PRO
 
 - [ ] Perfil profissional
@@ -905,7 +919,7 @@ Status: **CONCLUÍDO E VALIDADO LOCALMENTE E EM POSTGRESQL DESCARTÁVEL; SEM DEP
 
 ## Próxima tarefa recomendada
 
-**Aprovar os prazos de retenção e executar um rollout observacional em Preview.**
+**Autorizar um deployment isolado em Preview e aprovar a política de retenção.**
 
 A Prioridade 6 foi tecnicamente concluída e não bloqueia o restante do roadmap.
 A Lumi está homologada em Production somente para uma conta interna, com
@@ -916,5 +930,8 @@ mas continua desativado. A P7.7 foi implementada sobre P8.1 e P8.2, com
 reconciliação idempotente e feature flag fechada. O gate de consolidação da
 Prioridade 9 adicionou retenção fail-closed, ledger durável, métricas, status
 operacional e gatilhos protegidos. A próxima decisão é humana: aprovar os prazos,
-segredo e agenda e observar primeiro em Preview. Este registro não ativa cron,
-deploy, Lumi pública ou qualquer job em Production.
+segredo e agenda e observar primeiro em Preview. A auditoria de prontidão
+confirmou que o Preview registrado está dez commits atrás e em schema anterior
+à P7; por isso a próxima ação exige autorização explícita para publicar uma
+branch, migrar somente o banco Preview isolado e executar status/dry-run. Este
+registro não ativa cron, deploy, Lumi pública ou qualquer job em Production.

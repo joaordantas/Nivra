@@ -295,6 +295,22 @@ leitura e dry-run. Os triggers internos de alertas e manutenção reutilizam
 `CRON_SECRET`, recusam parâmetros/payload, não aparecem no OpenAPI e permanecem
 fechados por flags independentes. Nenhuma agenda é iniciada no processo HTTP.
 
+### Topologia observada no gate de prontidão
+
+Em 8 de outubro de 2026, o commit local `bf8b10c` ainda não existia no remoto.
+O último deployment Preview registrado apontava para `e2d968a`, dez commits
+atrás e anterior à fundação P7. Os dois endpoints Neon identificados localmente
+como Preview estavam em `b5c7d9e1f203` e `d7e8f9a012b3`; ambos não possuíam o
+ledger ou as colunas de observabilidade. A URL do deployment era protegida pelo
+login da Vercel e não permitiu observar a API sem credencial administrativa.
+
+O health público de Production permaneceu apenas em leitura e informou um
+fingerprint de banco diferente dos candidatos Preview. Isso comprova distinção
+dos endpoints observados, mas não substitui a confirmação do vínculo efetivo na
+Vercel. Consequentemente, status, dry-run e migration não foram executados em
+Preview. O gate operacional real requer primeiro deployment autorizado do SHA,
+vínculo explícito ao banco isolado e snapshot anterior à migration.
+
 ## Autenticação e isolamento
 
 O login cria uma sessão persistente no PostgreSQL. O navegador recebe um identificador aleatório em cookie HTTP-only; o banco guarda somente seu hash. Em produção, o cookie usa `Secure` e `SameSite=Lax`. A sessão possui prazo de expiração configurável e o logout a revoga no servidor.
