@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 
@@ -5,10 +6,17 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from backend.middleware.operations import OperationsMiddleware
+
 
 # Em desenvolvimento, carrega a configuração local sem substituir variáveis
 # já fornecidas pelo ambiente de execução (como Vercel ou terminal).
 load_dotenv(override=False)
+
+_log_level_name = os.environ.get("NIVRA_LOG_LEVEL", "INFO").strip().upper()
+logging.getLogger("nivra").setLevel(
+    getattr(logging, _log_level_name, logging.INFO)
+)
 
 
 from backend.routers.auth import router as auth_router
@@ -48,6 +56,7 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "X-CSRF-Token"],
 )
+app.add_middleware(OperationsMiddleware)
 
 app.include_router(auth_router, prefix="/api")
 app.include_router(accounts_router, prefix="/api")

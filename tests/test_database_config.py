@@ -29,6 +29,18 @@ class DatabaseConfigTests(unittest.TestCase):
         ):
             with self.assertRaisesRegex(RuntimeError, "PostgreSQL"):
                 get_database_url()
+        with patch.dict(
+            os.environ,
+            {
+                "APP_ENV": "preview",
+                "DATABASE_URL": "postgresql+pg8000://app:senha@ep-preview.neon.tech/app",
+            },
+            clear=True,
+        ):
+            self.assertEqual(
+                get_database_url(),
+                "postgresql+pg8000://app:senha@ep-preview.neon.tech/app",
+            )
 
     def test_migration_prefere_url_sem_pooling(self):
         with patch.dict(

@@ -17,6 +17,8 @@ import { ForgotPasswordPage } from "../pages/ForgotPasswordPage";
 import { ResetPasswordPage } from "../pages/ResetPasswordPage";
 import { VerifyEmailPage } from "../pages/VerifyEmailPage";
 import { SecurityPage } from "../pages/settings/SecurityPage";
+import { PrivacyPage } from "../pages/PrivacyPage";
+import { TermsPage } from "../pages/TermsPage";
 import { useAuth } from "./providers";
 
 const LumiGatePage = lazy(() => import("../pages/LumiGatePage").then((module) => ({ default: module.LumiGatePage })));
@@ -46,6 +48,8 @@ const router = createBrowserRouter([
   { path: "/forgot-password", element: <PublicRoute><ForgotPasswordPage /></PublicRoute> },
   { path: "/reset-password", element: <ResetPasswordPage /> },
   { path: "/verify-email", element: <VerifyEmailPage /> },
+  { path: "/privacy", element: <PrivacyPage /> },
+  { path: "/terms", element: <TermsPage /> },
   {
     path: "/",
     element: (

@@ -54,7 +54,7 @@ def get_database_url(*, migration: bool = False) -> str:
             f"{variable} nao configurada. Defina a conexao PostgreSQL antes de iniciar o backend."
         )
     normalized = _normalizar_url(database_url)
-    if not normalized.startswith("postgresql+psycopg://"):
+    if not normalized.startswith(("postgresql+psycopg://", "postgresql+pg8000://")):
         raise RuntimeError("O banco oficial deve usar uma URL PostgreSQL.")
     return normalized
 

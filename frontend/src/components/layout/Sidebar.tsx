@@ -1,5 +1,5 @@
 import { LogOut, Moon, Sun } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 
 import { useAuth, useTheme } from "../../app/providers";
 import { primaryNavigation, productIcon as ProductIcon, secondaryNavigation } from "./navigation";
@@ -55,6 +55,7 @@ export function Sidebar() {
             <NavigationLink item={item} key={item.path} />
           ))}
         </nav>
+        <div className="sidebar-legal-links"><Link to="/privacy">Privacidade</Link><Link to="/terms">Termos</Link></div>
 
         <div className="sidebar-user">
           <span className="user-avatar" aria-hidden="true">

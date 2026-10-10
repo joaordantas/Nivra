@@ -116,6 +116,7 @@ export function AuthView({ onLogin }: AuthViewProps) {
               <Button disabled={loading} type="submit">{loading ? "Criando..." : <>Criar minha conta <ArrowRight size={18} /></>}</Button>
             </form>
           )}
+          <p className="auth-legal-links">Ao continuar, você concorda com os <Link to="/terms">Termos de Uso</Link> e confirma que leu a <Link to="/privacy">Política de Privacidade</Link>.</p>
         </div>
       </section>
     </main>

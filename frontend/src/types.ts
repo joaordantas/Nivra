@@ -329,6 +329,19 @@ export interface Transfer {
   data: string;
 }
 
+export type MovementHistoryItem =
+  | { kind: "transaction"; transaction: Transaction }
+  | { kind: "transfer"; transfer: Transfer };
+
+export interface MovementPage {
+  items: MovementHistoryItem[];
+  total: number;
+  limit: number;
+  offset: number;
+  has_more: boolean;
+  summary: TransactionSummary;
+}
+
 export type MovementType = "entrada" | "saida" | "transferencia";
 
 export interface MovementFormValues {

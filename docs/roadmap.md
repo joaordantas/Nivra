@@ -850,19 +850,22 @@ Status: **CONCLUÍDA E VALIDADA; DOMÍNIO CONSUMIDO PELOS ALERTAS DA P7.7**
 
 ## 🛡️ PRIORIDADE 9 — POLIMENTO E PRODUÇÃO
 
-- [ ] Paginação e filtros server-side
-- [ ] Cache quando necessário
-- [ ] Error boundaries
-- [-] Monitoramento e logs estruturados — notificações, jobs, Lumi e Open Finance
-  possuem cobertura; a padronização geral da API permanece pendente
+- [x] Paginação e filtros server-side no histórico unificado
+- [x] Estratégia de cache revisada: API financeira e autenticação em `no-store`,
+  sem cache compartilhado de dados sensíveis; chunks pesados continuam lazy
+- [x] Error boundary global com recuperação controlada
+- [x] Monitoramento e logs HTTP estruturados, sanitizados e correlacionáveis
 - [x] Rate limiting básico de autenticação
-- [ ] Rate limiting geral da API
-- [-] Acessibilidade e performance mobile — fluxos centrais validados; auditoria
-  transversal e budgets de performance permanecem pendentes
-- [-] Auditoria de segurança, backup e recuperação — recovery de jobs e runbook
-  de notificações cobertos; backup/restauração global permanecem pendentes
-- [ ] Política de privacidade, termos de uso e LGPD
-- [ ] Screenshots oficiais, onboarding e testes públicos
+- [x] Rate limiting geral da API com limites separados para leitura e escrita
+- [x] Acessibilidade e performance mobile — skip link, foco principal, layouts em
+  375/390/430 px e bundle sem regressão de build
+- [x] Auditoria de segurança, backup e recuperação com runbook, RPO/RTO e ordem
+  segura de rollback/restauração
+- [-] Política de privacidade, termos de uso e LGPD — páginas públicas e política
+  de retenção implementadas; revisão jurídica do texto permanece externa
+- [-] Screenshots oficiais, onboarding e testes públicos — onboarding e regressão
+  pública implementados; captura editorial e teste em aparelho físico permanecem
+  como evidência não bloqueante
 
 ### Gate de consolidação operacional de notificações
 
@@ -883,16 +886,17 @@ Status: **CONCLUÍDO E VALIDADO LOCALMENTE E EM POSTGRESQL DESCARTÁVEL; SEM DEP
 ### Gate de prontidão operacional e Preview
 
 - [x] Estado local, remoto, deployments e bancos candidatos auditados sem expor segredos
-- [x] Proposta formal de retenção documentada, sem prazos ativados
+- [x] Política 180/180/30 aprovada e documentada, sem limpeza ou agenda ativada
 - [x] Triggers, flags, CLI, dry-run, dedupe, recovery e oito runners revalidados
 - [x] Cutoff de notificações lidas alinhado ao instante real de leitura
 - [x] PostgreSQL descartável validado novamente e removido
-- [-] Preview identificado, porém dez commits atrás e com schema anterior à P7
-- [ ] Deployment e migration autorizados no Preview
-- [ ] Observação de status, dry-run, flags, logs e métricas no runtime Preview atual
-- [ ] Aprovação humana dos prazos de retenção e da futura agenda
+- [x] Preview isolado identificado e atualizado até o commit `7c0aace`
+- [x] Deployment e migration `f5a6b7c8d9e0` validados no Preview
+- [x] Status e dry-run reais executados contra a branch Preview, sem limpeza
+- [x] Aprovação humana dos prazos de retenção 180/180/30 registrada; agenda e
+  limpeza continuam deliberadamente desativadas
 
-Status: **APROVADO COM RESSALVAS; PRONTIDÃO LOCAL COMPROVADA, OBSERVAÇÃO EM PREVIEW PENDENTE**
+Status: **CONCLUÍDA COM RESSALVAS NÃO BLOQUEANTES; PREVIEW VALIDADO, PRODUCTION INALTERADA**
 
 ## 🚀 PRIORIDADE 10 — NIVRA PRO
 
@@ -919,7 +923,7 @@ Status: **APROVADO COM RESSALVAS; PRONTIDÃO LOCAL COMPROVADA, OBSERVAÇÃO EM P
 
 ## Próxima tarefa recomendada
 
-**Autorizar um deployment isolado em Preview e aprovar a política de retenção.**
+**Observar o Preview atualizado e decidir, em fase própria, se haverá piloto público.**
 
 A Prioridade 6 foi tecnicamente concluída e não bloqueia o restante do roadmap.
 A Lumi está homologada em Production somente para uma conta interna, com
@@ -929,9 +933,8 @@ sem representar falha técnica. O agendamento da P7.6 está preparado e validado
 mas continua desativado. A P7.7 foi implementada sobre P8.1 e P8.2, com
 reconciliação idempotente e feature flag fechada. O gate de consolidação da
 Prioridade 9 adicionou retenção fail-closed, ledger durável, métricas, status
-operacional e gatilhos protegidos. A próxima decisão é humana: aprovar os prazos,
-segredo e agenda e observar primeiro em Preview. A auditoria de prontidão
-confirmou que o Preview registrado está dez commits atrás e em schema anterior
-à P7; por isso a próxima ação exige autorização explícita para publicar uma
-branch, migrar somente o banco Preview isolado e executar status/dry-run. Este
-registro não ativa cron, deploy, Lumi pública ou qualquer job em Production.
+operacional e gatilhos protegidos. A política 180/180/30 foi aprovada, o Preview
+isolado foi atualizado e a validação funcional/multiusuário, status, dry-run e
+mobile foi concluída. Cron, limpeza, Lumi pública e produtores em Production
+continuam desligados. A Prioridade 10 não foi iniciada; qualquer piloto público
+ou ativação operacional exige decisão própria e observação do Preview.

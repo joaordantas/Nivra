@@ -1,7 +1,9 @@
 from datetime import datetime
-from typing import Literal
+from typing import Annotated, Literal, Union
 
 from pydantic import BaseModel, ConfigDict, Field
+
+from backend.schemas.accounts import TransferListItem
 
 
 class TransactionCreate(BaseModel):
@@ -47,6 +49,31 @@ class TransactionSummary(BaseModel):
     entradas: float
     saidas: float
     saldo: float
+
+
+class MovementTransactionItem(BaseModel):
+    kind: Literal["transaction"] = "transaction"
+    transaction: TransactionListItem
+
+
+class MovementTransferItem(BaseModel):
+    kind: Literal["transfer"] = "transfer"
+    transfer: TransferListItem
+
+
+MovementListItem = Annotated[
+    Union[MovementTransactionItem, MovementTransferItem],
+    Field(discriminator="kind"),
+]
+
+
+class MovementPage(BaseModel):
+    items: list[MovementListItem]
+    total: int = Field(ge=0)
+    limit: int = Field(ge=1, le=100)
+    offset: int = Field(ge=0)
+    has_more: bool
+    summary: TransactionSummary
 
 
 class ReconciliationResponse(BaseModel):

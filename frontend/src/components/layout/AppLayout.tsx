@@ -12,6 +12,7 @@ import {
   NotificationBell,
   NotificationCenterProvider,
 } from "../notifications/NotificationCenter";
+import { OnboardingChecklist } from "../onboarding/OnboardingChecklist";
 
 const NotificationPanel = lazy(() => import("../notifications/NotificationPanel").then(
   (module) => ({ default: module.NotificationPanel }),
@@ -61,6 +62,7 @@ export function AppLayout() {
   return (
     <NotificationCenterProvider>
       <div className="app-shell">
+        <a className="skip-link" href="#main-content">Ir para o conteúdo</a>
         <Sidebar />
         <div className="app-body">
           <header className="mobile-header">
@@ -85,7 +87,8 @@ export function AppLayout() {
               {verificationMessage ? <small className={verificationError ? "verification-error" : "verification-success"}>{verificationMessage}</small> : null}
             </aside>
           ) : null}
-          <main className="main-content">
+          <main className="main-content" id="main-content" tabIndex={-1}>
+            {user ? <OnboardingChecklist userId={user.id} /> : null}
             <Outlet />
           </main>
         </div>

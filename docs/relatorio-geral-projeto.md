@@ -10,7 +10,7 @@ projeto. O progresso oficial continua sendo controlado por
 fontes de verdade quando houver diferença entre um relato histórico e o
 estado atual.
 
-**Atualização:** 22 de setembro de 2026
+**Atualização:** 10 de outubro de 2026
 **Produto:** Nivra\
 **Status:** Alpha funcional\
 **Aplicação:** <https://nivra-finance.vercel.app>\
@@ -1706,3 +1706,82 @@ as propostas e a execução financeira explicitamente desligadas. A próxima
 recomendação é um período curto de observação com as três flags em `false` e
 revisão humana das métricas/logs; qualquer futura abertura da Lumi exige uma
 autorização separada. A P6.6 não foi iniciada.
+
+## 18. Encerramento consolidado da Prioridade 9 — 10/10/2026
+
+### Resultado executivo
+
+A Prioridade 9 foi encerrada como **APROVADA COM RESSALVAS NÃO BLOQUEANTES**.
+O Preview comprovou autenticação por credenciais, persistência de sessão,
+logout, CSRF, isolamento multiusuário, contas, transações, orçamentos, metas,
+notificações, preferências, status operacional e retenção em dry-run. Os dados
+sintéticos foram removidos e a linha de base do Neon Preview foi restaurada.
+Production e `main` não foram modificadas por esse gate; Cron, Lumi pública,
+produtores financeiros e limpeza real permaneceram desligados.
+
+### Evolução entregue
+
+- histórico unificado com paginação e filtros no servidor, resumo financeiro do
+  conjunto filtrado e isolamento por usuário;
+- middleware operacional com request ID, logs JSON sanitizados, normalização de
+  IDs em paths, cabeçalhos defensivos, HSTS em HTTPS e `Cache-Control: no-store`;
+- rate limiting persistente e configurável para leituras e escritas da API,
+  preservando os limites especializados de autenticação e Lumi;
+- error boundary global, skip link, foco no conteúdo principal e onboarding
+  descartável para os primeiros passos;
+- páginas públicas de Privacidade e Termos, com acesso também pela autenticação
+  e pela navegação autenticada;
+- runbook de backup e recuperação com separação Preview/Production, RPO/RTO de
+  Alpha, ordem de contenção, rollback e exercício periódico;
+- política aprovada para o piloto: notificações lidas por 180 dias após a leitura,
+  histórico terminal de jobs por 180 dias, logs sanitizados por 30 dias e
+  preservação das não lidas. A aprovação não ativou limpeza nem agendamento;
+- runner operacional do piloto protegido por `APP_ENV=preview`, host esperado,
+  namespace sintético, lote restrito, repetição idempotente e limpeza guardada.
+
+### Segurança e privacidade
+
+Sessões continuam em cookies HTTP-only; mutações exigem CSRF e os repositórios
+filtram por usuário. Triggers internos permanecem fora do OpenAPI, exigem segredo
+forte e falham fechados quando flags estão desligadas. Logs novos contêm apenas
+método, path normalizado, status, duração, outcome e identificador de correlação;
+não registram token, cookie, senha, connection string, e-mail ou payload
+financeiro. O texto público de Privacidade/Termos é funcional e transparente,
+mas ainda requer revisão jurídica antes de divulgação ampla.
+
+### Qualidade e desempenho
+
+A diferença histórica de 397 para **401 testes backend** é explicada pelos
+quatro casos adicionados na Prioridade 9: paginação com isolamento, cabeçalhos
+operacionais, resposta 429 com `Retry-After` e sanitização de identificadores.
+A suíte canônica terminou **401/401**, em 750,204 s. O frontend terminou
+**37/37**, e o build React/TypeScript foi aprovado com 1.949 módulos. O chunk
+inicial ficou em 403,99 kB (118,35 kB gzip); Contas continua lazy em 121,06 kB.
+
+Os viewports autenticados de 375, 390 e 430 px foram validados sem overflow
+horizontal ou controles cortados. Essa evidência automatizada não substitui um
+teste em aparelho físico. A decisão de cache foi deliberada: respostas
+financeiras e de autenticação não usam cache compartilhado e recebem `no-store`;
+o ganho seguro permanece em coalescência local de requisições e chunks lazy.
+
+### Estado funcional acumulado até a Prioridade 9
+
+A Nivra possui domínio financeiro pessoal com usuários, autenticação segura,
+contas e saldos, receitas/despesas, transferências, categorias, cartões e
+faturas, parcelamentos, Open Finance Sandbox e conciliação, dashboard e insights,
+orçamentos mensais, metas com movimentos idempotentes, Lumi protegida por gates,
+central de notificações, preferências, resumos periódicos, alertas de orçamento e
+metas, ledger de deduplicação, tracking de jobs, métricas e manutenção fail-closed.
+
+As Prioridades 7.1–7.7 e os domínios canônicos P8.1/P8.2 estão integrados. A
+Prioridade 9 adiciona a camada transversal de operação, segurança, observabilidade,
+responsividade e continuidade necessária para um piloto controlado. A Prioridade
+10 não foi iniciada.
+
+### Ressalvas e próxima decisão
+
+Permanecem fora do encerramento técnico: revisão jurídica dos textos, screenshots
+editoriais definitivos, teste em dispositivo físico e decisão de negócio sobre
+piloto público. Nenhum desses itens autoriza automaticamente alteração de
+Production. A próxima etapa oficial é observar o Preview e decidir o piloto em
+um gate próprio; este relatório não inicia a Prioridade 10.

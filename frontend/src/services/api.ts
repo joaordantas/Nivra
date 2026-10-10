@@ -11,6 +11,7 @@ import type {
   FinancialInsights,
   FinancialGoal,
   GoalMovement,
+  MovementPage,
   InstallmentPlanDetail,
   InstallmentPlanSummary,
   InstallmentPlanUpdate,
@@ -210,6 +211,37 @@ export const api = {
     if (dataFim) params.set("data_fim", dataFim);
     const query = params.size ? `?${params.toString()}` : "";
     return request<Transaction[]>(`/transactions${query}`);
+  },
+  getMovementPage: ({
+    search = "",
+    movementType,
+    accountId,
+    categoryId,
+    origin,
+    startDate = "",
+    endDate = "",
+    limit = 25,
+    offset = 0,
+  }: {
+    search?: string;
+    movementType?: "entrada" | "saida" | "transferencia";
+    accountId?: number;
+    categoryId?: number;
+    origin?: "manual" | "open_finance" | "conciliada";
+    startDate?: string;
+    endDate?: string;
+    limit?: number;
+    offset?: number;
+  } = {}) => {
+    const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+    if (search.trim()) params.set("q", search.trim());
+    if (movementType) params.set("movement_type", movementType);
+    if (accountId) params.set("account_id", String(accountId));
+    if (categoryId) params.set("category_id", String(categoryId));
+    if (origin) params.set("origin", origin);
+    if (startDate) params.set("start_date", startDate);
+    if (endDate) params.set("end_date", endDate);
+    return request<MovementPage>(`/transactions/page?${params.toString()}`);
   },
   getTransactionSummary: () => request<TransactionSummary>("/transactions/summary"),
   createTransaction: (payload: { valor: number; tipo: "entrada" | "saida"; categoria_id: number | null; comentario: string; data: string; conta_id: number | null }) =>

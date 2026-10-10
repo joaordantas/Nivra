@@ -1,15 +1,20 @@
-from fastapi import APIRouter, HTTPException, status
+from datetime import date
+from typing import Literal
+
+from fastapi import APIRouter, HTTPException, Query, status
 
 from backend.dependencies.auth import CurrentUser, CurrentUserCsrf
 from backend.schemas.transactions import (
     TransactionCreate,
     TransactionListItem,
+    MovementPage,
     ReconciliationBatchResponse,
     ReconciliationSuggestion,
     ReconciliationResponse,
     TransactionSummary,
     TransactionUpdate,
 )
+from services.movement_history_service import list_movement_page
 from services.open_finance_reconciliation_service import (
     ReconciliationConflictError,
     ReconciliationNotFoundError,
@@ -27,6 +32,36 @@ from services.transacao_service import (
 )
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
+
+
+@router.get("/page", response_model=MovementPage)
+def list_movement_history_page(
+    current_user: CurrentUser,
+    q: str | None = Query(default=None, max_length=120),
+    movement_type: Literal["entrada", "saida", "transferencia"] | None = None,
+    account_id: int | None = Query(default=None, ge=1),
+    category_id: int | None = Query(default=None, ge=1),
+    origin: Literal["manual", "open_finance", "conciliada"] | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
+    limit: int = Query(default=25, ge=1, le=100),
+    offset: int = Query(default=0, ge=0, le=10000),
+) -> MovementPage:
+    try:
+        return MovementPage(**list_movement_page(
+            current_user.id,
+            search=q,
+            movement_type=movement_type,
+            account_id=account_id,
+            category_id=category_id,
+            origin=origin,
+            start_date=start_date,
+            end_date=end_date,
+            limit=limit,
+            offset=offset,
+        ))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.get("", response_model=list[TransactionListItem])

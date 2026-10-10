@@ -110,10 +110,12 @@ autorizado, fechar o gate externo adiado, revisar novas ações em fase própria
 somente depois, decidir expansão de rollout. `LUMI_PUBLIC_ENABLED`, propostas,
 execução e allowlist não foram alteradas por esta consolidação.
 
-## Proposta formal de retenção — aguardando aprovação
+## Política de retenção aprovada para o piloto
 
-Esta tabela é uma proposta operacional, não uma política ativa. Os prazos não
-foram configurados em nenhum ambiente.
+Os prazos abaixo foram aprovados pelo responsável em 10 de outubro de 2026 para
+uso controlado no Preview. A aprovação define a política, mas não agenda nem
+executa limpeza: a feature flag continua fail-closed, não existe Cron ativo e
+Production permanece inalterada.
 
 | Categoria | Finalidade | Recomendação proposta | Alternativas | Impacto e risco de exclusão | Risco de retenção excessiva |
 | --- | --- | --- | --- | --- | --- |
@@ -125,10 +127,13 @@ foram configurados em nenhum ambiente.
 | Estados de alertas financeiros | progressão monotônica de marcos | vida da conta/fonte; revisão separada para fontes excluídas | limpeza após prova de inexistência da fonte e janela aprovada | remover pode repetir marcos de orçamento/meta | estados órfãos podem se acumular |
 | Preferências | respeitar escolha vigente do usuário | vida da conta | nenhuma alternativa automática recomendada | exclusão reativa defaults e pode mudar consentimento prático | baixo volume; risco principal é governança, não armazenamento |
 
-A decisão deve envolver responsável pelo produto e avaliação jurídica/LGPD,
-considerando finalidade, transparência, direito de exclusão e minimização. Se a
-decisão diferir da proposta, atualizar este runbook e os parâmetros; não alterar
-o ledger nem as proteções de não lidas sem uma fase própria.
+A política aprovada é: notificações lidas por 180 dias após `lida_em`, histórico
+terminal de jobs por 180 dias preservando sempre o último por tipo, logs
+sanitizados por 30 dias e notificações não lidas sem expiração automática. A
+avaliação jurídica/LGPD do texto apresentado ao usuário continua necessária
+antes de abertura pública. Qualquer mudança exige atualizar este runbook; ledger,
+preferências, estados financeiros e proteção de não lidas não podem ser
+alterados sem fase própria.
 
 ## Evidência ambiental de 8 de outubro de 2026
 

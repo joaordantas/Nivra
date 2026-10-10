@@ -31,7 +31,18 @@ PLUGGY_CLIENT_SECRET=<client secret da aplicacao sandbox>
 PLUGGY_WEBHOOK_SECRET=<segredo aleatorio com pelo menos 32 caracteres>
 PLUGGY_WEBHOOK_URL=https://seu-dominio/api/open-finance/webhooks/pluggy
 OPEN_FINANCE_ENVIRONMENT=sandbox
+NIVRA_LOG_LEVEL=INFO
+API_RATE_LIMIT_ENABLED=true
+API_READ_RATE_LIMIT=600
+API_WRITE_RATE_LIMIT=120
+API_RATE_LIMIT_WINDOW_SECONDS=60
 ```
+
+O limite geral usa chaves técnicas com hash e nunca grava endereço IP, sessão,
+payload ou dado financeiro em claro. Em `APP_ENV=test` ele fica desligado por
+padrão para manter a suíte determinística; nos demais ambientes fica ligado,
+salvo configuração explícita em contrário. Respostas da API recebem
+`Cache-Control: no-store`, identificador de correlação e cabeçalhos defensivos.
 
 Aplique o schema e inicie a API:
 
@@ -110,6 +121,10 @@ Configure no ambiente desejado:
 - `DATABASE_URL_UNPOOLED`;
 - `SESSION_TTL_HOURS` quando o prazo padrão de 7 dias não for adequado;
 - `CORS_ORIGINS` apenas quando existir um frontend confiável em outra origem.
+- `NIVRA_LOG_LEVEL=INFO` para logs HTTP estruturados e sanitizados;
+- `API_RATE_LIMIT_ENABLED=true`;
+- `API_READ_RATE_LIMIT=600`, `API_WRITE_RATE_LIMIT=120` e
+  `API_RATE_LIMIT_WINDOW_SECONDS=60`, ajustados somente com evidência de carga;
 - `APP_PUBLIC_URL=https://nivra-finance.vercel.app`;
 - `EMAIL_PROVIDER=resend`;
 - `RESEND_API_KEY` com uma chave criada para o projeto;
