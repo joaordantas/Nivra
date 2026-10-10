@@ -400,3 +400,11 @@ ressalvas são revisão jurídica do texto público, captura editorial de screen
 e teste futuro em aparelho físico. Production, main, Cron, Lumi pública e os
 produtores de Production permaneceram inalterados. A Prioridade 10 permanece não
 iniciada.
+
+O fechamento foi publicado somente na branch
+`codex/p7-1-notification-foundation`, commit `986776c`. O check público da
+Vercel concluiu `Deployment has completed` para o deployment sanitizado
+`DfPtJAcr7E64gA5Kswshs2CRw8ZC`. A URL estável da branch continuou respondendo
+HTTP 302 para o SSO da Vercel, distinguindo corretamente a proteção de borda de
+uma resposta do backend. Nenhum merge em `main` ou deployment Production foi
+realizado.

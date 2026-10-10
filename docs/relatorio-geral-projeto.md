@@ -1719,6 +1719,13 @@ sintéticos foram removidos e a linha de base do Neon Preview foi restaurada.
 Production e `main` não foram modificadas por esse gate; Cron, Lumi pública,
 produtores financeiros e limpeza real permaneceram desligados.
 
+O código final foi publicado exclusivamente em
+`codex/p7-1-notification-foundation`, commit `986776c`. O check público da
+Vercel confirmou a conclusão do deployment Preview
+`DfPtJAcr7E64gA5Kswshs2CRw8ZC`. A URL da branch permaneceu sob SSO e respondeu
+HTTP 302 para a proteção de borda; esse resultado não foi interpretado como
+falha da aplicação.
+
 ### Evolução entregue
 
 - histórico unificado com paginação e filtros no servidor, resumo financeiro do
